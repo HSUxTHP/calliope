@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:calliope/app/modules/draw/views/DrawingCanvas.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -6,223 +7,202 @@ import '../controllers/draw_controller.dart';
 class DrawView extends GetView<DrawController> {
   const DrawView({super.key});
 
-  static const toolbarBgColor = Color(0xFFF0F0F0);
-  static const sidebarBgColor = Color(0xFFF9FAFB);
-  static const sidebarBorderColor = Color(0xFFE0E0E0);
-  static const iconColor = Colors.black87;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
-          // Toolbar
+          // Top NavBar
           Container(
-            width: 1200,
             height: 56,
-            margin: const EdgeInsets.only(bottom: 20),
-            color: toolbarBgColor,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  for (final entry in [
-                    {'icon': Icons.arrow_back, 'action': () {}},
-                    null,
-                    {'icon': Icons.settings, 'action': () {}},
-                    {'icon': Icons.save, 'action': () {}},
-                    {'icon': Icons.share, 'action': () {}},
-                    {'icon': Icons.undo, 'action': controller.undo},
-                    {'icon': Icons.redo, 'action': controller.redo},
-                    {'icon': Icons.brush, 'action': () {}},
-                  ])
-                    if (entry != null)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        child: IconButton(
-                          icon: Icon(entry['icon'] as IconData,
-                              color: iconColor, size: 22),
-                          onPressed: entry['action'] as VoidCallback,
-                          splashRadius: 20,
-                          tooltip: (entry['icon'] as IconData)
-                              .codePoint
-                              .toString(),
-                        ),
-                      )
-                    else
-                      Container(
-                        height: 28,
-                        width: 1.2,
-                        color: Colors.grey.shade400,
-                        margin: const EdgeInsets.symmetric(horizontal: 10),
-                      ),
-                ],
-              ),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            color: const Color(0xFFF4F6F8),
+            child: Row(
+              children: [
+                IconButton(icon: const Icon(Icons.arrow_back), onPressed: () {}),
+                IconButton(icon: const Icon(Icons.settings), onPressed: () {}),
+                IconButton(icon: const Icon(Icons.upload_file), onPressed: () {}),
+                IconButton(icon: const Icon(Icons.share), onPressed: () {}),
+                const VerticalDivider(width: 20),
+                IconButton(icon: const Icon(Icons.undo), onPressed: controller.undo),
+                IconButton(icon: const Icon(Icons.redo), onPressed: controller.redo),
+                IconButton(icon: const Icon(Icons.crop_square), onPressed: () {}),
+                IconButton(icon: const Icon(Icons.all_inclusive), onPressed: () {}),
+                IconButton(icon: const Icon(Icons.edit), onPressed: () => controller.toggleEraser()),
+                IconButton(icon: const Icon(Icons.brush), onPressed: () {}),
+                IconButton(icon: const Icon(Icons.crop_square_outlined), onPressed: () {}),
+                IconButton(icon: const Icon(Icons.circle_outlined), onPressed: () {}),
+                IconButton(icon: const Icon(Icons.change_history), onPressed: () {}),
+                const VerticalDivider(width: 20),
+                IconButton(icon: const Icon(Icons.fiber_manual_record, color: Colors.red), onPressed: () {}),
+                IconButton(icon: const Icon(Icons.mic), onPressed: () {}),
+                IconButton(icon: const Icon(Icons.save), onPressed: controller.saveCurrentFrame),
+              ],
             ),
           ),
 
-          // Nội dung chính
+          // Body content
           Expanded(
             child: Row(
               children: [
+                // Sidebar Left (Frame list)
                 Container(
                   width: 180,
-                  margin: EdgeInsets.only(left: 8),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: sidebarBgColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: sidebarBorderColor, width: 1),
-                  ),
+                  color: const Color(0xFFF2F4F7),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Tabs Frame/Layout
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Row(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        color: const Color(0xFFDEE1E6),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(
-                              child: Container(
-                                padding: const EdgeInsets.only(bottom: 6),
-                                decoration: const BoxDecoration(
-                                  border: Border(
-                                    bottom:
-                                    BorderSide(color: Colors.black87, width: 1.2),
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Frame',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: const Text(
-                                'Layout',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w400,
-                                  fontSize: 16,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ),
+                            Text('Frame', style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text('Layout', style: TextStyle(color: Colors.grey)),
                           ],
                         ),
                       ),
-
+                      const SizedBox(height: 12),
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: controller.addFrame,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF6C2BD9),
+                            minimumSize: const Size(60, 60),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Icon(Icons.add, color: Colors.white),
+                        ),
+                      ),
                       const SizedBox(height: 16),
-
-                      // Danh sách frame
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: ListView(
-                            children: [
-                              // Nút +
-                              Container(
-                                height: 36,
-                                margin: const EdgeInsets.only(bottom: 16),
+                      Obx(() => Expanded(
+                        child: ListView(
+                          children: controller.frames.map((frame) {
+                            final isSelected = controller.currentFrame.value == frame;
+                            return GestureDetector(
+                              onTap: () => controller.selectFrame(frame),
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xff256b8c),
                                   borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 6,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.add,
-                                    color: Colors.white,
-                                    size: 32,
-                                  ),
-                                ),
-                              ),
-
-                              // Frame mẫu
-                              Container(
-                                height: 100,
-                                decoration: BoxDecoration(
                                   border: Border.all(
-                                    color: sidebarBorderColor,
-                                    width: 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(12),
+                                      color: isSelected ? Colors.red : Colors.transparent, width: 1.5),
                                   color: Colors.white,
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Colors.black12,
-                                      blurRadius: 4,
-                                      offset: Offset(0, 1),
-                                    ),
-                                  ],
                                 ),
-                                child: Stack(
+                                child: Column(
                                   children: [
-                                    Center(
-                                      child: Icon(
-                                        Icons.image_not_supported_outlined,
-                                        size: 36,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                    Positioned(
-                                      top: 6,
-                                      right: 6,
-                                      child: Material(
-                                        color: Colors.grey.shade300,
-                                        shape: const CircleBorder(),
-                                        child: InkWell(
-                                          customBorder: const CircleBorder(),
-                                          onTap: () {},
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(6),
-                                            child: Icon(
-                                              Icons.delete,
-                                              color: Colors.red.shade700,
-                                              size: 20,
+                                    FutureBuilder<Uint8List>(
+                                      future: controller.renderThumbnail(frame),
+                                      builder: (context, snapshot) {
+                                        if (snapshot.connectionState == ConnectionState.done &&
+                                            snapshot.hasData) {
+                                          return ClipRRect(
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: Image.memory(
+                                              snapshot.data!,
+                                              width: 140,
+                                              height: 80,
+                                              fit: BoxFit.cover,
                                             ),
-                                          ),
+                                          );
+                                        } else {
+                                          return const SizedBox(
+                                            width: 140,
+                                            height: 80,
+                                            child: Center(child: CircularProgressIndicator(strokeWidth: 1)),
+                                          );
+                                        }
+                                      },
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: CircleAvatar(
+                                        radius: 14,
+                                        backgroundColor: Colors.grey.shade300,
+                                        child: IconButton(
+                                          icon: const Icon(Icons.delete, size: 14, color: Colors.red),
+                                          onPressed: () => controller.removeFrame(frame),
                                         ),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ],
-                          ),
+                            );
+                          }).toList(),
                         ),
-                      ),
+                      )),
                     ],
                   ),
                 ),
 
-                // Canvas bên phải
+                // Right side: Drawing area + toolbar
                 Expanded(
                   child: Container(
-                    margin: const EdgeInsets.only(left: 20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 8,
-                          offset: Offset(0, 2),
+                    color: const Color(0xFFE3E7EB),
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        // Canvas
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: Color(0xFFE0E0E0)),
+                            ),
+                            padding: const EdgeInsets.all(12),
+                            child: const DrawingCanvas(),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Toolbar
+                        Container(
+                          height: 56,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF9FAFB),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Color(0xFFE0E0E0)),
+                          ),
+                          child: Row(
+                            children: [
+                              Obx(() => IconButton(
+                                icon: Icon(controller.isPlaying.value ? Icons.pause : Icons.play_arrow),
+                                onPressed: controller.togglePlayback,
+                              )),
+                              const SizedBox(width: 4),
+                              Text('${controller.selectedWidth.value.toInt()}px'),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                icon: const Icon(Icons.remove),
+                                onPressed: () => controller.changeWidth(
+                                    (controller.selectedWidth.value - 1).clamp(1, 30).toDouble()),
+                              ),
+                              Expanded(
+                                child: Slider(
+                                  min: 1,
+                                  max: 30,
+                                  value: controller.selectedWidth.value,
+                                  onChanged: controller.changeWidth,
+                                  activeColor: const Color(0xFF052C65),
+                                  inactiveColor: const Color(0xFFD6E4FF),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.add),
+                                onPressed: () => controller.changeWidth(
+                                    (controller.selectedWidth.value + 1).clamp(1, 30).toDouble()),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                    child: DrawingCanvas(),
                   ),
                 ),
               ],

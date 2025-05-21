@@ -7,6 +7,7 @@ class Sketcher extends CustomPainter {
   Sketcher({required this.lines});
 
   @override
+  @override
   void paint(Canvas canvas, Size size) {
     for (final line in lines) {
       final paint = Paint()
@@ -16,10 +17,15 @@ class Sketcher extends CustomPainter {
         ..isAntiAlias = true;
 
       for (int i = 0; i < line.points.length - 1; i++) {
-        canvas.drawLine(line.points[i], line.points[i + 1], paint);
+        final p1 = line.points[i];
+        final p2 = line.points[i + 1];
+        if (p1 != null && p2 != null) {
+          canvas.drawLine(p1, p2, paint);
+        }
       }
     }
   }
+
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;

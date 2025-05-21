@@ -1,48 +1,49 @@
+import 'dart:ui' as ui;
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/draw_controller.dart';
+import 'package:flutter/rendering.dart';
 
 class DrawingCanvas extends StatelessWidget {
-  final controller = Get.find<DrawController>();
-
-  DrawingCanvas({super.key});
+  const DrawingCanvas({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<DrawController>();
+
     return GestureDetector(
       onPanStart: (details) {
         final box = context.findRenderObject() as RenderBox;
         final point = box.globalToLocal(details.globalPosition);
-        controller.addLine(DrawnLine(
-          points: [point],
-          color: controller.selectedColor.value,
-          width: controller.selectedWidth.value,
-        ));
+        controller.startStroke(point);
       },
       onPanUpdate: (details) {
         final box = context.findRenderObject() as RenderBox;
         final point = box.globalToLocal(details.globalPosition);
-        final updated = controller.lines.removeLast();
-        controller.lines.add(DrawnLine(
-          points: [...updated.points, point],
-          color: updated.color,
-          width: updated.width,
-        ));
+        controller.addPoint(point);
+      },
+      onPanEnd: (_) {
+        controller.endStroke();
       },
       child: Obx(() {
-        final lines = controller.lines.toList(); // <-- Sửa lỗi tại đây
-        return CustomPaint(
-          painter: _LinePainter(lines),
-          size: Size.infinite,
+        final lines = controller.lines.toList();
+        return RepaintBoundary(
+          key: controller.repaintKey,
+          child: CustomPaint(
+            painter: _DrawingPainter(lines),
+            size: Size.infinite,
+          ),
         );
       }),
     );
   }
 }
 
-class _LinePainter extends CustomPainter {
+class _DrawingPainter extends CustomPainter {
   final List<DrawnLine> lines;
-  _LinePainter(this.lines);
+
+  _DrawingPainter(this.lines);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -51,14 +52,17 @@ class _LinePainter extends CustomPainter {
         ..color = line.color
         ..strokeWidth = line.width
         ..strokeCap = StrokeCap.round;
+
       for (int i = 0; i < line.points.length - 1; i++) {
-        canvas.drawLine(line.points[i], line.points[i + 1], paint);
+        final p1 = line.points[i];
+        final p2 = line.points[i + 1];
+        if (p1 != null && p2 != null) {
+          canvas.drawLine(p1, p2, paint);
+        }
       }
     }
   }
 
   @override
-  bool shouldRepaint(covariant _LinePainter oldDelegate) {
-    return true;
-  }
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
