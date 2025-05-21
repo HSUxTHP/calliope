@@ -5,6 +5,7 @@ abstract class Routes {
   Routes._();
   static const HOME = _Paths.HOME;
   static const DRAW = _Paths.DRAW;
+  static const COMMUNITY = _Paths.COMMUNITY;
   static const LAYOUT = _Paths.LAYOUT;
 }
 
@@ -12,5 +13,6 @@ abstract class _Paths {
   _Paths._();
   static const HOME = '/home';
   static const DRAW = '/draw';
+  static const COMMUNITY = '/community';
   static const LAYOUT = '/layout';
 }
