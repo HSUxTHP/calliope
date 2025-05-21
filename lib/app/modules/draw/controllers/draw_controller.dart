@@ -1,23 +1,43 @@
 import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 
 class DrawController extends GetxController {
-  //TODO: Implement DrawController
+  final lines = <DrawnLine>[].obs;
+  final undoneLines = <DrawnLine>[].obs;
+  final selectedColor = Colors.black.obs;
+  final selectedWidth = 4.0.obs;
 
-  final count = 0.obs;
-  @override
-  void onInit() {
-    super.onInit();
+  void addLine(DrawnLine line) {
+    lines.add(line);
+    undoneLines.clear(); // xóa redo khi vẽ mới
   }
 
-  @override
-  void onReady() {
-    super.onReady();
+  void clear() {
+    lines.clear();
+    undoneLines.clear();
   }
 
-  @override
-  void onClose() {
-    super.onClose();
+  void undo() {
+    if (lines.isNotEmpty) {
+      undoneLines.add(lines.removeLast());
+    }
   }
 
-  void increment() => count.value++;
+  void redo() {
+    if (undoneLines.isNotEmpty) {
+      lines.add(undoneLines.removeLast());
+    }
+  }
+}
+
+class DrawnLine {
+  final List<Offset> points;
+  final Color color;
+  final double width;
+
+  DrawnLine({
+    required this.points,
+    required this.color,
+    required this.width,
+  });
 }
