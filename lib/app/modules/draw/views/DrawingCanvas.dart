@@ -1,9 +1,11 @@
-import 'dart:ui' as ui;
+
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 import '../controllers/draw_controller.dart';
-import 'package:flutter/rendering.dart';
+import '../views/sketcher.dart';
 
 class DrawingCanvas extends StatelessWidget {
   const DrawingCanvas({super.key});
@@ -23,46 +25,25 @@ class DrawingCanvas extends StatelessWidget {
         final point = box.globalToLocal(details.globalPosition);
         controller.addPoint(point);
       },
-      onPanEnd: (_) {
-        controller.endStroke();
-      },
+      onPanEnd: (_) => controller.endStroke(),
+
+      /// 👇 Giới hạn vùng vẽ bằng ClipRect và Container
       child: Obx(() {
         final lines = controller.lines.toList();
-        return RepaintBoundary(
-          key: controller.repaintKey,
-          child: CustomPaint(
-            painter: _DrawingPainter(lines),
-            size: Size.infinite,
+        return ClipRect(
+          child: RepaintBoundary(
+            key: controller.repaintKey,
+            child: Container(
+              width: double.infinity,
+              height: double.infinity,
+              color: Colors.transparent,
+              child: CustomPaint(
+                painter: Sketcher(lines: lines),
+              ),
+            ),
           ),
         );
       }),
     );
   }
-}
-
-class _DrawingPainter extends CustomPainter {
-  final List<DrawnLine> lines;
-
-  _DrawingPainter(this.lines);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    for (final line in lines) {
-      final paint = Paint()
-        ..color = line.color
-        ..strokeWidth = line.width
-        ..strokeCap = StrokeCap.round;
-
-      for (int i = 0; i < line.points.length - 1; i++) {
-        final p1 = line.points[i];
-        final p2 = line.points[i + 1];
-        if (p1 != null && p2 != null) {
-          canvas.drawLine(p1, p2, paint);
-        }
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

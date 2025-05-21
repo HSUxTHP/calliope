@@ -17,7 +17,6 @@ class MyApp extends StatelessWidget {
     displayLarge: TextStyle(fontSize: 72.0, fontWeight: FontWeight.bold),
     displayMedium: TextStyle(fontSize: 36.0, fontStyle: FontStyle.italic),
     bodyLarge: TextStyle(fontSize: 14.0, fontFamily: 'Lexend'),
-    // Add other text styles as needed
   );
   MyApp({super.key});
 

@@ -1,12 +1,13 @@
+
+import 'package:calliope/app/modules/draw/controllers/DrawnLine.dart';
 import 'package:flutter/material.dart';
-import '../controllers/draw_controller.dart';
+
 
 class Sketcher extends CustomPainter {
   final List<DrawnLine> lines;
 
   Sketcher({required this.lines});
 
-  @override
   @override
   void paint(Canvas canvas, Size size) {
     for (final line in lines) {
@@ -25,7 +26,6 @@ class Sketcher extends CustomPainter {
       }
     }
   }
-
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
