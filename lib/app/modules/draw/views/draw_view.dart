@@ -66,7 +66,6 @@ class DrawView extends GetView<DrawController> {
           Expanded(
             child: Row(
               children: [
-                // Sidebar trái với border bo tròn
                 Container(
                   width: 180,
                   margin: EdgeInsets.only(left: 8),
