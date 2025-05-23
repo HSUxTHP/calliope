@@ -4,13 +4,13 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../views/sketcher.dart';
 import 'DrawnLine.dart';
 
 class DrawController extends GetxController {
   final repaintKey = GlobalKey();
 
-  // Trạng thái vẽ
   final lines = <DrawnLine>[].obs;
   final undoStack = <List<DrawnLine>>[];
   final redoStack = <List<DrawnLine>>[];
@@ -19,17 +19,22 @@ class DrawController extends GetxController {
   final selectedWidth = 4.0.obs;
   final isEraser = false.obs;
 
-  // Frame
   final frames = <List<DrawnLine>>[].obs;
   final currentFrame = Rxn<List<DrawnLine>>();
   final currentFrameIndex = 0.obs;
   final Map<List<DrawnLine>, Uint8List> thumbnailCache = {};
 
-  // Playback
   final isPlaying = false.obs;
+  final isFrameListExpanded = true.obs;
+
   Timer? _playbackTimer;
   int _currentIndex = 0;
   final int fps = 6;
+
+  static const Size canvasSize = Size(1600, 900); // canvas thực tế
+
+  IconData get currentToolIcon => isEraser.value ? Icons.content_cut : Icons.brush;
+  String get currentToolTooltip => isEraser.value ? 'Tẩy' : 'Bút';
 
   @override
   void onInit() {
@@ -37,7 +42,6 @@ class DrawController extends GetxController {
     addFrame();
   }
 
-  // Vẽ
   void startStroke(Offset point) {
     undoStack.add(List.from(lines.map((l) => l.copy())));
     redoStack.clear();
@@ -55,14 +59,16 @@ class DrawController extends GetxController {
   void endStroke() {
     if (lines.isNotEmpty) {
       lines.last.points.add(null);
-      lines.refresh();  }
+      lines.refresh();
+      thumbnailCache.remove(currentFrame.value);
+    }
   }
 
-  // Undo/Redo
   void undo() {
     if (undoStack.isNotEmpty) {
       redoStack.add(List.from(lines.map((l) => l.copy())));
       lines.value = undoStack.removeLast();
+      thumbnailCache.remove(currentFrame.value);
     }
   }
 
@@ -70,20 +76,22 @@ class DrawController extends GetxController {
     if (redoStack.isNotEmpty) {
       undoStack.add(List.from(lines.map((l) => l.copy())));
       lines.value = redoStack.removeLast();
+      thumbnailCache.remove(currentFrame.value);
     }
   }
 
   void clearCanvas() {
     undoStack.add(List.from(lines.map((l) => l.copy())));
     lines.clear();
+    thumbnailCache.remove(currentFrame.value);
   }
 
-  // Công cụ
   void toggleEraser() => isEraser.toggle();
   void changeColor(Color color) => selectedColor.value = color;
   void changeWidth(double width) => selectedWidth.value = width.clamp(1.0, 30.0);
 
-  // Frame
+  void toggleFrameList() => isFrameListExpanded.toggle();
+
   void addFrame() {
     final empty = <DrawnLine>[];
     frames.insert(0, empty);
@@ -92,20 +100,24 @@ class DrawController extends GetxController {
     currentFrameIndex.value = 0;
   }
 
-  void selectFrame(List<DrawnLine> frame) {
-    final index = frames.indexOf(frame);
-    if (index != -1) {
-      currentFrameIndex.value = index;
-      lines.value = frame.map((l) => l.copy()).toList();
-      currentFrame.value = frame;
-    }
-  }
-
   void saveCurrentFrame() {
     final index = frames.indexOf(currentFrame.value!);
     if (index != -1) {
-      frames[index] = lines.map((l) => l.copy()).toList();
-      currentFrame.value = frames[index];
+      final copied = lines.map((l) => l.copy()).toList();
+      frames[index] = copied;
+      currentFrame.value = copied;
+      thumbnailCache.remove(currentFrame.value);
+    }
+  }
+
+  void selectFrame(List<DrawnLine> frame) {
+    saveCurrentFrame();
+    final index = frames.indexOf(frame);
+    if (index != -1) {
+      final copied = frame.map((l) => l.copy()).toList();
+      currentFrameIndex.value = index;
+      currentFrame.value = frame;
+      lines.value = copied;
     }
   }
 
@@ -124,7 +136,6 @@ class DrawController extends GetxController {
     }
   }
 
-  // Playback
   void togglePlayback() {
     isPlaying.toggle();
     if (isPlaying.value) {
@@ -132,7 +143,8 @@ class DrawController extends GetxController {
       _playbackTimer = Timer.periodic(Duration(milliseconds: 1000 ~/ fps), (_) {
         if (frames.isEmpty) return;
         _currentIndex = (_currentIndex + 1) % frames.length;
-        lines.value = frames[_currentIndex].map((l) => l.copy()).toList();
+        final copied = frames[_currentIndex].map((l) => l.copy()).toList();
+        lines.value = copied;
         currentFrameIndex.value = _currentIndex;
       });
     } else {
@@ -140,7 +152,6 @@ class DrawController extends GetxController {
     }
   }
 
-  // Capture
   Future<Uint8List?> captureImage() async {
     try {
       final boundary = repaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
@@ -160,12 +171,19 @@ class DrawController extends GetxController {
       return thumbnailCache[lines]!;
     }
 
+    const double thumbWidth = 160;
+    const double thumbHeight = 90;
+
     final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, 160, 90));
+    final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, thumbWidth, thumbHeight));
+
+    canvas.scale(thumbWidth / canvasSize.width, thumbHeight / canvasSize.height);
+
     final painter = Sketcher(lines: lines);
-    painter.paint(canvas, const Size(160, 90));
+    painter.paint(canvas, canvasSize);
+
     final picture = recorder.endRecording();
-    final image = await picture.toImage(160, 90);
+    final image = await picture.toImage(thumbWidth.toInt(), thumbHeight.toInt());
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     final bytes = byteData!.buffer.asUint8List();
 

@@ -17,11 +17,27 @@ class DrawView extends GetView<DrawController> {
           Expanded(
             child: Row(
               children: [
-                SizedBox(
-                  width: 230,
-                  child: _buildFrameSidebar(),
-                ),
-                Expanded(child: _buildCanvasArea()),
+                Obx(() => controller.isFrameListExpanded.value
+                    ? _buildFrameList()
+                    : Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
+                  child: Column(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFE0E0E0)),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.chevron_right),
+                          onPressed: controller.toggleFrameList,
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+                Expanded(child: _buildCanvasAndToolbarArea()),
               ],
             ),
           ),
@@ -32,236 +48,215 @@ class DrawView extends GetView<DrawController> {
 
   Widget _buildTopToolbar() {
     return Container(
-      height: 56,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE6EEFA),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: const BoxDecoration(
+        color: Color(0xFFE6EEFA),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 1.5))],
       ),
       child: Row(
         children: [
-          IconButton(icon: const Icon(Icons.arrow_back), onPressed: () {}),
-          const VerticalDivider(width: 20),
-          IconButton(icon: const Icon(Icons.undo), onPressed: controller.undo),
-          IconButton(icon: const Icon(Icons.redo), onPressed: controller.redo),
-          IconButton(icon: const Icon(Icons.clear), onPressed: controller.clearCanvas),
-          IconButton(icon: const Icon(Icons.brush), onPressed: controller.toggleEraser),
+          IconButton(icon: const Icon(Icons.arrow_back, size: 20), onPressed: () {}),
+          const VerticalDivider(width: 16),
+          IconButton(icon: const Icon(Icons.undo, size: 20), onPressed: controller.undo),
+          IconButton(icon: const Icon(Icons.redo, size: 20), onPressed: controller.redo),
+          IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: controller.clearCanvas),
+          Obx(() => IconButton(
+            icon: Icon(controller.currentToolIcon, size: 20),
+            tooltip: controller.currentToolTooltip,
+            onPressed: controller.toggleEraser,
+          )),
+
           const Spacer(),
-          ElevatedButton.icon(
+          IconButton(
+            icon: const Icon(Icons.save_alt, color: Color(0xFF1E88E5), size: 20),
+            tooltip: 'Lưu',
             onPressed: controller.saveCurrentFrame,
-            icon: const Icon(Icons.save, color: Colors.white),
-            label: const Text('Save', style: TextStyle(color: Colors.white)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E88E5),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFrameSidebar() {
-    return LayoutBuilder(
-      builder: (_, constraints) {
-        return Container(
-          margin: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFE0E0E0)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
-                ),
-                child: Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Frames',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    Container(width: 1, height: 20, color: Colors.grey.shade400),
-                    const Expanded(
-                      child: Text(
-                        'Layout',
-                        textAlign: TextAlign.right,
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: controller.addFrame,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey.shade300,
-                  shape: const CircleBorder(),
-                  padding: const EdgeInsets.all(12),
-                  elevation: 2,
-                ),
-                child: const Icon(Icons.add, size: 20, color: Colors.black),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: Obx(() => ListView.builder(
-                  itemCount: controller.frames.length,
-                  itemBuilder: (_, index) {
-                    final frame = controller.frames[index];
-                    final isSelected = controller.currentFrameIndex.value == index;
-
-                    return GestureDetector(
-                      onTap: () => controller.selectFrame(frame),
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: isSelected ? Colors.blue.shade100 : Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isSelected ? Colors.blue : Colors.grey.shade300,
-                            width: 2,
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            FutureBuilder<Uint8List>(
-                              future: controller.renderThumbnail(frame),
-                              builder: (_, snapshot) {
-                                if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-                                  return ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.memory(
-                                      snapshot.data!,
-                                      width: 140,
-                                      height: 80,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  );
-                                } else {
-                                  return const SizedBox(
-                                    width: 140,
-                                    height: 80,
-                                    child: Center(child: CircularProgressIndicator(strokeWidth: 1)),
-                                  );
-                                }
-                              },
-                            ),
-                            const SizedBox(height: 4),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: IconButton(
-                                icon: const Icon(Icons.delete, size: 16, color: Colors.red),
-                                onPressed: () => controller.removeFrame(frame),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                )),
-              ),
-            ],
-          ),
-        );
-      },
+  Widget _buildCanvasAndToolbarArea() {
+    return Column(
+      children: [
+        Expanded(child: _buildCanvasArea()),
+        _buildBottomToolbar(),
+      ],
     );
   }
 
   Widget _buildCanvasArea() {
     return Padding(
-      padding: const EdgeInsets.all(20),
-      child: LayoutBuilder(
-        builder: (_, constraints) {
-          final canvasWidth = constraints.maxWidth;
-          final canvasHeight = constraints.maxHeight - 56 - 12;
-          final desiredHeight = canvasWidth / (16 / 9);
-
-          return Stack(
-            children: [
-              Column(
-                children: [
-                  Expanded(
-                    child: Center(
-                      child: Container(
-                        width: canvasWidth,
-                        height: desiredHeight > canvasHeight ? canvasHeight : desiredHeight,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: const Color(0xFFE0E0E0)),
-                        ),
-                        child: const DrawingCanvas(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 68),
-                ],
-              ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: SizedBox(
-                  height: 56,
-                  child: _buildBottomToolbar(),
-                ),
-              ),
-            ],
-          );
-        },
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: Container(
+          width: 1600,
+          height: 900,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: const Color(0xFFE0E0E0)),
+          ),
+          child: const DrawingCanvas(),
+        ),
       ),
     );
   }
 
   Widget _buildBottomToolbar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: 56,
+      margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: const Color(0xFFF9FAFB),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE0E0E0)),
       ),
-      child: Row(
-        children: [
-          Obx(() => IconButton(
-            icon: Icon(controller.isPlaying.value ? Icons.pause : Icons.play_arrow),
-            onPressed: controller.togglePlayback,
-          )),
-          const SizedBox(width: 4),
-          Obx(() => Text('${controller.selectedWidth.value.toInt()} px')),
-          IconButton(
-            icon: const Icon(Icons.remove),
-            onPressed: () => controller.changeWidth(controller.selectedWidth.value - 1),
-          ),
-          Expanded(
-            child: Obx(() => Slider(
-              min: 1,
-              max: 30,
-              value: controller.selectedWidth.value,
-              onChanged: controller.changeWidth,
-              activeColor: const Color(0xFF1E88E5),
-              inactiveColor: const Color(0xFFD6E4FF),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            Obx(() => IconButton(
+              icon: Icon(controller.isPlaying.value ? Icons.pause : Icons.play_arrow, size: 20),
+              onPressed: controller.togglePlayback,
             )),
+            const SizedBox(width: 8),
+            Obx(() => Text('${controller.selectedWidth.value.toInt()} px', style: const TextStyle(fontSize: 13))),
+            IconButton(
+              icon: const Icon(Icons.remove, size: 18),
+              onPressed: () => controller.changeWidth(controller.selectedWidth.value - 1),
+            ),
+            Obx(() => SizedBox(
+              width: 200,
+              child: Slider(
+                min: 1,
+                max: 30,
+                value: controller.selectedWidth.value,
+                onChanged: controller.changeWidth,
+                activeColor: const Color(0xFF1E88E5),
+                inactiveColor: const Color(0xFFD6E4FF),
+                thumbColor: const Color(0xFF1E88E5),
+              ),
+            )),
+            IconButton(
+              icon: const Icon(Icons.add, size: 18),
+              onPressed: () => controller.changeWidth(controller.selectedWidth.value + 1),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFrameList() {
+    return Container(
+      width: 160,
+      margin: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Frames', style: TextStyle(fontWeight: FontWeight.bold)),
+                IconButton(
+                  icon: const Icon(Icons.chevron_left, size: 18),
+                  onPressed: controller.toggleFrameList,
+                ),
+              ],
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => controller.changeWidth(controller.selectedWidth.value + 1),
+          ElevatedButton(
+            onPressed: controller.addFrame,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey.shade200,
+              shape: const CircleBorder(),
+              padding: const EdgeInsets.all(12),
+              elevation: 1,
+            ),
+            child: const Icon(Icons.add, size: 18, color: Colors.black),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: Obx(() => ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              itemCount: controller.frames.length,
+              itemBuilder: (_, index) {
+                final frame = controller.frames[index];
+                final isSelected = controller.currentFrameIndex.value == index;
+
+                return GestureDetector(
+                  onTap: () => controller.selectFrame(frame),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.blue.shade50 : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected ? Colors.blue : Colors.grey.shade300,
+                        width: 2,
+                      ),
+                    ),
+                    child: Stack(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: SizedBox(
+                            width: 140,
+                            child: AspectRatio(
+                              aspectRatio: 16 / 9,
+                              child: FutureBuilder<Uint8List>(
+                                future: controller.renderThumbnail(frame),
+                                builder: (_, snapshot) {
+                                  if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+                                    return ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.memory(snapshot.data!, fit: BoxFit.cover),
+                                    );
+                                  }
+                                  return const Center(child: CircularProgressIndicator(strokeWidth: 1.2));
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: PopupMenuButton<String>(
+                            icon: const Icon(Icons.more_vert, size: 18, color: Colors.black54),
+                            onSelected: (value) {
+                              if (value == 'delete') controller.removeFrame(frame);
+                            },
+                            itemBuilder: (_) => [
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.delete, color: Colors.redAccent, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('Xoá'),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            )),
           ),
         ],
       ),
