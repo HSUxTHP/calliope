@@ -1,10 +1,20 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:calliope/share/theme.dart';
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/routes/app_pages.dart';
+import 'firebase_options.dart';
 
-void main() {
+Future<void> main() async {
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  await Supabase.initialize(
+    url: 'https://pfwsaixdqklqwvafybgb.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmd3NhaXhkcWtscXd2YWZ5YmdiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc5OTg3NTIsImV4cCI6MjA2MzU3NDc1Mn0.F2L-NheN8-mnKwpkc9Ere-HeIY5p3lyLXbAFE84EVB0',
+  );
   runApp(
     //Gắn database ở đây
 
