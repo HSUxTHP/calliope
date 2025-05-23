@@ -6,7 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../views/sketcher.dart';
-import 'DrawnLine.dart';
+import '../../../data/models/DrawnLine_model.dart';
 
 class DrawController extends GetxController {
   final repaintKey = GlobalKey();

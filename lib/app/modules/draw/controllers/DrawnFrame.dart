@@ -1,4 +1,4 @@
-import 'DrawnLine.dart';
+import '../../../data/models/DrawnLine_model.dart';
 
 class DrawnFrame {
   final List<DrawnLine> lines;
