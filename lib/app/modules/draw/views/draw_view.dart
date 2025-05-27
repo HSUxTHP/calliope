@@ -66,10 +66,14 @@ class DrawView extends GetView<DrawController> {
             tooltip: controller.currentToolTooltip,
             onPressed: controller.toggleEraser,
           )),
-
           const Spacer(),
           IconButton(
-            icon: const Icon(Icons.save_alt, color: Color(0xFF1E88E5), size: 20),
+            icon: const Icon(Icons.paste, size: 20),
+            tooltip: 'Dán frame đã sao chép',
+            onPressed: controller.pasteCopiedFrame,
+          ),
+          IconButton(
+            icon: const Icon(Icons.save, color: Color(0xFF1E88E5), size: 20),
             tooltip: 'Lưu',
             onPressed: controller.saveCurrentFrame,
           ),
@@ -235,9 +239,29 @@ class DrawView extends GetView<DrawController> {
                           child: PopupMenuButton<String>(
                             icon: const Icon(Icons.more_vert, size: 18, color: Colors.black54),
                             onSelected: (value) {
-                              if (value == 'delete') controller.removeFrame(frame);
+                              switch (value) {
+                                case 'save':
+                                  controller.copyFrame(frame);
+                                  break;
+                                case 'paste':
+                                  controller.lines.value = frame.map((l) => l.copy()).toList();
+                                  break;
+                                case 'delete':
+                                  controller.removeFrame(frame);
+                                  break;
+                              }
                             },
                             itemBuilder: (_) => [
+                              const PopupMenuItem(
+                                value: 'save',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.copy, color: Colors.blueAccent, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('Copy'),
+                                  ],
+                                ),
+                              ),
                               const PopupMenuItem(
                                 value: 'delete',
                                 child: Row(

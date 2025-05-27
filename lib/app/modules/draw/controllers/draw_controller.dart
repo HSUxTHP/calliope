@@ -31,9 +31,11 @@ class DrawController extends GetxController {
   int _currentIndex = 0;
   final int fps = 6;
 
-  static const Size canvasSize = Size(1600, 900); // canvas thực tế
+  List<DrawnLine>? copiedFrame;
 
-  IconData get currentToolIcon => isEraser.value ? Icons.content_cut : Icons.brush;
+  static const Size canvasSize = Size(1600, 900); // Kích thước canvas
+
+  IconData get currentToolIcon => isEraser.value ? MdiIcons.eraser : Icons.brush;
   String get currentToolTooltip => isEraser.value ? 'Tẩy' : 'Bút';
 
   @override
@@ -89,7 +91,6 @@ class DrawController extends GetxController {
   void toggleEraser() => isEraser.toggle();
   void changeColor(Color color) => selectedColor.value = color;
   void changeWidth(double width) => selectedWidth.value = width.clamp(1.0, 30.0);
-
   void toggleFrameList() => isFrameListExpanded.toggle();
 
   void addFrame() {
@@ -136,6 +137,22 @@ class DrawController extends GetxController {
     }
   }
 
+  void copyFrame(List<DrawnLine> frame) {
+    copiedFrame = frame.map((l) => l.copy()).toList();
+  }
+
+  void pasteCopiedFrame() {
+    if (copiedFrame == null) return;
+
+    final newFrame = copiedFrame!.map((l) => l.copy()).toList();
+    final insertIndex = currentFrameIndex.value + 1;
+
+    frames.insert(insertIndex, newFrame);
+    currentFrameIndex.value = insertIndex;
+    lines.value = newFrame;
+    currentFrame.value = newFrame;
+  }
+
   void togglePlayback() {
     isPlaying.toggle();
     if (isPlaying.value) {
@@ -176,7 +193,6 @@ class DrawController extends GetxController {
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, thumbWidth, thumbHeight));
-
     canvas.scale(thumbWidth / canvasSize.width, thumbHeight / canvasSize.height);
 
     final painter = Sketcher(lines: lines);
