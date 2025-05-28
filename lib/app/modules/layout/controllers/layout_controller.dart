@@ -56,7 +56,7 @@ class LayoutController extends GetxController with GetSingleTickerProviderStateM
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Chọn giao diện'),
+          title: Text('Select interface'),
           content: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               isExpanded: true,

@@ -23,14 +23,14 @@ class ProfileView extends GetView<ProfileController> {
               height: 60,
               padding: const EdgeInsets.only(left: 4, right: 20),
               decoration: BoxDecoration(
-                  color: const Color(0xFFE8EDF1),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context).colorScheme.outline,
-                      blurRadius: 4,
-                    ),
-                  ],
-                ),
+                color: const Color(0xFFE8EDF1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).colorScheme.outline,
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -70,7 +70,7 @@ class ProfileView extends GetView<ProfileController> {
                         backgroundColor: Colors.transparent,
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -81,8 +81,13 @@ class ProfileView extends GetView<ProfileController> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      decoration: const BoxDecoration(
-                        border: Border(bottom: BorderSide(width: 1)),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            width: 1,
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                        ),
                       ),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 60,
@@ -168,22 +173,20 @@ class ProfileView extends GetView<ProfileController> {
                                           ? TextButton(
                                             style: TextButton.styleFrom(
                                               backgroundColor:
-                                                  Theme.of(
-                                                    context,
-                                                  ).colorScheme.surfaceDim,
+                                                  Theme.of(context)
+                                                      .colorScheme
+                                                      .primaryContainer,
+                                              foregroundColor:
+                                                  Theme.of(context)
+                                                      .colorScheme
+                                                      .onPrimaryContainer,
                                             ),
                                             onPressed: () {
-                                              // Open edit dialog
+                                              // TODO: Open edit dialog
                                             },
                                             child: Text(
                                               'Edit your profile',
-                                              style: TextStyle(
-                                                color:
-                                                    Theme.of(
-                                                      context,
-                                                    ).colorScheme.onSurface,
-                                                fontSize: 16,
-                                              ),
+                                              style: TextStyle(fontSize: 16),
                                             ),
                                           )
                                           : const SizedBox.shrink(),
@@ -221,13 +224,15 @@ class ProfileView extends GetView<ProfileController> {
                       itemCount: 4,
                       itemBuilder: (_, index) {
                         return PostProfileCard(
-                            imageUrl: "https://miro.medium.com/v2/resize:fit:1200/1*uNCVd_VqFOcdxhsL71cT5Q.jpeg",
-                            title: "Project that i made by myself absolutely",
-                            avatarUrl: "assets/avatar.png",
-                            userName: 'Username $index',
-                            createdAt: "2023-10-01",
-                            views: "0"
-                        );;
+                          imageUrl:
+                              "https://miro.medium.com/v2/resize:fit:1200/1*uNCVd_VqFOcdxhsL71cT5Q.jpeg",
+                          title: "Project that i made by myself absolutely",
+                          avatarUrl: "assets/avatar.png",
+                          userName: 'Username $index',
+                          createdAt: "2023-10-01",
+                          views: "0",
+                        );
+                        ;
                       },
                     ),
                   ],
