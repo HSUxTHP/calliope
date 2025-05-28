@@ -1,3 +1,5 @@
+// ✅ DrawController cho phép vẽ trực tiếp lên layer hiện tại dù ở chế độ Frame hay Layout
+
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -5,8 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import '../views/sketcher.dart';
 import '../../../data/models/DrawnLine_model.dart';
+import '../views/sketcher.dart';
 
 class DrawController extends GetxController {
   final repaintKey = GlobalKey();
@@ -19,27 +21,30 @@ class DrawController extends GetxController {
   final selectedWidth = 4.0.obs;
   final isEraser = false.obs;
 
-  final frames = <List<DrawnLine>>[].obs;
-  final currentFrame = Rxn<List<DrawnLine>>();
+  final frameLayers = <List<List<DrawnLine>>>[].obs;
   final currentFrameIndex = 0.obs;
-  final Map<List<DrawnLine>, Uint8List> thumbnailCache = {};
+  final currentLayerIndex = 0.obs;
 
   final isPlaying = false.obs;
   final isFrameListExpanded = true.obs;
+  final isShowingLayout = false.obs;
 
+  final Map<String, Uint8List> thumbnailCache = {};
   Timer? _playbackTimer;
   int _currentIndex = 0;
   final int fps = 6;
 
-  static const Size canvasSize = Size(1600, 900); // canvas thực tế
+  List<DrawnLine>? copiedFrame;
+  static const Size canvasSize = Size(1600, 900);
 
-  IconData get currentToolIcon => isEraser.value ? Icons.content_cut : Icons.brush;
+  IconData get currentToolIcon => isEraser.value ? MdiIcons.eraser : Icons.brush;
   String get currentToolTooltip => isEraser.value ? 'Tẩy' : 'Bút';
 
   @override
   void onInit() {
     super.onInit();
     addFrame();
+    selectFrame(0);
   }
 
   void startStroke(Offset point) {
@@ -59,8 +64,8 @@ class DrawController extends GetxController {
   void endStroke() {
     if (lines.isNotEmpty) {
       lines.last.points.add(null);
+      saveCurrentFrame();
       lines.refresh();
-      thumbnailCache.remove(currentFrame.value);
     }
   }
 
@@ -68,7 +73,7 @@ class DrawController extends GetxController {
     if (undoStack.isNotEmpty) {
       redoStack.add(List.from(lines.map((l) => l.copy())));
       lines.value = undoStack.removeLast();
-      thumbnailCache.remove(currentFrame.value);
+      saveCurrentFrame();
     }
   }
 
@@ -76,64 +81,76 @@ class DrawController extends GetxController {
     if (redoStack.isNotEmpty) {
       undoStack.add(List.from(lines.map((l) => l.copy())));
       lines.value = redoStack.removeLast();
-      thumbnailCache.remove(currentFrame.value);
+      saveCurrentFrame();
     }
   }
 
   void clearCanvas() {
     undoStack.add(List.from(lines.map((l) => l.copy())));
     lines.clear();
-    thumbnailCache.remove(currentFrame.value);
+    saveCurrentFrame();
   }
 
   void toggleEraser() => isEraser.toggle();
   void changeColor(Color color) => selectedColor.value = color;
   void changeWidth(double width) => selectedWidth.value = width.clamp(1.0, 30.0);
-
   void toggleFrameList() => isFrameListExpanded.toggle();
 
   void addFrame() {
-    final empty = <DrawnLine>[];
-    frames.insert(0, empty);
-    lines.value = empty;
-    currentFrame.value = empty;
+    final layers = List.generate(3, (_) => <DrawnLine>[]);
+    frameLayers.insert(0, layers);
     currentFrameIndex.value = 0;
+    currentLayerIndex.value = 0;
+    lines.value = layers[0];
+  }
+
+  void selectFrame(int index) {
+    saveCurrentFrame();
+    currentFrameIndex.value = index;
+    currentLayerIndex.value = 0;
+    lines.value = frameLayers[index][0];
+  }
+
+  void switchLayer(int layerIndex) {
+    saveCurrentFrame();
+    currentLayerIndex.value = layerIndex;
+    lines.value = frameLayers[currentFrameIndex.value][layerIndex];
   }
 
   void saveCurrentFrame() {
-    final index = frames.indexOf(currentFrame.value!);
-    if (index != -1) {
-      final copied = lines.map((l) => l.copy()).toList();
-      frames[index] = copied;
-      currentFrame.value = copied;
-      thumbnailCache.remove(currentFrame.value);
+    final fIndex = currentFrameIndex.value;
+    final lIndex = currentLayerIndex.value;
+    if (fIndex < frameLayers.length) {
+      frameLayers[fIndex][lIndex] = lines.map((l) => l.copy()).toList();
+      _clearThumbnailCache();
     }
   }
 
-  void selectFrame(List<DrawnLine> frame) {
-    saveCurrentFrame();
-    final index = frames.indexOf(frame);
-    if (index != -1) {
-      final copied = frame.map((l) => l.copy()).toList();
-      currentFrameIndex.value = index;
-      currentFrame.value = frame;
-      lines.value = copied;
-    }
-  }
-
-  void removeFrame(List<DrawnLine> frame) {
-    final index = frames.indexOf(frame);
-    if (index != -1) {
-      frames.removeAt(index);
-      thumbnailCache.remove(frame);
-      if (frames.isNotEmpty) {
+  void removeFrame(int index) {
+    if (index >= 0 && index < frameLayers.length) {
+      frameLayers.removeAt(index);
+      if (frameLayers.isNotEmpty) {
         final newIndex = (index > 0) ? index - 1 : 0;
-        selectFrame(frames[newIndex]);
+        selectFrame(newIndex);
       } else {
         lines.clear();
-        currentFrame.value = null;
       }
     }
+  }
+
+  void copyFrame(int index) {
+    final frame = frameLayers[index][currentLayerIndex.value];
+    copiedFrame = frame.map((l) => l.copy()).toList();
+  }
+
+  void pasteCopiedFrame() {
+    if (copiedFrame == null) return;
+    final newLayer = copiedFrame!.map((l) => l.copy()).toList();
+    final insertIndex = currentFrameIndex.value + 1;
+    final newLayers = List.generate(3, (_) => <DrawnLine>[]);
+    newLayers[0] = newLayer;
+    frameLayers.insert(insertIndex, newLayers);
+    selectFrame(insertIndex);
   }
 
   void togglePlayback() {
@@ -141,11 +158,11 @@ class DrawController extends GetxController {
     if (isPlaying.value) {
       _currentIndex = 0;
       _playbackTimer = Timer.periodic(Duration(milliseconds: 1000 ~/ fps), (_) {
-        if (frames.isEmpty) return;
-        _currentIndex = (_currentIndex + 1) % frames.length;
-        final copied = frames[_currentIndex].map((l) => l.copy()).toList();
-        lines.value = copied;
+        if (frameLayers.isEmpty) return;
+        _currentIndex = (_currentIndex + 1) % frameLayers.length;
+        lines.value = frameLayers[_currentIndex][0];
         currentFrameIndex.value = _currentIndex;
+        currentLayerIndex.value = 0;
       });
     } else {
       _playbackTimer?.cancel();
@@ -166,28 +183,35 @@ class DrawController extends GetxController {
     return null;
   }
 
-  Future<Uint8List> renderThumbnail(List<DrawnLine> lines) async {
-    if (thumbnailCache.containsKey(lines)) {
-      return thumbnailCache[lines]!;
-    }
+  Future<Uint8List> renderThumbnail(int frameIndex, [int? layerIndex]) async {
+    final cacheKey = layerIndex == null ? '$frameIndex' : '$frameIndex-$layerIndex';
+    if (thumbnailCache.containsKey(cacheKey)) return thumbnailCache[cacheKey]!;
 
     const double thumbWidth = 160;
     const double thumbHeight = 90;
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, thumbWidth, thumbHeight));
-
     canvas.scale(thumbWidth / canvasSize.width, thumbHeight / canvasSize.height);
 
-    final painter = Sketcher(lines: lines);
-    painter.paint(canvas, canvasSize);
+    if (layerIndex == null) {
+      for (int i = 0; i < 3; i++) {
+        Sketcher(lines: frameLayers[frameIndex][i]).paint(canvas, canvasSize);
+      }
+    } else {
+      Sketcher(lines: frameLayers[frameIndex][layerIndex]).paint(canvas, canvasSize);
+    }
 
     final picture = recorder.endRecording();
     final image = await picture.toImage(thumbWidth.toInt(), thumbHeight.toInt());
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     final bytes = byteData!.buffer.asUint8List();
 
-    thumbnailCache[lines] = bytes;
+    thumbnailCache[cacheKey] = bytes;
     return bytes;
+  }
+
+  void _clearThumbnailCache() {
+    thumbnailCache.clear();
   }
 }
