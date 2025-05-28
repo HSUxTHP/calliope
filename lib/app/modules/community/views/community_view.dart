@@ -85,17 +85,8 @@ class CommunityView extends GetView<CommunityController> {
             )
           ]
         ),
-
-        // Body Content (Placeholder)
-        Expanded(
-          child: Center(
-            child: Text(
-              'HomeView is working',
-              style: TextStyle(fontSize: 20),
-            ),
-          ),
-        ),
-      ],
+      )
     );
   }
 }
+
