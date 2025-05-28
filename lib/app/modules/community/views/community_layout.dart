@@ -15,9 +15,9 @@ class CommunityLayout extends GetView<CommunityController> {
         // Custom AppBar
         Container(
           height: 60,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          decoration: const BoxDecoration(
-            color: Color(0xFFE8EDF1),
+          padding: const EdgeInsets.only( left: 4, right: 20),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainer,
             boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
           ),
           child: Row(
@@ -31,10 +31,10 @@ class CommunityLayout extends GetView<CommunityController> {
                     'assets/logo.png',
                     height: 48, // Adjust size as needed
                   ),
-                  const Text(
+                  Text(
                     'Calliope',
                     style: TextStyle(
-                      color: Color(0xFF40484C),
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                     ),
@@ -45,10 +45,22 @@ class CommunityLayout extends GetView<CommunityController> {
               // Search Bar
               SizedBox(
                 width: MediaQuery.sizeOf(context).width * 0.45,
-                child: TextField(
+                child: Obx (()=> TextField(
+                  controller: controller.searchController,
                   decoration: InputDecoration(
                     hintText: 'Search your project here',
-                    prefixIcon: const Icon(Icons.search),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                    ),
+                    suffixIcon: controller.isSearching
+                        ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        controller.searchController.clear();
+                        controller.updateSearch('');
+                      },
+                    )
+                        : null,
                     contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                     filled: true,
                     fillColor: Colors.white,
@@ -57,8 +69,12 @@ class CommunityLayout extends GetView<CommunityController> {
                       borderSide: BorderSide.none,
                     ),
                   ),
+                  style: const TextStyle(
+                    color: Colors.black, // Text color
+                    fontWeight: FontWeight.normal, // Font weight
+                  ),
                   onChanged: controller.updateSearch,
-                ),
+                ),)
               ),
 
               // Avatar
