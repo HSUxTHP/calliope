@@ -23,13 +23,8 @@ class ProfileView extends GetView<ProfileController> {
               height: 60,
               padding: const EdgeInsets.only(left: 4, right: 20),
               decoration: BoxDecoration(
-                color: const Color(0xFFE8EDF1),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).colorScheme.outline,
-                    blurRadius: 4,
-                  ),
-                ],
+                color: Theme.of(context).colorScheme.surfaceContainer,
+                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -42,10 +37,10 @@ class ProfileView extends GetView<ProfileController> {
                         'assets/logo.png',
                         height: 48, // Adjust size as needed
                       ),
-                      const Text(
+                      Text(
                         'Calliope',
                         style: TextStyle(
-                          color: Color(0xFF40484C),
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
                         ),
