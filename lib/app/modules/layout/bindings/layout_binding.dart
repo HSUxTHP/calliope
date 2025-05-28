@@ -1,7 +1,9 @@
+import 'package:calliope/app/modules/community/controllers/community_controller.dart';
 import 'package:calliope/app/modules/draw/controllers/draw_controller.dart';
 import 'package:get/get.dart';
 
 import '../../home/controllers/home_controller.dart';
+import '../../profile/controllers/profile_controller.dart';
 import '../controllers/layout_controller.dart';
 
 class LayoutBinding extends Bindings {
@@ -15,6 +17,11 @@ class LayoutBinding extends Bindings {
     );
     Get.lazyPut<DrawController>(
           () => DrawController(),
+    );
+    Get.lazyPut<CommunityController>(
+          () => CommunityController(),
+    Get.lazyPut<ProfileController>(
+          () => ProfileController(),
     );
   }
 }

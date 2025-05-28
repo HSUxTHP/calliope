@@ -1,6 +1,9 @@
+import 'package:calliope/app/modules/community/views/community_layout.dart';
+import 'package:calliope/app/modules/community/views/community_view.dart';
 import 'package:calliope/app/modules/home/views/home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../profile/views/profile_view.dart';
 import '../controllers/layout_controller.dart';
 
 class LayoutView extends GetView<LayoutController> {
@@ -48,8 +51,8 @@ class LayoutView extends GetView<LayoutController> {
               controller: controller.tabController,
               children: const [
                 HomeView(),
-                Center(child: Text('Community View')),
-                Center(child: Text('Profile View')),
+                CommunityLayout(),
+                ProfileView(),
               ],
             ),
           ),
