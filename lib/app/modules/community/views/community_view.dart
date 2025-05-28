@@ -1,3 +1,4 @@
+import 'package:calliope/app/widget_share/post_widget.dart';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
@@ -8,80 +9,83 @@ class CommunityView extends GetView<CommunityController> {
   const CommunityView({super.key});
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Custom AppBar
-        Container(
-          height: 60,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          decoration: const BoxDecoration(
-            color: Color(0xFFE8EDF1),
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Logo
-              const Text(
-                'Calliope',
-                style: TextStyle(
-                  color: Color(0xFF40484C),
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              // Search Bar
-              SizedBox(
-                width: MediaQuery.sizeOf(context).width * 0.45,
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search your project here',
-                    prefixIcon: const Icon(Icons.search),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(100),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  onSubmitted: (value) {
-                    print('Search submitted: $value');
-                  },
-                ),
-              ),
-
-              // Avatar
-              Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.black,
-                    width: 2,
-                  ),
-                ),
-                child: const CircleAvatar(
-                  radius: 18,
-                  backgroundImage: AssetImage('assets/avatar.png'), // hoặc NetworkImage(...)
-                  backgroundColor: Colors.transparent,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // Body Content (Placeholder)
-        Expanded(
-          child: Center(
-            child: Text(
-              'HomeView is working',
-              style: TextStyle(fontSize: 20),
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.onPrimary,
+      body: Column(
+        children: [
+          SizedBox(height: 32),
+          // Tab Bar
+          Obx(() => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 80),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              spacing: 24,
+              children: [
+                _buildTabItem(controller, 'Trending', 0),
+                _buildTabItem(controller, 'Newest', 1),
+                _buildTabItem(controller, 'Most Liked', 2),
+              ],
             ),
-          ),
+          )),
+
+          const SizedBox(height: 16),
+
+          // Content Grid
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  childAspectRatio: 1,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                ),
+                itemCount: 20,
+                itemBuilder: (context, index) {
+                  return PostCard(
+                      imageUrl: "https://miro.medium.com/v2/resize:fit:1200/1*uNCVd_VqFOcdxhsL71cT5Q.jpeg",
+                      title: "Project that i made by myself absolutely",
+                      avatarUrl: "assets/avatar.png",
+                      userName: "Username1",
+                      createdAt: "2023-10-01",
+                      views: "0"
+                  );
+                },
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+  Widget _buildTabItem(
+      CommunityController controller, String title, int index) {
+    final isSelected = controller.selectedTabIndex.value == index;
+    return GestureDetector(
+      onTap: () => controller.changeTab(index),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Column(
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                  fontWeight:
+                  isSelected ? FontWeight.bold : FontWeight.normal),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: isSelected ? Colors.lightBlue : Colors.transparent,
+              ),
+              height: 4,
+              width: 60,
+              margin: const EdgeInsets.only(top: 4),
+            )
+          ]
         ),
-      ],
+      ),
     );
   }
 }
