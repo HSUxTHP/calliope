@@ -1,3 +1,4 @@
+import 'package:calliope/app/modules/community/controllers/community_controller.dart';
 import 'package:calliope/app/modules/draw/controllers/draw_controller.dart';
 import 'package:get/get.dart';
 
@@ -15,6 +16,9 @@ class LayoutBinding extends Bindings {
     );
     Get.lazyPut<DrawController>(
           () => DrawController(),
+    );
+    Get.lazyPut<CommunityController>(
+          () => CommunityController(),
     );
   }
 }

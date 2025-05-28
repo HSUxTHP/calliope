@@ -32,7 +32,7 @@ class ProjectCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Image.network(
-                "https://miro.medium.com/v2/resize:fit:1200/1*uNCVd_VqFOcdxhsL71cT5Q.jpeg",
+                "${imageUrl}",
                 width: double.infinity, // Match the width of the Card
                 height: 140, // Fixed height for the image
                 fit: BoxFit.cover, // Ensure the image covers the available space
