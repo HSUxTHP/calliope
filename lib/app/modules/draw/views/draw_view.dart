@@ -18,7 +18,7 @@ class DrawView extends GetView<DrawController> {
             child: Row(
               children: [
                 Obx(() => controller.isFrameListExpanded.value
-                    ? _buildFrameList()
+                    ? _buildSidebar()
                     : Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
                   child: Column(
@@ -155,9 +155,9 @@ class DrawView extends GetView<DrawController> {
     );
   }
 
-  Widget _buildFrameList() {
+  Widget _buildSidebar() {
     return Container(
-      width: 160,
+      width: 200,
       margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -166,16 +166,34 @@ class DrawView extends GetView<DrawController> {
       ),
       child: Column(
         children: [
-          Padding(
+          Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE2E8F0),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Frames', style: TextStyle(fontWeight: FontWeight.bold)),
-                IconButton(
-                  icon: const Icon(Icons.chevron_left, size: 18),
-                  onPressed: controller.toggleFrameList,
-                ),
+                Obx(() => GestureDetector(
+                  onTap: () => controller.isShowingLayout.value = false,
+                  child: Text('Frame',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: controller.isShowingLayout.value ? Colors.grey : Colors.black)),
+                )),
+                const SizedBox(width: 12),
+                Obx(() => GestureDetector(
+                  onTap: () => controller.isShowingLayout.value = true,
+                  child: Text('Layout',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: controller.isShowingLayout.value ? Colors.black : Colors.grey)),
+                )),
+                const Spacer(),
+                const Icon(Icons.menu, size: 18, color: Colors.black54),
               ],
             ),
           ),
@@ -191,99 +209,85 @@ class DrawView extends GetView<DrawController> {
           ),
           const SizedBox(height: 8),
           Expanded(
-            child: Obx(() => ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              itemCount: controller.frames.length,
-              itemBuilder: (_, index) {
-                final frame = controller.frames[index];
-                final isSelected = controller.currentFrameIndex.value == index;
-
-                return GestureDetector(
-                  onTap: () => controller.selectFrame(frame),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.blue.shade50 : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected ? Colors.blue : Colors.grey.shade300,
-                        width: 2,
-                      ),
-                    ),
-                    child: Stack(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(6),
-                          child: SizedBox(
-                            width: 140,
-                            child: AspectRatio(
-                              aspectRatio: 16 / 9,
-                              child: FutureBuilder<Uint8List>(
-                                future: controller.renderThumbnail(frame),
-                                builder: (_, snapshot) {
-                                  if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-                                    return ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Image.memory(snapshot.data!, fit: BoxFit.cover),
-                                    );
-                                  }
-                                  return const Center(child: CircularProgressIndicator(strokeWidth: 1.2));
-                                },
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_vert, size: 18, color: Colors.black54),
-                            onSelected: (value) {
-                              switch (value) {
-                                case 'save':
-                                  controller.copyFrame(frame);
-                                  break;
-                                case 'paste':
-                                  controller.lines.value = frame.map((l) => l.copy()).toList();
-                                  break;
-                                case 'delete':
-                                  controller.removeFrame(frame);
-                                  break;
-                              }
-                            },
-                            itemBuilder: (_) => [
-                              const PopupMenuItem(
-                                value: 'save',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.copy, color: Colors.blueAccent, size: 18),
-                                    SizedBox(width: 8),
-                                    Text('Copy'),
-                                  ],
-                                ),
-                              ),
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.delete, color: Colors.redAccent, size: 18),
-                                    SizedBox(width: 8),
-                                    Text('Xoá'),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            )),
+            child: Obx(() => controller.isShowingLayout.value
+                ? _buildLayoutList()
+                : _buildFrameList()),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildFrameList() {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      itemCount: controller.frameLayers.length,
+      itemBuilder: (_, index) {
+        final isSelected = controller.currentFrameIndex.value == index;
+        return GestureDetector(
+          onTap: () => controller.selectFrame(index),
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 6),
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.blue.shade50 : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected ? Colors.blue : Colors.grey.shade300,
+                width: 2,
+              ),
+            ),
+            child: FutureBuilder<Uint8List>(
+              future: controller.renderThumbnail(index, 0),
+              builder: (_, snapshot) {
+                if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.memory(snapshot.data!, fit: BoxFit.cover),
+                  );
+                }
+                return const SizedBox(height: 80, child: Center(child: CircularProgressIndicator(strokeWidth: 1.2)));
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLayoutList() {
+    final index = controller.currentFrameIndex.value;
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      itemCount: 3,
+      itemBuilder: (_, layerIndex) {
+        final isSelected = controller.currentLayerIndex.value == layerIndex;
+        return GestureDetector(
+          onTap: () => controller.switchLayer(layerIndex),
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 6),
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.indigo.shade50 : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected ? Colors.indigo : Colors.grey.shade300,
+                width: 2,
+              ),
+            ),
+            child: FutureBuilder<Uint8List>(
+              future: controller.renderThumbnail(index, layerIndex),
+              builder: (_, snapshot) {
+                if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.memory(snapshot.data!, fit: BoxFit.cover),
+                  );
+                }
+                return const SizedBox(height: 80, child: Center(child: CircularProgressIndicator(strokeWidth: 1.2)));
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 }
