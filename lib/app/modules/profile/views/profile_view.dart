@@ -4,12 +4,14 @@ import 'package:get/get.dart';
 
 import '../../../widget_share/post_profile_widget.dart';
 import '../../../widget_share/post_widget.dart';
+import '../../layout/controllers/layout_controller.dart';
 import '../controllers/profile_controller.dart';
 
 class ProfileView extends GetView<ProfileController> {
   const ProfileView({super.key});
   @override
   Widget build(BuildContext context) {
+    final layoutController = Get.find<LayoutController>();
     return Scaffold(
       body: Obx(() {
         if (controller.isLoading.value) {
@@ -52,19 +54,23 @@ class ProfileView extends GetView<ProfileController> {
                   ),
 
                   // Avatar
-                  Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.black, width: 2),
+                  GestureDetector(
+                    onTap: () {
+                      layoutController.showThemeDialog(context);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.black, width: 2),
+                      ),
+                      child: const CircleAvatar(
+                        radius: 18,
+                        backgroundImage: AssetImage('assets/avatar.png'),
+                        backgroundColor: Colors.transparent,
+                      ),
                     ),
-                    child: const CircleAvatar(
-                      radius: 18,
-                      backgroundImage: AssetImage('assets/avatar.png'),
-                      // hoặc NetworkImage(...)
-                      backgroundColor: Colors.transparent,
-                    ),
-                  ),
+                  )
                 ],
               ),
             ),
