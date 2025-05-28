@@ -1,3 +1,5 @@
+import 'package:calliope/app/modules/draw/views/draw_view.dart';
+import 'package:calliope/app/modules/layout/views/ProjectCard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sticky_header/flutter_sticky_header.dart';
 import 'package:get/get.dart';
@@ -79,7 +81,7 @@ class HomeView extends GetView<HomeController> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16), // Set border radius to 16
                           ),
-                          backgroundColor: Color(0xFF136682)
+                          backgroundColor: Theme.of(context).colorScheme.primary,
                         ),
                         onPressed: () {},
                         child: Column(
@@ -104,8 +106,8 @@ class HomeView extends GetView<HomeController> {
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 4,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: MediaQuery.of(context).size.width >= 1300 ? 5 : 4,
                         crossAxisSpacing: 24,
                         mainAxisSpacing: 12,
                         childAspectRatio: 1,
@@ -130,69 +132,4 @@ class HomeView extends GetView<HomeController> {
   }
 
 
-}
-
-class ProjectCard extends StatelessWidget {
-  final String imageUrl;
-  final String title;
-  final String createdAt;
-
-  const ProjectCard({
-    super.key,
-    required this.imageUrl,
-    required this.title,
-    required this.createdAt,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 3,
-      clipBehavior: Clip.antiAlias,
-      child: ClipRRect(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Image.network(
-              "https://miro.medium.com/v2/resize:fit:1200/1*uNCVd_VqFOcdxhsL71cT5Q.jpeg",
-              width: double.infinity, // Match the width of the Card
-              height: 140, // Fixed height for the image
-              fit: BoxFit.cover, // Ensure the image covers the available space
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Text("$title",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text("$createdAt",
-                        style: const TextStyle(
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                      onPressed: () {},
-                      icon: Icon(Icons.more_vert)
-                  )
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
