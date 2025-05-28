@@ -53,10 +53,20 @@ class CommunityView extends GetView<CommunityController> {
               ),
 
               // Avatar
-              const CircleAvatar(
-                radius: 18,
-                backgroundColor: Colors.grey,
-                child: Icon(Icons.person, color: Colors.white),
+              Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.black,
+                    width: 2,
+                  ),
+                ),
+                child: const CircleAvatar(
+                  radius: 18,
+                  backgroundImage: AssetImage('assets/avatar.png'), // hoặc NetworkImage(...)
+                  backgroundColor: Colors.transparent,
+                ),
               ),
             ],
           ),
