@@ -10,6 +10,7 @@ import '../views/sketcher.dart';
 
 class DrawController extends GetxController {
   final repaintKey = GlobalKey();
+  final scrollController = ScrollController(); // ✅ Thêm scroll controller
 
   final lines = <DrawnLine>[].obs;
   final undoStack = <List<DrawnLine>>[];
@@ -270,5 +271,18 @@ class DrawController extends GetxController {
 
   void _clearThumbnailCache() {
     thumbnailCache.clear();
+  }
+
+  /// ✅ Gọi từ DrawView để cuộn về đầu thumbnail
+  void scrollToTop() {
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (scrollController.hasClients) {
+        scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 }

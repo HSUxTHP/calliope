@@ -1,11 +1,11 @@
 import 'dart:typed_data';
-import 'package:calliope/app/modules/draw/views/canvas_area.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/draw_controller.dart';
+import 'canvas_area.dart';
 
 class DrawView extends GetView<DrawController> {
-  const DrawView({super.key});
+  DrawView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -31,10 +31,8 @@ class DrawView extends GetView<DrawController> {
   }
 
   Widget _buildTopToolbar() {
-    final controller = Get.find<DrawController>();
-
     return Container(
-      margin: EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 10),
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -43,12 +41,12 @@ class DrawView extends GetView<DrawController> {
       ),
       child: Row(
         children: [
-          IconButton(icon: const Icon(Icons.arrow_back), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.arrow_back, color: Colors.black), onPressed: () {}),
           const SizedBox(width: 8),
-          _iconButton(Icons.undo, controller.undo),
-          _iconButton(Icons.redo, controller.redo),
-          _iconButton(Icons.clear, controller.clearCanvas),
-          Obx(() => _iconButton(controller.currentToolIcon, controller.toggleEraser)),
+          _iconButton(Icons.undo, controller.undo, color: Colors.black),
+          _iconButton(Icons.redo, controller.redo, color: Colors.black),
+          _iconButton(Icons.clear, controller.clearCanvas, color: Colors.black),
+          Obx(() => _iconButton(controller.currentToolIcon, controller.toggleEraser, color: Colors.black)),
           const Spacer(),
           Obx(() => Row(
             children: [
@@ -56,14 +54,16 @@ class DrawView extends GetView<DrawController> {
                 controller.isPlaying.value ? Icons.pause : Icons.play_arrow,
                     () {
                   if (controller.isPlaying.value) {
-                    controller.togglePlayback(); // Dừng phát
+                    controller.togglePlayback();
                   } else {
-                    controller.showPlaybackDialog(Get.context!); // Mở Dialog phát
+                    controller.showPlaybackDialog(Get.context!);
                   }
                 },
+                color: Colors.black,
               ),
               Text('${controller.selectedWidth.value.toInt()} px', style: const TextStyle(fontSize: 13)),
-              _iconButton(Icons.remove, () => controller.changeWidth(controller.selectedWidth.value - 1)),
+              _iconButton(Icons.remove, () =>
+                  controller.changeWidth(controller.selectedWidth.value - 1), color: Colors.black),
               SizedBox(
                 width: 120,
                 child: Slider(
@@ -75,13 +75,14 @@ class DrawView extends GetView<DrawController> {
                   inactiveColor: Colors.blue.shade100,
                 ),
               ),
-              _iconButton(Icons.add, () => controller.changeWidth(controller.selectedWidth.value + 1)),
+              _iconButton(Icons.add, () =>
+                  controller.changeWidth(controller.selectedWidth.value + 1), color: Colors.black),
             ],
           )),
           const VerticalDivider(width: 12),
-          _iconButton(Icons.paste, controller.pasteCopiedFrame, tooltip: 'Dán frame'),
+          _iconButton(Icons.paste, controller.pasteCopiedFrame, tooltip: 'Dán frame', color: Colors.black),
           IconButton(
-            icon: const Icon(Icons.save, color: Color(0xFF1E88E5)),
+            icon: const Icon(Icons.save, color: Colors.black),
             tooltip: 'Lưu',
             onPressed: controller.saveCurrentFrame,
           ),
@@ -90,9 +91,9 @@ class DrawView extends GetView<DrawController> {
     );
   }
 
-  Widget _iconButton(IconData icon, VoidCallback onPressed, {String? tooltip}) {
+  Widget _iconButton(IconData icon, VoidCallback onPressed, {String? tooltip, Color? color}) {
     return IconButton(
-      icon: Icon(icon, size: 20),
+      icon: Icon(icon, size: 20, color: color),
       tooltip: tooltip,
       onPressed: onPressed,
     );
@@ -106,7 +107,7 @@ class DrawView extends GetView<DrawController> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         elevation: 1,
         child: IconButton(
-          icon: const Icon(Icons.chevron_right),
+          icon: const Icon(Icons.chevron_right, color: Colors.black),
           onPressed: controller.toggleFrameList,
         ),
       ),
@@ -146,18 +147,22 @@ class DrawView extends GetView<DrawController> {
         color: Color(0xFFE2E8F0),
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: Column(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
         children: [
-          Row(
-            children: [
-              _sidebarTab("Frame", false),
-              _sidebarTab("Layout", true),
-            ],
+          Expanded(
+            child: Row(
+              children: [
+                _sidebarTab("Frame", false),
+                _sidebarTab("Layout", true),
+              ],
+            ),
           ),
-          Container(
-            alignment: Alignment.centerRight,
-            margin: const EdgeInsets.only(right: 8, bottom: 4),
-            child: const Icon(Icons.menu, size: 18, color: Colors.black54),
+          GestureDetector(
+            onTap: () {
+              controller.scrollToTop();
+            },
+            child: const Icon(Icons.menu, size: 18, color: Colors.black),
           ),
         ],
       ),
@@ -167,15 +172,27 @@ class DrawView extends GetView<DrawController> {
   Widget _sidebarTab(String label, bool layoutTab) {
     return Expanded(
       child: Obx(() => GestureDetector(
-        onTap: () => controller.isShowingLayout.value = layoutTab,
+        onTap: () {
+          controller.isShowingLayout.value = layoutTab;
+          controller.scrollToTop();
+        },
         child: Container(
           height: 36,
+          margin: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: controller.isShowingLayout.value == layoutTab
+                ? Colors.white
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
           alignment: Alignment.center,
           child: Text(
             label,
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: controller.isShowingLayout.value == layoutTab ? Colors.black : Colors.grey,
+              color: controller.isShowingLayout.value == layoutTab
+                  ? Colors.black
+                  : Colors.grey,
             ),
           ),
         ),
@@ -198,6 +215,7 @@ class DrawView extends GetView<DrawController> {
 
   Widget _buildFrameList() {
     return ListView.builder(
+      controller: controller.scrollController,
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
       itemCount: controller.frameLayers.length,
       itemBuilder: (_, index) {
@@ -215,6 +233,7 @@ class DrawView extends GetView<DrawController> {
   Widget _buildLayoutList() {
     final index = controller.currentFrameIndex.value;
     return ListView.builder(
+      controller: controller.scrollController,
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
       itemCount: 3,
       itemBuilder: (_, layerIndex) {
