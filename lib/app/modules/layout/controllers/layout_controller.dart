@@ -8,13 +8,6 @@ class LayoutController extends GetxController with GetSingleTickerProviderStateM
   late TabController tabController;
 
   @override
-  void onInit() {
-    super.onInit();
-    tabController = TabController(length: 3, vsync: this);
-    tabController.addListener(() {
-      currentIndex.value = tabController.index;
-    });
-  }
 
   @override
   void onReady() {
@@ -22,13 +15,27 @@ class LayoutController extends GetxController with GetSingleTickerProviderStateM
   }
 
   @override
-  void onClose() {
-    super.onClose();
+  void onInit() {
+    super.onInit();
+    tabController = TabController(length: 3, vsync: this);
+    tabController.addListener(() {
+      if (!tabController.indexIsChanging) {
+        currentIndex.value = tabController.index;
+      }
+    });
   }
 
   void onTabChange(int index) {
     currentIndex.value = index;
-    tabController.animateTo(currentIndex.value);
+    tabController.animateTo(index);
   }
+
+  @override
+  void onClose() {
+    tabController.dispose();
+    super.onClose();
+  }
+
+
 }
 
