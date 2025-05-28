@@ -20,6 +20,7 @@ class LayoutBinding extends Bindings {
     );
     Get.lazyPut<CommunityController>(
           () => CommunityController(),
+    );
     Get.lazyPut<ProfileController>(
           () => ProfileController(),
     );
