@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:calliope/share/theme.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -13,7 +12,7 @@ import 'app/routes/app_pages.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized(); // <- Dòng này luôn phải ở đầu
   await Hive.initFlutter();
   Hive.registerAdapter(UserModelAdapter());
   await SystemChrome.setPreferredOrientations([
@@ -33,7 +32,7 @@ Future<void> main() async {
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
-  await Hive.openBox('settings'); // <- Thêm dòng này đúng chỗ
+  await Hive.openBox('settings');
   // Lấy theme đã lưu
   final settingsBox = Hive.box('settings');
   final savedTheme = settingsBox.get('theme', defaultValue: 'light');

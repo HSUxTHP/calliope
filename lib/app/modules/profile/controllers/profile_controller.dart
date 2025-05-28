@@ -8,6 +8,9 @@ class ProfileController extends GetxController {
   final isLoading = false.obs;
   final isCurrentUser = true.obs;
 
+  final videos = <String>["a","b","a","b","a","b","a","b","a","b","a","b"].obs;
+  // final videos = <String>[].obs;
+
   final user = Rx<UserModel?>(null);
 
   late Box<UserModel> userBox;
