@@ -1,5 +1,3 @@
-// ✅ DrawController cho phép vẽ trực tiếp lên layer hiện tại dù ở chế độ Frame hay Layout
-
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -27,7 +25,7 @@ class DrawController extends GetxController {
 
   final isPlaying = false.obs;
   final isFrameListExpanded = true.obs;
-  final isShowingLayout = false.obs;
+  final isShowingLayout = true.obs;
 
   final Map<String, Uint8List> thumbnailCache = {};
   Timer? _playbackTimer;
@@ -169,6 +167,52 @@ class DrawController extends GetxController {
     }
   }
 
+  void showPlaybackDialog(BuildContext context) {
+    isPlaying.value = true;
+    _currentIndex = 0;
+
+    _playbackTimer?.cancel();
+    _playbackTimer = Timer.periodic(Duration(milliseconds: 1000 ~/ fps), (_) {
+      if (frameLayers.isEmpty) return;
+
+      _currentIndex = (_currentIndex + 1) % frameLayers.length;
+      lines.value = frameLayers[_currentIndex][0];
+      currentFrameIndex.value = _currentIndex;
+      currentLayerIndex.value = 0;
+    });
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        contentPadding: const EdgeInsets.all(8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Container(
+          width: 400,
+          height: 225,
+          padding: const EdgeInsets.all(8),
+          child: RepaintBoundary(
+            key: repaintKey,
+            child: CustomPaint(
+              painter: Sketcher(lines: lines),
+              child: Container(),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              isPlaying.value = false;
+              _playbackTimer?.cancel();
+              Navigator.of(context).pop();
+            },
+            child: const Text("Đóng"),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<Uint8List?> captureImage() async {
     try {
       final boundary = repaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
@@ -192,7 +236,9 @@ class DrawController extends GetxController {
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, thumbWidth, thumbHeight));
-    canvas.scale(thumbWidth / canvasSize.width, thumbHeight / canvasSize.height);
+
+    final scale = thumbWidth / canvasSize.width;
+    canvas.scale(scale, scale);
 
     if (layerIndex == null) {
       for (int i = 0; i < 3; i++) {
@@ -209,6 +255,17 @@ class DrawController extends GetxController {
 
     thumbnailCache[cacheKey] = bytes;
     return bytes;
+  }
+
+  bool isInsideCanvas(Offset point) {
+    final box = repaintKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return false;
+
+    final size = box.size;
+    return point.dx >= 0 &&
+        point.dy >= 0 &&
+        point.dx <= size.width &&
+        point.dy <= size.height;
   }
 
   void _clearThumbnailCache() {
