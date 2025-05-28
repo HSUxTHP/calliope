@@ -22,7 +22,7 @@ class PostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 3,
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surfaceContainer,
       clipBehavior: Clip.antiAlias,
       child: GestureDetector(
         onTap: () {
@@ -70,7 +70,6 @@ class PostCard extends StatelessWidget {
                             userName,
                             style: const TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.bold,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -89,9 +88,9 @@ class PostCard extends StatelessWidget {
                   children: [
                     Text(
                       "$views Views",
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     SizedBox(
@@ -101,9 +100,9 @@ class PostCard extends StatelessWidget {
                         children: [
                           Text(
                               "|",
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                         ],
@@ -111,9 +110,9 @@ class PostCard extends StatelessWidget {
                     ),
                     Text(
                       createdAt,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
 class CommunityController extends GetxController {
@@ -9,7 +10,7 @@ class CommunityController extends GetxController {
   }
 
   var searchText = ''.obs;
-
+  final searchController = TextEditingController();
   bool get isSearching => searchText.value.trim().isNotEmpty;
 
   void updateSearch(String value) {
@@ -29,6 +30,7 @@ class CommunityController extends GetxController {
 
   @override
   void onClose() {
+    searchController.dispose();
     super.onClose();
   }
 

@@ -17,7 +17,7 @@ class LayoutView extends GetView<LayoutController> {
           // Sidebar
           Container(
             width: 80,
-            color: const Color(0xFFE8EDF1), // Light gray background
+            color: Theme.of(context).colorScheme.surfaceContainer, // Light gray background
             child: Obx(() => Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -85,7 +85,7 @@ class _NavItem extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isSelected ? Colors.black : Colors.grey,
+              color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
               size: 28,
             ),
             const SizedBox(height: 6),
@@ -93,7 +93,7 @@ class _NavItem extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: isSelected ? Colors.black : Colors.grey,
+                color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
               textAlign: TextAlign.center,

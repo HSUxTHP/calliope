@@ -22,7 +22,7 @@ class PostProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 3,
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surfaceContainer,
       clipBehavior: Clip.antiAlias,
       child: GestureDetector(
         onTap: () {
@@ -61,7 +61,6 @@ class PostProfileCard extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-
                         ],
                       ),
                     ),
@@ -75,9 +74,9 @@ class PostProfileCard extends StatelessWidget {
                   children: [
                     Text(
                       "$views Views",
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     SizedBox(
@@ -86,10 +85,10 @@ class PostProfileCard extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                              "|",
-                            style: const TextStyle(
+                            "|",
+                            style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                         ],
@@ -97,9 +96,9 @@ class PostProfileCard extends StatelessWidget {
                     ),
                     Text(
                       createdAt,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],

@@ -1,4 +1,5 @@
 import 'package:calliope/app/modules/draw/views/draw_view.dart';
+import 'package:calliope/app/modules/layout/controllers/layout_controller.dart';
 import 'package:calliope/app/modules/layout/views/ProjectCard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sticky_header/flutter_sticky_header.dart';
@@ -11,15 +12,15 @@ class HomeView extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.onPrimary,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Column(
         children: [
           // Custom AppBar
           Container(
             height: 60,
             padding: const EdgeInsets.only( left: 4, right: 20),
-            decoration: const BoxDecoration(
-              color: Color(0xFFE8EDF1),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainer,
               boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
             ),
             child: Row(
@@ -33,10 +34,10 @@ class HomeView extends GetView<HomeController> {
                       'assets/logo.png',
                       height: 48, // Adjust size as needed
                     ),
-                    const Text(
+                    Text(
                       'Calliope',
                       style: TextStyle(
-                        color: Color(0xFF40484C),
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
                       ),
@@ -45,19 +46,25 @@ class HomeView extends GetView<HomeController> {
                 ),
       
                 // Avatar
-                Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 2,
+                InkWell(
+                  onTap: () {
+                    final layoutController = Get.find<LayoutController>();
+                    layoutController.showProfileMenu(context);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.black,
+                        width: 2,
+                      ),
                     ),
-                  ),
-                  child: const CircleAvatar(
-                    radius: 18,
-                    backgroundImage: AssetImage('assets/avatar.png'), // hoặc NetworkImage(...)
-                    backgroundColor: Colors.transparent,
+                    child: const CircleAvatar(
+                      radius: 18,
+                      backgroundImage: AssetImage('assets/avatar.png'), // hoặc NetworkImage(...)
+                      backgroundColor: Colors.transparent,
+                    ),
                   ),
                 ),
       
@@ -81,7 +88,7 @@ class HomeView extends GetView<HomeController> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16), // Set border radius to 16
                           ),
-                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                         ),
                         onPressed: () {
                           showDialog(
@@ -169,15 +176,17 @@ class HomeView extends GetView<HomeController> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
+                            Icon(
                                 Icons.add,
                                 size: 32, // Adjust icon size as needed
+                                color: Theme.of(context).colorScheme.onSurface, // Icon color
                             ),
                             const SizedBox(height: 4), // Spacing between icon and text
-                            const Text(
+                            Text(
                                 "New Project",
                                 style: TextStyle(
                                   fontSize: 24,
+                                  color: Theme.of(context).colorScheme.onSurface, // Text color
                                 ),
                             ),
                           ],
@@ -233,11 +242,11 @@ class HomeView extends GetView<HomeController> {
                                   prefixIcon: const Icon(Icons.search),
                                   contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                                   filled: true,
-                                  fillColor: Colors.white,
+                                  fillColor: Theme.of(context).colorScheme.surface,
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(
-                                      color: Colors.black, // Border color
+                                    borderSide: BorderSide(
+                                      color: Theme.of(context).colorScheme.onSurface, // Border color
                                       width: 1.0,         // Border width
                                     ),
                                   ),
@@ -312,11 +321,12 @@ class HomeView extends GetView<HomeController> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: Colors.black, // Border color
-                width: 3.0,          // Border width
+                color: Theme.of(context).colorScheme.onSurface, // Border color
+                width: 2.0,          // Border width
               ),
             ),
             child: DropdownButton<int>(
+
               value: valueRx.value,
               isExpanded: false,
               onChanged: (value) => valueRx.value = value!,
