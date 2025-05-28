@@ -44,7 +44,7 @@ class CommunityView extends GetView<CommunityController> {
                 itemCount: 20,
                 itemBuilder: (context, index) {
                   return PostCard(
-                      imageUrl: "https://miro.medium.com/v2/resize:fit:1200/1*uNCVd_VqFOcdxhsL71cT5Q.jpeg",
+                      imageUrl: "assets/video_cover_example.png",
                       title: "Project that i made by myself absolutely",
                       avatarUrl: "assets/avatar.png",
                       userName: "Username1",
