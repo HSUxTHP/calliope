@@ -1,5 +1,6 @@
 import 'package:calliope/app/modules/community/views/community_view.dart';
 import 'package:calliope/app/modules/community/views/searching_view.dart';
+import 'package:calliope/app/modules/layout/controllers/layout_controller.dart';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
@@ -79,19 +80,25 @@ class CommunityLayout extends GetView<CommunityController> {
               ),
 
               // Avatar
-              Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.black,
-                    width: 2,
+              InkWell(
+                onTap: () {
+                  final layoutController = Get.find<LayoutController>();
+                  layoutController.showProfileMenu(context);
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.black,
+                      width: 2,
+                    ),
                   ),
-                ),
-                child: const CircleAvatar(
-                  radius: 18,
-                  backgroundImage: AssetImage('assets/avatar.png'), // hoặc NetworkImage(...)
-                  backgroundColor: Colors.transparent,
+                  child: const CircleAvatar(
+                    radius: 18,
+                    backgroundImage: AssetImage('assets/avatar.png'), // hoặc NetworkImage(...)
+                    backgroundColor: Colors.transparent,
+                  ),
                 ),
               ),
             ],

@@ -9,7 +9,7 @@ class LayoutController extends GetxController with GetSingleTickerProviderStateM
   late TabController tabController;
 
   var selectedTheme = 'light'.obs;
-
+  final isDark = false.obs;
   @override
 
   @override
@@ -26,6 +26,7 @@ class LayoutController extends GetxController with GetSingleTickerProviderStateM
         currentIndex.value = tabController.index;
       }
     });
+    loadTheme();
   }
 
   void onTabChange(int index) {
@@ -41,15 +42,29 @@ class LayoutController extends GetxController with GetSingleTickerProviderStateM
 
   void loadTheme() {
     final box = Hive.box('settings');
-    selectedTheme.value = box.get('theme', defaultValue: 'dark');
-    changeTheme(selectedTheme.value);
+    final theme = box.get('theme', defaultValue: 'system');
+    selectedTheme.value = theme;
+    changeTheme(theme);
   }
 
   void changeTheme(String value) {
     selectedTheme.value = value;
     Hive.box('settings').put('theme', value);
-    Get.changeThemeMode(value == 'dark' ? ThemeMode.dark : value == 'light' ? ThemeMode.light : ThemeMode.system);
+
+    if (value == 'dark') {
+      isDark.value = true;
+      Get.changeThemeMode(ThemeMode.dark);
+    } else if (value == 'light') {
+      isDark.value = false;
+      Get.changeThemeMode(ThemeMode.light);
+    } else {
+      // system default
+      final brightness = WidgetsBinding.instance.window.platformBrightness;
+      isDark.value = brightness == Brightness.dark;
+      Get.changeThemeMode(ThemeMode.system);
+    }
   }
+
 
   void showThemeDialog(BuildContext context) {
     showDialog(
@@ -79,6 +94,75 @@ class LayoutController extends GetxController with GetSingleTickerProviderStateM
     );
   }
 
+  Future<void> showProfileMenu(BuildContext context) async {
+    final RenderBox button = context.findRenderObject() as RenderBox;
+    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final Offset offset = button.localToGlobal(Offset.zero, ancestor: overlay);
+    final theme = Theme.of(context);
 
+    await showMenu<void>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        offset.dx,
+        offset.dy + button.size.height,
+        overlay.size.width - offset.dx - button.size.width,
+        overlay.size.height - offset.dy - button.size.height,
+      ),
+
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      items: <PopupMenuEntry<void>>[
+        PopupMenuItem<void>(
+          enabled: false,
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundImage: AssetImage('assets/avatar.png'),
+                radius: 20,
+              ),
+              SizedBox(width: 12),
+              Obx(() => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Username1",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isDark.value ? Colors.white : Colors.black,
+                      )
+                  ),
+                  Text("user@example.com",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark.value ? Colors.white : Colors.black,
+                      )
+                  ),
+                ],
+              ),)
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem<void>(
+          enabled: false,
+          child: Obx(() => Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                  isDark.value ? 'Dark Mode' : 'Light Mode',
+                  style: TextStyle(
+                    color: isDark.value ? Colors.white : Colors.black,
+                  )
+              ),
+              Switch(
+                value: isDark.value,
+                onChanged: (val) {
+                  changeTheme(val ? 'dark' : 'light');
+                },
+              ),
+            ],
+          )),
+        ),
+      ],
+    );
+  }
 }
 
