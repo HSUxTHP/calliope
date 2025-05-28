@@ -72,9 +72,10 @@ class ProfileView extends GetView<ProfileController> {
                   ),
 
                   // Avatar
-                  GestureDetector(
+                  InkWell(
                     onTap: () {
-                      layoutController.showThemeDialog(context);
+                      final layoutController = Get.find<LayoutController>();
+                      layoutController.showProfileMenu(context);
                     },
                     child: Container(
                       padding: const EdgeInsets.all(2),

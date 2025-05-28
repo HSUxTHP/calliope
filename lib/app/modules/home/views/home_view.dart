@@ -1,4 +1,5 @@
 import 'package:calliope/app/modules/draw/views/draw_view.dart';
+import 'package:calliope/app/modules/layout/controllers/layout_controller.dart';
 import 'package:calliope/app/modules/layout/views/ProjectCard.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sticky_header/flutter_sticky_header.dart';
@@ -45,19 +46,25 @@ class HomeView extends GetView<HomeController> {
                 ),
       
                 // Avatar
-                Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 2,
+                InkWell(
+                  onTap: () {
+                    final layoutController = Get.find<LayoutController>();
+                    layoutController.showProfileMenu(context);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.black,
+                        width: 2,
+                      ),
                     ),
-                  ),
-                  child: const CircleAvatar(
-                    radius: 18,
-                    backgroundImage: AssetImage('assets/avatar.png'), // hoặc NetworkImage(...)
-                    backgroundColor: Colors.transparent,
+                    child: const CircleAvatar(
+                      radius: 18,
+                      backgroundImage: AssetImage('assets/avatar.png'), // hoặc NetworkImage(...)
+                      backgroundColor: Colors.transparent,
+                    ),
                   ),
                 ),
       
