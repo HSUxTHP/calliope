@@ -272,7 +272,7 @@ class HomeView extends GetView<HomeController> {
                       itemCount: 20, // Add itemCount
                       itemBuilder: (context, index) {
                         return ProjectCard(
-                          imageUrl: "https://miro.medium.com/v2/resize:fit:1200/1*uNCVd_VqFOcdxhsL71cT5Q.jpeg",
+                          imageUrl: "assets/video_cover_example.png",
                           title: "Project $index",
                           createdAt: "2023-10-01",
                         );
