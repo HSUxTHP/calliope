@@ -8,10 +8,10 @@ class UserModel extends HiveObject {
   String id;
 
   @HiveField(1)
-  DateTime createdAt;
+  DateTime created_at;
 
   @HiveField(2)
-  DateTime editedAt;
+  DateTime edited_at;
 
   @HiveField(3)
   String name;
@@ -23,39 +23,39 @@ class UserModel extends HiveObject {
   String email;
 
   @HiveField(6)
-  String? avatarUrl;
+  String? avatar_url;
 
   UserModel({
     required this.id,
-    required this.createdAt,
-    required this.editedAt,
+    required this.created_at,
+    required this.edited_at,
     required this.name,
     required this.bio,
     required this.email,
-    this.avatarUrl,
+    this.avatar_url,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] as String,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      editedAt: DateTime.parse(json['editedAt'] as String),
-      name: json['name'] as String,
-      bio: json['bio'] as String,
-      email: json['email'] as String,
-      avatarUrl: json['avatarUrl'] as String?,
+      id: (json['id'] ?? '').toString(),
+      created_at: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
+      edited_at: DateTime.parse(json['edited_at'] ?? DateTime.now().toIso8601String()),
+      name: json['name'] ?? '',
+      bio: json['bio'] ?? '',
+      email: json['email'] ?? '',
+      avatar_url: json['avatar_url'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'createdAt': createdAt.toIso8601String(),
-      'editedAt': editedAt.toIso8601String(),
+      'created_at': created_at.toIso8601String(),
+      'edited_at': edited_at.toIso8601String(),
       'name': name,
       'bio': bio,
       'email': email,
-      'avatarUrl': avatarUrl,
+      'avatar_url': avatar_url,
     };
   }
 }

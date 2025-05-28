@@ -1,22 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../data/models/user_model.dart';
 
 class ProfileController extends GetxController {
-  //TODO: Implement ProfileController
-
+  final isLoading = false.obs;
   final isCurrentUser = true.obs;
 
-  var user = UserModel(
-    id: '1',
-    createdAt: DateTime.parse('2025-05-27T23:52:56Z'),
-    editedAt: DateTime.parse('2025-05-27T23:52:54Z'),
-    name: 'user 1',
-    bio: 'this is a bio',
-    email: 'nguyenvana@gmail.com',
-    avatarUrl: null,
-  ).obs;
+  final user = Rx<UserModel?>(null);
 
   late Box<UserModel> userBox;
 
@@ -24,37 +16,63 @@ class ProfileController extends GetxController {
   Future<void> onInit() async {
     super.onInit();
     userBox = await Hive.openBox<UserModel>('users');
-    if (userBox.isNotEmpty) {
-      user.value = userBox.getAt(0)!;
+    await getUser(1);
+  }
+
+  Future<void> getUser(int userId) async {
+    isLoading.value = true;
+    try {
+      final response = await Supabase.instance.client
+          .from("users")
+          .select()
+          .eq("id", userId)
+          .limit(1)
+          .maybeSingle();
+
+      print(response);
+      if (response != null) {
+        user.value = UserModel(
+          id: response['id'].toString(),
+          name: response['name'] ?? '',
+          email: response['email'] ?? '',
+          bio: response['bio'] ?? '',
+          avatar_url: response['avatar_url'],
+          created_at: DateTime.parse(response['created_at']),
+          edited_at: DateTime.parse(response['edited_at']),
+        );
+      } else {
+        saveUserDEV();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error fetching todos: $e");
+        saveUserDEV();
+      }
+    } finally {
+      isLoading.value = false;
     }
-    else {
-      // If no user exists, save the default user
-      saveUser();
-    }
-    // printUser();
   }
 
-  @override
-  void onReady() {
-    super.onReady();
-  }
 
-  @override
-  void onClose() {
-    super.onClose();
-  }
+  void saveUserDEV() {
+    user.value = UserModel(
+    id: '1',
+    created_at: DateTime.parse('2025-05-27T23:52:56Z'),
+    edited_at: DateTime.parse('2025-05-27T23:52:54Z'),
+    name: 'user 1',
+    bio: 'this is a bio',
+    email: 'nguyenvana@gmail.com',
+    avatar_url: null,
+  );
+}
 
-  void saveUser() {
-    userBox.put('current_user', user.value);
-  }
-
-  printUser() {
-    print('User ID: ${user.value.id}');
-    print('Created At: ${user.value.createdAt}');
-    print('Edited At: ${user.value.editedAt}');
-    print('Name: ${user.value.name}');
-    print('Bio: ${user.value.bio}');
-    print('Email: ${user.value.email}');
-    print('Avatar URL: ${user.value.avatarUrl ?? "No avatar"}');
-  }
+  // printUser() {
+  //   print('User ID: ${user.value.id}');
+  //   print('Created At: ${user.value.createdAt}');
+  //   print('Edited At: ${user.value.editedAt}');
+  //   print('Name: ${user.value.name}');
+  //   print('Bio: ${user.value.bio}');
+  //   print('Email: ${user.value.email}');
+  //   print('Avatar URL: ${user.value.avatarUrl ?? "No avatar"}');
+  // }
 }

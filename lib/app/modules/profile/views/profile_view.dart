@@ -9,184 +9,214 @@ class ProfileView extends GetView<ProfileController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          Container(
-            height: 60,
-            padding: const EdgeInsets.only( left: 4, right: 20),
-            decoration: const BoxDecoration(
-              color: Color(0xFFE8EDF1),
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Logo
-                Row(
-                  spacing: 8,
-                  children: [
-                    Image.asset(
-                      'assets/logo.png',
-                      height: 48, // Adjust size as needed
-                    ),
-                    const Text(
-                      'Calliope',
-                      style: TextStyle(
-                        color: Color(0xFF40484C),
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Avatar
-                Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 2,
-                    ),
-                  ),
-                  child: const CircleAvatar(
-                    radius: 18,
-                    backgroundImage: AssetImage('assets/avatar.png'), // hoặc NetworkImage(...)
-                    backgroundColor: Colors.transparent,
-                  ),
-                ),
-
-              ],
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return Column(
+          children: [
+            Container(
+              height: 60,
+              padding: const EdgeInsets.only(left: 4, right: 20),
+              decoration: const BoxDecoration(
+                color: Color(0xFFE8EDF1),
+                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    decoration: const BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(width: 1),
+                  // Logo
+                  Row(
+                    spacing: 8,
+                    children: [
+                      Image.asset(
+                        'assets/logo.png',
+                        height: 48, // Adjust size as needed
                       ),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 40),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Obx(
-                              () => Container(
-                            width: 160,
-                            height: 160,
-                            decoration: ShapeDecoration(
-                              image: DecorationImage(
-                                image: controller.user.value.avatarUrl != null
-                                    ? NetworkImage(controller.user.value.avatarUrl!)
-                                    : const AssetImage('assets/avatar.png')
-                                as ImageProvider,
-                                fit: BoxFit.contain,
-                              ),
-                              shape: const OvalBorder(),
-                            ),
-                          ),
+                      const Text(
+                        'Calliope',
+                        style: TextStyle(
+                          color: Color(0xFF40484C),
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(width: 60),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Obx(
-                                  () => SizedBox(
-                                height: 60,
-                                child: Text(
-                                  controller.user.value.name,
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.w500,
-                                    height: 1.25,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Obx(
-                                  () => SizedBox(
-                                height: 43,
-                                child: Text(
-                                  controller.user.value.bio,
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w400,
-                                    height: 1.50,
-                                    letterSpacing: 0.50,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(
-                              height: 56,
-                              child: Obx(
-                                    () => controller.isCurrentUser.value
-                                    ? TextButton(
-                                  style: TextButton.styleFrom(
-                                    backgroundColor: Theme.of(context)
-                                        .colorScheme
-                                        .surfaceDim,
-                                  ),
-                                  onPressed: () {
-                                    // Open edit dialog
-                                  },
-                                  child: Text(
-                                    'Edit your profile',
-                                    style: TextStyle(
-                                      color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                )
-                                    : const SizedBox.shrink(),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.only(top: 16),
-                    child: Text(
-                      controller.isCurrentUser.value ? 'Your video' : 'Newest video',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 24,
                       ),
-                    ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(8),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      childAspectRatio: 0.7,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
+
+                  // Avatar
+                  Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.black, width: 2),
                     ),
-                    itemCount: 4,
-                    itemBuilder: (_, index) {
-                      return const Placeholder();
-                    },
+                    child: const CircleAvatar(
+                      radius: 18,
+                      backgroundImage: AssetImage('assets/avatar.png'),
+                      // hoặc NetworkImage(...)
+                      backgroundColor: Colors.transparent,
+                    ),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
-      ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      decoration: const BoxDecoration(
+                        border: Border(bottom: BorderSide(width: 1)),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 60,
+                        vertical: 40,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Obx(
+                            () => Container(
+                              width: 160,
+                              height: 160,
+                              decoration: ShapeDecoration(
+                                image: DecorationImage(
+                                  image:
+                                      controller.user.value != null &&
+                                              controller
+                                                      .user
+                                                      .value!
+                                                      .avatar_url !=
+                                                  null
+                                          ? NetworkImage(
+                                            controller.user.value!.avatar_url!,
+                                          )
+                                          : const AssetImage(
+                                                'assets/avatar.png',
+                                              )
+                                              as ImageProvider,
+                                  fit: BoxFit.contain,
+                                ),
+                                shape: const OvalBorder(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 60),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Obx(
+                                () => SizedBox(
+                                  height: 60,
+                                  child: Text(
+                                    controller.user.value != null
+                                        ? controller.user.value!.name
+                                        : '',
+                                    style: TextStyle(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.w500,
+                                      height: 1.25,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Obx(
+                                () => SizedBox(
+                                  height: 43,
+                                  child: Text(
+                                    controller.user.value != null
+                                        ? controller.user.value!.bio
+                                        : '',
+                                    style: TextStyle(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w400,
+                                      height: 1.50,
+                                      letterSpacing: 0.50,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                height: 56,
+                                child: Obx(
+                                  () =>
+                                      controller.isCurrentUser.value
+                                          ? TextButton(
+                                            style: TextButton.styleFrom(
+                                              backgroundColor:
+                                                  Theme.of(
+                                                    context,
+                                                  ).colorScheme.surfaceDim,
+                                            ),
+                                            onPressed: () {
+                                              // Open edit dialog
+                                            },
+                                            child: Text(
+                                              'Edit your profile',
+                                              style: TextStyle(
+                                                color:
+                                                    Theme.of(
+                                                      context,
+                                                    ).colorScheme.onSurface,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          )
+                                          : const SizedBox.shrink(),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Text(
+                        controller.isCurrentUser.value
+                            ? 'Your video'
+                            : 'Newest video',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontSize: 24,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(8),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            childAspectRatio: 0.7,
+                            mainAxisSpacing: 8,
+                            crossAxisSpacing: 8,
+                          ),
+                      itemCount: 4,
+                      itemBuilder: (_, index) {
+                        return const Placeholder();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      }),
     );
   }
 }
