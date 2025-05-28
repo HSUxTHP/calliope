@@ -1,3 +1,4 @@
+import 'package:calliope/app/modules/draw/controllers/draw_controller.dart';
 import 'package:get/get.dart';
 
 import '../../home/controllers/home_controller.dart';
@@ -11,6 +12,9 @@ class LayoutBinding extends Bindings {
     );
     Get.lazyPut<HomeController>(
           () => HomeController(),
+    );
+    Get.lazyPut<DrawController>(
+          () => DrawController(),
     );
   }
 }

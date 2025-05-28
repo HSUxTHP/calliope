@@ -1,3 +1,5 @@
+// ✅ DrawView với sidebar thay đổi nút + theo Frame/Layout
+
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -197,7 +199,9 @@ class DrawView extends GetView<DrawController> {
               ],
             ),
           ),
-          ElevatedButton(
+          Obx(() => controller.isShowingLayout.value
+              ? const SizedBox(height: 8)
+              : ElevatedButton(
             onPressed: controller.addFrame,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.grey.shade200,
@@ -206,7 +210,7 @@ class DrawView extends GetView<DrawController> {
               elevation: 1,
             ),
             child: const Icon(Icons.add, size: 18, color: Colors.black),
-          ),
+          )),
           const SizedBox(height: 8),
           Expanded(
             child: Obx(() => controller.isShowingLayout.value
@@ -237,7 +241,7 @@ class DrawView extends GetView<DrawController> {
               ),
             ),
             child: FutureBuilder<Uint8List>(
-              future: controller.renderThumbnail(index, 0),
+              future: controller.renderThumbnail(index),
               builder: (_, snapshot) {
                 if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
                   return ClipRRect(
@@ -272,6 +276,9 @@ class DrawView extends GetView<DrawController> {
                 color: isSelected ? Colors.indigo : Colors.grey.shade300,
                 width: 2,
               ),
+              boxShadow: isSelected
+                  ? [BoxShadow(color: Colors.indigo.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))]
+                  : [],
             ),
             child: FutureBuilder<Uint8List>(
               future: controller.renderThumbnail(index, layerIndex),

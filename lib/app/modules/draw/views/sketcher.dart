@@ -4,7 +4,7 @@ import '../../../data/models/DrawnLine_model.dart';
 class Sketcher extends CustomPainter {
   final List<DrawnLine> lines;
 
-  Sketcher({required this.lines});
+  const Sketcher({required this.lines});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -29,6 +29,7 @@ class Sketcher extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant Sketcher oldDelegate) {
+    // Luôn vẽ lại nếu khác danh sách nét vẽ
     return oldDelegate.lines != lines;
   }
 }

@@ -1,11 +1,7 @@
-
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 import '../controllers/draw_controller.dart';
-import '../views/sketcher.dart';
+import 'sketcher.dart';
 
 class DrawingCanvas extends StatelessWidget {
   const DrawingCanvas({super.key});
@@ -16,34 +12,46 @@ class DrawingCanvas extends StatelessWidget {
 
     return GestureDetector(
       onPanStart: (details) {
-        final box = context.findRenderObject() as RenderBox;
-        final point = box.globalToLocal(details.globalPosition);
+        final point = (context.findRenderObject() as RenderBox).globalToLocal(details.globalPosition);
         controller.startStroke(point);
       },
       onPanUpdate: (details) {
-        final box = context.findRenderObject() as RenderBox;
-        final point = box.globalToLocal(details.globalPosition);
+        final point = (context.findRenderObject() as RenderBox).globalToLocal(details.globalPosition);
         controller.addPoint(point);
       },
       onPanEnd: (_) => controller.endStroke(),
+      child: ClipRect(
+        child: RepaintBoundary(
+          key: controller.repaintKey,
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            color: Colors.white,
+            child: Obx(() {
+              final frameIndex = controller.currentFrameIndex.value;
+              final layerIndex = controller.currentLayerIndex.value;
+              final layers = controller.frameLayers[frameIndex];
 
-      /// 👇 Giới hạn vùng vẽ bằng ClipRect và Container
-      child: Obx(() {
-        final lines = controller.lines.toList();
-        return ClipRect(
-          child: RepaintBoundary(
-            key: controller.repaintKey,
-            child: Container(
-              width: double.infinity,
-              height: double.infinity,
-              color: Colors.transparent,
-              child: CustomPaint(
-                painter: Sketcher(lines: lines),
-              ),
-            ),
+              // 👉 Layout mode: chỉ hiển thị layer hiện tại + các nét mới vẽ
+              if (controller.isShowingLayout.value) {
+                final currentLines = [...layers[layerIndex], ...controller.lines];
+                return CustomPaint(painter: Sketcher(lines: currentLines));
+              }
+
+              // 👉 Frame mode: hiển thị 3 layer gộp + nét mới vẽ của layer hiện tại
+              return Stack(
+                children: [
+                  for (int i = 2; i >= 0; i--)
+                    CustomPaint(painter: Sketcher(lines: [
+                      ...layers[i],
+                      if (i == layerIndex) ...controller.lines
+                    ])),
+                ],
+              );
+            }),
           ),
-        );
-      }),
+        ),
+      ),
     );
   }
 }

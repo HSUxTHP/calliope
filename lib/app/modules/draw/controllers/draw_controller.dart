@@ -1,4 +1,4 @@
-// ✅ DrawController có thêm biến điều khiển hiển thị layout/frame
+// ✅ DrawController cho phép vẽ trực tiếp lên layer hiện tại dù ở chế độ Frame hay Layout
 
 import 'dart:async';
 import 'dart:typed_data';
@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import '../views/sketcher.dart';
 import '../../../data/models/DrawnLine_model.dart';
+import '../views/sketcher.dart';
 
 class DrawController extends GetxController {
   final repaintKey = GlobalKey();
@@ -21,15 +21,15 @@ class DrawController extends GetxController {
   final selectedWidth = 4.0.obs;
   final isEraser = false.obs;
 
-  final frameLayers = <List<List<DrawnLine>>>[].obs; // mỗi frame có 3 layers
+  final frameLayers = <List<List<DrawnLine>>>[].obs;
   final currentFrameIndex = 0.obs;
   final currentLayerIndex = 0.obs;
-  final Map<String, Uint8List> thumbnailCache = {}; // key = frameIndex_layerIndex
 
   final isPlaying = false.obs;
   final isFrameListExpanded = true.obs;
-  final isShowingLayout = false.obs; // ✅ thêm để chuyển tab Frame/Layout
+  final isShowingLayout = false.obs;
 
+  final Map<String, Uint8List> thumbnailCache = {};
   Timer? _playbackTimer;
   int _currentIndex = 0;
   final int fps = 6;
@@ -44,6 +44,7 @@ class DrawController extends GetxController {
   void onInit() {
     super.onInit();
     addFrame();
+    selectFrame(0);
   }
 
   void startStroke(Offset point) {
@@ -63,8 +64,8 @@ class DrawController extends GetxController {
   void endStroke() {
     if (lines.isNotEmpty) {
       lines.last.points.add(null);
+      saveCurrentFrame();
       lines.refresh();
-      _clearThumbnailCache();
     }
   }
 
@@ -72,7 +73,7 @@ class DrawController extends GetxController {
     if (undoStack.isNotEmpty) {
       redoStack.add(List.from(lines.map((l) => l.copy())));
       lines.value = undoStack.removeLast();
-      _clearThumbnailCache();
+      saveCurrentFrame();
     }
   }
 
@@ -80,14 +81,14 @@ class DrawController extends GetxController {
     if (redoStack.isNotEmpty) {
       undoStack.add(List.from(lines.map((l) => l.copy())));
       lines.value = redoStack.removeLast();
-      _clearThumbnailCache();
+      saveCurrentFrame();
     }
   }
 
   void clearCanvas() {
     undoStack.add(List.from(lines.map((l) => l.copy())));
     lines.clear();
-    _clearThumbnailCache();
+    saveCurrentFrame();
   }
 
   void toggleEraser() => isEraser.toggle();
@@ -107,20 +108,20 @@ class DrawController extends GetxController {
     saveCurrentFrame();
     currentFrameIndex.value = index;
     currentLayerIndex.value = 0;
-    lines.value = frameLayers[index][0].map((l) => l.copy()).toList();
+    lines.value = frameLayers[index][0];
   }
 
   void switchLayer(int layerIndex) {
     saveCurrentFrame();
     currentLayerIndex.value = layerIndex;
-    lines.value = frameLayers[currentFrameIndex.value][layerIndex].map((l) => l.copy()).toList();
+    lines.value = frameLayers[currentFrameIndex.value][layerIndex];
   }
 
   void saveCurrentFrame() {
-    final frameIndex = currentFrameIndex.value;
-    final layerIndex = currentLayerIndex.value;
-    if (frameIndex < frameLayers.length) {
-      frameLayers[frameIndex][layerIndex] = lines.map((l) => l.copy()).toList();
+    final fIndex = currentFrameIndex.value;
+    final lIndex = currentLayerIndex.value;
+    if (fIndex < frameLayers.length) {
+      frameLayers[fIndex][lIndex] = lines.map((l) => l.copy()).toList();
       _clearThumbnailCache();
     }
   }
@@ -159,7 +160,7 @@ class DrawController extends GetxController {
       _playbackTimer = Timer.periodic(Duration(milliseconds: 1000 ~/ fps), (_) {
         if (frameLayers.isEmpty) return;
         _currentIndex = (_currentIndex + 1) % frameLayers.length;
-        lines.value = frameLayers[_currentIndex][0].map((l) => l.copy()).toList();
+        lines.value = frameLayers[_currentIndex][0];
         currentFrameIndex.value = _currentIndex;
         currentLayerIndex.value = 0;
       });
@@ -182,8 +183,8 @@ class DrawController extends GetxController {
     return null;
   }
 
-  Future<Uint8List> renderThumbnail(int frameIndex, int layerIndex) async {
-    final cacheKey = '$frameIndex-$layerIndex';
+  Future<Uint8List> renderThumbnail(int frameIndex, [int? layerIndex]) async {
+    final cacheKey = layerIndex == null ? '$frameIndex' : '$frameIndex-$layerIndex';
     if (thumbnailCache.containsKey(cacheKey)) return thumbnailCache[cacheKey]!;
 
     const double thumbWidth = 160;
@@ -193,8 +194,13 @@ class DrawController extends GetxController {
     final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, thumbWidth, thumbHeight));
     canvas.scale(thumbWidth / canvasSize.width, thumbHeight / canvasSize.height);
 
-    final painter = Sketcher(lines: frameLayers[frameIndex][layerIndex]);
-    painter.paint(canvas, canvasSize);
+    if (layerIndex == null) {
+      for (int i = 0; i < 3; i++) {
+        Sketcher(lines: frameLayers[frameIndex][i]).paint(canvas, canvasSize);
+      }
+    } else {
+      Sketcher(lines: frameLayers[frameIndex][layerIndex]).paint(canvas, canvasSize);
+    }
 
     final picture = recorder.endRecording();
     final image = await picture.toImage(thumbWidth.toInt(), thumbHeight.toInt());
