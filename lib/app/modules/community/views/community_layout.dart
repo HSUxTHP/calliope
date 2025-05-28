@@ -62,15 +62,16 @@ class CommunityLayout extends GetView<CommunityController> {
                     )
                         : null,
                     contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                    filled: true,
-                    fillColor: Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(100),
-                      borderSide: BorderSide.none,
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary, // Border color
+                        width: 2.0,
+                      ),
                     ),
                   ),
-                  style: const TextStyle(
-                    color: Colors.black, // Text color
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface, // Text color
                     fontWeight: FontWeight.normal, // Font weight
                   ),
                   onChanged: controller.updateSearch,
