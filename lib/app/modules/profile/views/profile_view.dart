@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 
+import '../../../widget_share/post_profile_widget.dart';
+import '../../../widget_share/post_widget.dart';
 import '../controllers/profile_controller.dart';
 
 class ProfileView extends GetView<ProfileController> {
@@ -18,10 +20,15 @@ class ProfileView extends GetView<ProfileController> {
             Container(
               height: 60,
               padding: const EdgeInsets.only(left: 4, right: 20),
-              decoration: const BoxDecoration(
-                color: Color(0xFFE8EDF1),
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-              ),
+              decoration: BoxDecoration(
+                  color: const Color(0xFFE8EDF1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).colorScheme.outline,
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -201,13 +208,20 @@ class ProfileView extends GetView<ProfileController> {
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 3,
-                            childAspectRatio: 0.7,
-                            mainAxisSpacing: 8,
-                            crossAxisSpacing: 8,
+                            childAspectRatio: 1,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
                           ),
                       itemCount: 4,
                       itemBuilder: (_, index) {
-                        return const Placeholder();
+                        return PostProfileCard(
+                            imageUrl: "https://miro.medium.com/v2/resize:fit:1200/1*uNCVd_VqFOcdxhsL71cT5Q.jpeg",
+                            title: "Project that i made by myself absolutely",
+                            avatarUrl: "assets/avatar.png",
+                            userName: 'Username $index',
+                            createdAt: "2023-10-01",
+                            views: "0"
+                        );;
                       },
                     ),
                   ],
