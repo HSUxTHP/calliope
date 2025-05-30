@@ -18,13 +18,10 @@ class Sketcher extends CustomPainter {
         ..strokeWidth = line.width
         ..isAntiAlias = true;
 
-      final points = line.points;
-      for (int i = 0; i < points.length - 1; i++) {
-        final p1 = points[i];
-        final p2 = points[i + 1];
-        if (p1 != null && p2 != null) {
-          canvas.drawLine(p1, p2, paint);
-        }
+      for (int i = 0; i < line.points.length - 1; i++) {
+        final p1 = line.points[i];
+        final p2 = line.points[i + 1];
+        canvas.drawLine(p1, p2, paint);
       }
     }
   }

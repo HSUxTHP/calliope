@@ -64,11 +64,11 @@ class DrawController extends GetxController {
 
   void endStroke() {
     if (lines.isNotEmpty) {
-      lines.last.points.add(null);
-      saveCurrentFrame();
-      lines.refresh();
+      lines.refresh();        // Cập nhật UI
+      saveCurrentFrame();     // Lưu vào layer tương ứng
     }
   }
+
 
   void undo() {
     if (undoStack.isNotEmpty) {
