@@ -24,7 +24,7 @@ class PostProfileCard extends StatelessWidget {
       elevation: 3,
       color: Theme.of(context).colorScheme.surfaceContainer,
       clipBehavior: Clip.antiAlias,
-      child: GestureDetector(
+      child: InkWell(
         onTap: () {
 
         },

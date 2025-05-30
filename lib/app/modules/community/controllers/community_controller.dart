@@ -1,12 +1,15 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class CommunityController extends GetxController {
+class CommunityController extends GetxController with GetSingleTickerProviderStateMixin {
   //TODO: Implement CommunityController
   var selectedTabIndex = 0.obs;
+  late TabController tabController;
 
   void changeTab(int index) {
     selectedTabIndex.value = index;
+    tabController.animateTo(index);
   }
 
   var searchText = ''.obs;
@@ -20,6 +23,7 @@ class CommunityController extends GetxController {
   final count = 0.obs;
   @override
   void onInit() {
+    tabController = TabController(length: 3, vsync: this);
     super.onInit();
   }
 
