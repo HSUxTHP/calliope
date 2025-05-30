@@ -1,3 +1,6 @@
+import 'package:calliope/app/modules/community/views/view_community/community_most_like.dart';
+import 'package:calliope/app/modules/community/views/view_community/community_newest.dart';
+import 'package:calliope/app/modules/community/views/view_community/community_trending.dart';
 import 'package:calliope/app/widget_share/post_widget.dart';
 import 'package:flutter/material.dart';
 
@@ -6,6 +9,7 @@ import 'package:get/get.dart';
 import '../controllers/community_controller.dart';
 
 class CommunityView extends GetView<CommunityController> {
+
   const CommunityView({super.key});
   @override
   Widget build(BuildContext context) {
@@ -32,27 +36,13 @@ class CommunityView extends GetView<CommunityController> {
 
           // Content Grid
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  childAspectRatio: 1,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                ),
-                itemCount: 20,
-                itemBuilder: (context, index) {
-                  return PostCard(
-                      imageUrl: "assets/video_cover_example.png",
-                      title: "Project that i made by myself absolutely",
-                      avatarUrl: "assets/avatar.png",
-                      userName: "Username1",
-                      createdAt: "2023-10-01",
-                      views: "0"
-                  );
-                },
-              ),
+            child: TabBarView(
+              controller: controller.tabController,
+              children: [
+                TrendingCommunity(),
+                NewestCommunity(),
+                MostLikeCommunity(),
+              ],
             ),
           )
         ],
