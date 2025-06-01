@@ -1,5 +1,3 @@
-// ✅ DrawController cho phép vẽ trực tiếp lên layer hiện tại dù ở chế độ Frame hay Layout
-
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -12,6 +10,7 @@ import '../views/sketcher.dart';
 
 class DrawController extends GetxController {
   final repaintKey = GlobalKey();
+  final scrollController = ScrollController();
 
   final lines = <DrawnLine>[].obs;
   final undoStack = <List<DrawnLine>>[];
@@ -27,14 +26,16 @@ class DrawController extends GetxController {
 
   final isPlaying = false.obs;
   final isFrameListExpanded = true.obs;
-  final isShowingLayout = false.obs;
+  final isShowingLayout = true.obs;
+
+  final playbackSpeed = 6.obs; // Mặc định 6 FPS
 
   final Map<String, Uint8List> thumbnailCache = {};
   Timer? _playbackTimer;
   int _currentIndex = 0;
-  final int fps = 6;
+  int fps = 6;
 
-  List<DrawnLine>? copiedFrame;
+  List<List<DrawnLine>>? copiedFrame;
   static const Size canvasSize = Size(1600, 900);
 
   IconData get currentToolIcon => isEraser.value ? MdiIcons.eraser : Icons.brush;
@@ -63,11 +64,11 @@ class DrawController extends GetxController {
 
   void endStroke() {
     if (lines.isNotEmpty) {
-      lines.last.points.add(null);
-      saveCurrentFrame();
-      lines.refresh();
+      lines.refresh();        // Cập nhật UI
+      saveCurrentFrame();     // Lưu vào layer tương ứng
     }
   }
+
 
   void undo() {
     if (undoStack.isNotEmpty) {
@@ -126,35 +127,76 @@ class DrawController extends GetxController {
     }
   }
 
-  void removeFrame(int index) {
+  void copyFrame(int index) {
     if (index >= 0 && index < frameLayers.length) {
-      frameLayers.removeAt(index);
-      if (frameLayers.isNotEmpty) {
-        final newIndex = (index > 0) ? index - 1 : 0;
-        selectFrame(newIndex);
-      } else {
-        lines.clear();
-      }
+      copiedFrame = frameLayers[index]
+          .map((layer) => layer.map((line) => line.copy()).toList())
+          .toList();
     }
   }
 
-  void copyFrame(int index) {
-    final frame = frameLayers[index][currentLayerIndex.value];
-    copiedFrame = frame.map((l) => l.copy()).toList();
+  void copyFrameCurrent() {
+    final index = currentFrameIndex.value;
+    copyFrame(index);
   }
 
   void pasteCopiedFrame() {
     if (copiedFrame == null) return;
-    final newLayer = copiedFrame!.map((l) => l.copy()).toList();
+    final newFrame = copiedFrame!
+        .map((layer) => layer.map((line) => line.copy()).toList())
+        .toList();
     final insertIndex = currentFrameIndex.value + 1;
-    final newLayers = List.generate(3, (_) => <DrawnLine>[]);
-    newLayers[0] = newLayer;
-    frameLayers.insert(insertIndex, newLayers);
+    frameLayers.insert(insertIndex, newFrame);
     selectFrame(insertIndex);
   }
+  void reorderFrame(int oldIndex, int newIndex) {
+    if (newIndex > oldIndex) newIndex--;
+
+    final item = frameLayers.removeAt(oldIndex);
+    frameLayers.insert(newIndex, item);
+
+    if (currentFrameIndex.value == oldIndex) {
+      currentFrameIndex.value = newIndex;
+    } else if (currentFrameIndex.value == newIndex) {
+      currentFrameIndex.value = oldIndex;
+    } else if (oldIndex < currentFrameIndex.value && currentFrameIndex.value <= newIndex) {
+      currentFrameIndex.value -= 1;
+    } else if (newIndex <= currentFrameIndex.value && currentFrameIndex.value < oldIndex) {
+      currentFrameIndex.value += 1;
+    }
+  }
+  RxSet<int> hiddenFrames = <int>{}.obs;
+  RxSet<int> hiddenLayers = <int>{}.obs;
+
+  bool isFrameHidden(int index) => hiddenFrames.contains(index);
+  bool isLayerHidden(int index) => hiddenLayers.contains(index);
+
+  void toggleFrameVisibility(int index) {
+    if (hiddenFrames.contains(index)) {
+      hiddenFrames.remove(index);
+    } else {
+      hiddenFrames.add(index);
+    }
+  }
+
+  void toggleLayerVisibility(int index) {
+    if (hiddenLayers.contains(index)) {
+      hiddenLayers.remove(index);
+    } else {
+      hiddenLayers.add(index);
+    }
+  }
+
+  void removeFrame(int index) {
+    frameLayers.removeAt(index);
+    frameLayers.refresh(); // BẮT BUỘC để cập nhật .obs
+  }
+
 
   void togglePlayback() {
     isPlaying.toggle();
+    _playbackTimer?.cancel();
+
     if (isPlaying.value) {
       _currentIndex = 0;
       _playbackTimer = Timer.periodic(Duration(milliseconds: 1000 ~/ fps), (_) {
@@ -164,8 +206,16 @@ class DrawController extends GetxController {
         currentFrameIndex.value = _currentIndex;
         currentLayerIndex.value = 0;
       });
-    } else {
-      _playbackTimer?.cancel();
+    }
+  }
+
+  void setFps(int value) {
+    fps = value;
+    playbackSpeed.value = value;
+
+    if (isPlaying.value) {
+      togglePlayback();
+      togglePlayback();
     }
   }
 
@@ -192,7 +242,8 @@ class DrawController extends GetxController {
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, thumbWidth, thumbHeight));
-    canvas.scale(thumbWidth / canvasSize.width, thumbHeight / canvasSize.height);
+    final scale = thumbWidth / canvasSize.width;
+    canvas.scale(scale, scale);
 
     if (layerIndex == null) {
       for (int i = 0; i < 3; i++) {
@@ -211,7 +262,29 @@ class DrawController extends GetxController {
     return bytes;
   }
 
+  bool isInsideCanvas(Offset point) {
+    final box = repaintKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return false;
+    final size = box.size;
+    return point.dx >= 0 &&
+        point.dy >= 0 &&
+        point.dx <= size.width &&
+        point.dy <= size.height;
+  }
+
   void _clearThumbnailCache() {
     thumbnailCache.clear();
+  }
+
+  void scrollToTop() {
+    Future.delayed(const Duration(milliseconds: 50), () {
+      if (scrollController.hasClients) {
+        scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 }

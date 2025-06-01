@@ -14,14 +14,13 @@ class Sketcher extends CustomPainter {
       final paint = Paint()
         ..color = line.color
         ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
         ..strokeWidth = line.width
         ..isAntiAlias = true;
 
       for (int i = 0; i < line.points.length - 1; i++) {
         final p1 = line.points[i];
         final p2 = line.points[i + 1];
-
-        if (p1 == null || p2 == null) continue;
         canvas.drawLine(p1, p2, paint);
       }
     }
@@ -29,7 +28,6 @@ class Sketcher extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant Sketcher oldDelegate) {
-    // Luôn vẽ lại nếu khác danh sách nét vẽ
     return oldDelegate.lines != lines;
   }
 }

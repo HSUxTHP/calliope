@@ -279,7 +279,7 @@ class ProfileView extends GetView<ProfileController> {
                                 itemBuilder: (_, index) {
                                   return PostProfileCard(
                                     imageUrl:
-                                        "https://miro.medium.com/v2/resize:fit:1200/1*uNCVd_VqFOcdxhsL71cT5Q.jpeg",
+                                        "assets/video_cover_example.png",
                                     title:
                                         'Project that i made by myself absolutely $index',
                                     avatarUrl: "assets/avatar.png",

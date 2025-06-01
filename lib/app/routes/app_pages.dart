@@ -26,7 +26,7 @@ class AppPages {
     ),
     GetPage(
       name: _Paths.DRAW,
-      page: () => const DrawView(),
+      page: () =>  DrawView(),
       binding: DrawBinding(),
     ),
     GetPage(

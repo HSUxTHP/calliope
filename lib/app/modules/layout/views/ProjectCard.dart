@@ -60,9 +60,62 @@ class ProjectCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    IconButton(
-                        onPressed: () {},
-                        icon: Icon(Icons.more_vert)
+                    PopupMenuButton<String>(
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          // Xử lý khi chọn Edit
+                          print('Edit selected');
+                        } else if (value == 'delete') {
+                          showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text('Confirm Delete'),
+                                  content: Text(
+                                      'Are you sure want to delete this project ? \n'
+                                          'this action cannot be undone.',
+                                    style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.error)
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop(); // Close the dialog
+                                      },
+                                      child: Text('Cancel'),
+                                    ),
+                                    FilledButton(
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: Theme.of(context).colorScheme.error,
+                                      ),
+                                      onPressed: () {
+                                        // Delete logic here
+                                        Navigator.of(context).pop(); // Close the dialog
+                                      },
+                                      child: Text(
+                                          'Delete',
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onError,
+                                          )
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+                          );
+                          print('Delete selected');
+                        }
+                      },
+                      itemBuilder: (BuildContext context) => [
+                        PopupMenuItem(
+                          value: 'edit',
+                          child: Text('Edit'),
+                        ),
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Text('Delete'),
+                        ),
+                      ],
+                      icon: Icon(Icons.more_vert),
                     )
                   ],
                 ),

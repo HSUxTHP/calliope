@@ -1,13 +1,11 @@
-// ✅ DrawView với sidebar thay đổi nút + theo Frame/Layout
-
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/draw_controller.dart';
-import 'DrawingCanvas.dart';
+import 'canvas_area.dart';
 
 class DrawView extends GetView<DrawController> {
-  const DrawView({super.key});
+  DrawView({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,25 +19,9 @@ class DrawView extends GetView<DrawController> {
               children: [
                 Obx(() => controller.isFrameListExpanded.value
                     ? _buildSidebar()
-                    : Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
-                  child: Column(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFFE0E0E0)),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.chevron_right),
-                          onPressed: controller.toggleFrameList,
-                        ),
-                      ),
-                    ],
-                  ),
-                )),
-                Expanded(child: _buildCanvasAndToolbarArea()),
+                    : _buildCollapsedSidebar()),
+                const VerticalDivider(width: 1, thickness: 1),
+                const Expanded(child: CanvasArea()),
               ],
             ),
           ),
@@ -50,108 +32,147 @@ class DrawView extends GetView<DrawController> {
 
   Widget _buildTopToolbar() {
     return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: const BoxDecoration(
-        color: Color(0xFFE6EEFA),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 1.5))],
+      height: 58,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+        ],
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(16),
+          bottomRight: Radius.circular(16),
+        ),
+      ),
+      child: Obx(() => Row(
+        children: [
+          _toolbarGroup([
+            _iconButton(Icons.arrow_back, () {}, tooltip: 'Quay lại'),
+          ]),
+          const SizedBox(width: 8),
+          _toolbarGroup([
+            _iconButton(Icons.undo, controller.undo, tooltip: 'Hoàn tác'),
+            _iconButton(Icons.redo, controller.redo, tooltip: 'Làm lại'),
+            _iconButton(Icons.clear, controller.clearCanvas, tooltip: 'Xoá canvas'),
+          ]),
+          const SizedBox(width: 8),
+          _toolbarGroup([
+            _iconButton(controller.currentToolIcon, controller.toggleEraser,
+                tooltip: controller.currentToolTooltip),
+            _iconButton(Icons.color_lens, () => _showColorPicker(Get.context!),
+                tooltip: 'Chọn màu',
+                color: controller.selectedColor.value),
+          ]),
+          const SizedBox(width: 8),
+          _roundedControl(
+            label: '${controller.selectedWidth.value.toInt()} px',
+            onMinus: () => controller.changeWidth(controller.selectedWidth.value - 1),
+            onPlus: () => controller.changeWidth(controller.selectedWidth.value + 1),
+          ),
+          const SizedBox(width: 8),
+          _roundedControl(
+            label: '${controller.playbackSpeed.value}fps',
+            onMinus: () => controller.playbackSpeed.value =
+                (controller.playbackSpeed.value - 1).clamp(3, 24),
+            onPlus: () => controller.playbackSpeed.value =
+                (controller.playbackSpeed.value + 1).clamp(3, 24),
+            trailing: Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: IconButton(
+                icon: Icon(
+                  controller.isPlaying.value
+                      ? Icons.pause_circle_filled
+                      : Icons.play_circle_fill,
+                  size: 30,
+                  color: Colors.black,
+                ),
+                onPressed: controller.togglePlayback,
+                tooltip: controller.isPlaying.value ? 'Pause' : 'Play',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ),
+          ),
+
+          const Spacer(),
+          _toolbarGroup([
+            _iconButton(Icons.save, controller.copyFrameCurrent, tooltip: 'Sao chép frame hiện tại'),
+            _iconButton(Icons.paste, controller.pasteCopiedFrame, tooltip: 'Dán frame'),
+          ]),
+        ],
+      )),
+    );
+  }
+
+  Widget _iconButton(IconData icon, VoidCallback onPressed, {String? tooltip, Color? color}) {
+    return IconButton(
+      icon: Icon(icon, size: 20, color: color ?? Colors.black),
+      tooltip: tooltip,
+      onPressed: onPressed,
+    );
+  }
+
+  Widget _toolbarGroup(List<Widget> children) {
+    return Row(
+      children: children
+          .map((w) => Padding(padding: const EdgeInsets.symmetric(horizontal: 2), child: w))
+          .toList(),
+    );
+  }
+
+  Widget _roundedControl({
+    required String label,
+    required VoidCallback onMinus,
+    required VoidCallback onPlus,
+    Widget? trailing,
+  }) {
+    return Container(
+      height: 34,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.black),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(icon: const Icon(Icons.arrow_back, size: 20), onPressed: () {}),
-          const VerticalDivider(width: 16),
-          IconButton(icon: const Icon(Icons.undo, size: 20), onPressed: controller.undo),
-          IconButton(icon: const Icon(Icons.redo, size: 20), onPressed: controller.redo),
-          IconButton(icon: const Icon(Icons.clear, size: 20), onPressed: controller.clearCanvas),
-          Obx(() => IconButton(
-            icon: Icon(controller.currentToolIcon, size: 20),
-            tooltip: controller.currentToolTooltip,
-            onPressed: controller.toggleEraser,
-          )),
-          const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.paste, size: 20),
-            tooltip: 'Dán frame đã sao chép',
-            onPressed: controller.pasteCopiedFrame,
+          GestureDetector(
+            onTap: onMinus,
+            child: const CircleAvatar(
+              radius: 9,
+              backgroundColor: Color(0xFFFFFFFF),
+              child: Icon(Icons.remove, size: 12, color: Colors.black),
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.save, color: Color(0xFF1E88E5), size: 20),
-            tooltip: 'Lưu',
-            onPressed: controller.saveCurrentFrame,
+          const SizedBox(width: 6),
+          Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black)),
+          const SizedBox(width: 6),
+          GestureDetector(
+            onTap: onPlus,
+            child: const CircleAvatar(
+              radius: 9,
+              backgroundColor: Color(0xFFFFFFFF),
+              child: Icon(Icons.add, size: 12, color: Colors.black),
+            ),
           ),
+          if (trailing != null) trailing,
         ],
       ),
     );
   }
 
-  Widget _buildCanvasAndToolbarArea() {
-    return Column(
-      children: [
-        Expanded(child: _buildCanvasArea()),
-        _buildBottomToolbar(),
-      ],
-    );
-  }
 
-  Widget _buildCanvasArea() {
+  Widget _buildCollapsedSidebar() {
     return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Center(
-        child: Container(
-          width: 1600,
-          height: 900,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFE0E0E0)),
-          ),
-          child: const DrawingCanvas(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomToolbar() {
-    return Container(
-      height: 56,
-      margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            Obx(() => IconButton(
-              icon: Icon(controller.isPlaying.value ? Icons.pause : Icons.play_arrow, size: 20),
-              onPressed: controller.togglePlayback,
-            )),
-            const SizedBox(width: 8),
-            Obx(() => Text('${controller.selectedWidth.value.toInt()} px', style: const TextStyle(fontSize: 13))),
-            IconButton(
-              icon: const Icon(Icons.remove, size: 18),
-              onPressed: () => controller.changeWidth(controller.selectedWidth.value - 1),
-            ),
-            Obx(() => SizedBox(
-              width: 200,
-              child: Slider(
-                min: 1,
-                max: 30,
-                value: controller.selectedWidth.value,
-                onChanged: controller.changeWidth,
-                activeColor: const Color(0xFF1E88E5),
-                inactiveColor: const Color(0xFFD6E4FF),
-                thumbColor: const Color(0xFF1E88E5),
-              ),
-            )),
-            IconButton(
-              icon: const Icon(Icons.add, size: 18),
-              onPressed: () => controller.changeWidth(controller.selectedWidth.value + 1),
-            ),
-          ],
+      padding: const EdgeInsets.all(12),
+      child: Material(
+        color: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 1,
+        child: IconButton(
+          icon: const Icon(Icons.chevron_right, color: Colors.black),
+          onPressed: controller.toggleFrameList,
         ),
       ),
     );
@@ -168,49 +189,10 @@ class DrawView extends GetView<DrawController> {
       ),
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE2E8F0),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-            ),
-            child: Row(
-              children: [
-                Obx(() => GestureDetector(
-                  onTap: () => controller.isShowingLayout.value = false,
-                  child: Text('Frame',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: controller.isShowingLayout.value ? Colors.grey : Colors.black)),
-                )),
-                const SizedBox(width: 12),
-                Obx(() => GestureDetector(
-                  onTap: () => controller.isShowingLayout.value = true,
-                  child: Text('Layout',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: controller.isShowingLayout.value ? Colors.black : Colors.grey)),
-                )),
-                const Spacer(),
-                const Icon(Icons.menu, size: 18, color: Colors.black54),
-              ],
-            ),
-          ),
+          _buildSidebarHeader(),
           Obx(() => controller.isShowingLayout.value
               ? const SizedBox(height: 8)
-              : ElevatedButton(
-            onPressed: controller.addFrame,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey.shade200,
-              shape: const CircleBorder(),
-              padding: const EdgeInsets.all(12),
-              elevation: 1,
-            ),
-            child: const Icon(Icons.add, size: 18, color: Colors.black),
-          )),
+              : _buildFrameToggle()),
           const SizedBox(height: 8),
           Expanded(
             child: Obx(() => controller.isShowingLayout.value
@@ -222,79 +204,257 @@ class DrawView extends GetView<DrawController> {
     );
   }
 
-  Widget _buildFrameList() {
-    return ListView.builder(
+  Widget _buildSidebarHeader() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      decoration: const BoxDecoration(
+        color: Color(0xFFE2E8F0),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                _sidebarTab("Frame", false),
+                _sidebarTab("Layout", true),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              controller.scrollToTop();
+            },
+            child: const Icon(Icons.menu, size: 18, color: Colors.black),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sidebarTab(String label, bool layoutTab) {
+    return Expanded(
+      child: Obx(() => GestureDetector(
+        onTap: () {
+          controller.isShowingLayout.value = layoutTab;
+          controller.scrollToTop();
+        },
+        child: Container(
+          height: 36,
+          margin: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: controller.isShowingLayout.value == layoutTab
+                ? Colors.white
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: controller.isShowingLayout.value == layoutTab
+                  ? Colors.black
+                  : Colors.grey,
+            ),
+          ),
+        ),
+      )),
+    );
+  }
+
+  Widget _buildFrameToggle() {
+    return ElevatedButton(
+      onPressed: controller.addFrame,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.grey.shade200,
+        shape: const CircleBorder(),
+        padding: const EdgeInsets.all(12),
+        elevation: 1,
+      ),
+      child: const Icon(Icons.add, size: 18, color: Colors.black),
+    );
+  }
+
+  Widget _buildFrameList() {
+    return Obx(() => ReorderableListView.builder(
+      key: const PageStorageKey('frame_list_key'),
+      onReorder: controller.reorderFrame,
+      buildDefaultDragHandles: false,
+      scrollController: controller.scrollController,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
       itemCount: controller.frameLayers.length,
       itemBuilder: (_, index) {
         final isSelected = controller.currentFrameIndex.value == index;
-        return GestureDetector(
-          onTap: () => controller.selectFrame(index),
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 6),
-            decoration: BoxDecoration(
-              color: isSelected ? Colors.blue.shade50 : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected ? Colors.blue : Colors.grey.shade300,
-                width: 2,
+        return Dismissible(
+          key: ValueKey('frame_$index'),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 16),
+            color: Colors.red.withOpacity(0.1),
+            child: const Icon(Icons.delete, color: Colors.red),
+          ),
+          confirmDismiss: (_) async {
+            if (controller.frameLayers.length <= 1) return false;
+            return await Get.dialog<bool>(
+              AlertDialog(
+                title: const Text('Xác nhận xoá'),
+                content: const Text('Bạn có chắc muốn xoá frame này?'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Get.back(result: false),
+                      child: const Text('Huỷ')),
+                  TextButton(
+                      onPressed: () => Get.back(result: true),
+                      child: const Text('Xoá')),
+                ],
               ),
-            ),
-            child: FutureBuilder<Uint8List>(
-              future: controller.renderThumbnail(index),
-              builder: (_, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.memory(snapshot.data!, fit: BoxFit.cover),
-                  );
-                }
-                return const SizedBox(height: 80, child: Center(child: CircularProgressIndicator(strokeWidth: 1.2)));
-              },
+            ) ??
+                false;
+          },
+          onDismissed: (_) {
+            Future.microtask(() {
+              controller.removeFrame(index);
+              if (controller.currentFrameIndex.value >= controller.frameLayers.length) {
+                controller.selectFrame(controller.frameLayers.length - 1);
+              }
+            });
+          },
+          child: ReorderableDragStartListener(
+            index: index,
+            child: _thumbnailItem(
+              isSelected: isSelected,
+              onTap: () => controller.selectFrame(index),
+              futureImage: controller.renderThumbnail(index),
+              borderColor: Colors.blue,
             ),
           ),
+        );
+      },
+    ));
+  }
+
+
+
+
+  Widget _buildLayoutList() {
+    final index = controller.currentFrameIndex.value;
+    return ListView.builder(
+      controller: controller.scrollController,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+      itemCount: 3,
+      itemBuilder: (_, layerIndex) {
+        final isSelected = controller.currentLayerIndex.value == layerIndex;
+        return _thumbnailItem(
+          isSelected: isSelected,
+          onTap: () => controller.switchLayer(layerIndex),
+          futureImage: controller.renderThumbnail(index, layerIndex),
+          borderColor: Colors.indigo,
         );
       },
     );
   }
 
-  Widget _buildLayoutList() {
-    final index = controller.currentFrameIndex.value;
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      itemCount: 3,
-      itemBuilder: (_, layerIndex) {
-        final isSelected = controller.currentLayerIndex.value == layerIndex;
-        return GestureDetector(
-          onTap: () => controller.switchLayer(layerIndex),
-          child: Container(
+  Widget _thumbnailItem({
+    required bool isSelected,
+    required VoidCallback onTap,
+    required Future<Uint8List> futureImage,
+    required Color borderColor,
+    bool? isHidden,
+    VoidCallback? onToggleVisibility,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        children: [
+          Container(
             margin: const EdgeInsets.symmetric(vertical: 6),
             decoration: BoxDecoration(
-              color: isSelected ? Colors.indigo.shade50 : Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              color: isSelected ? borderColor.withOpacity(0.05) : Colors.white,
               border: Border.all(
-                color: isSelected ? Colors.indigo : Colors.grey.shade300,
+                color: isSelected ? borderColor : Colors.grey.shade300,
                 width: 2,
               ),
-              boxShadow: isSelected
-                  ? [BoxShadow(color: Colors.indigo.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))]
-                  : [],
             ),
             child: FutureBuilder<Uint8List>(
-              future: controller.renderThumbnail(index, layerIndex),
+              future: futureImage,
               builder: (_, snapshot) {
                 if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.memory(snapshot.data!, fit: BoxFit.cover),
+                    child: Opacity(
+                      opacity: isHidden == true ? 0.4 : 1.0,
+                      child: Image.memory(snapshot.data!, fit: BoxFit.cover),
+                    ),
                   );
                 }
-                return const SizedBox(height: 80, child: Center(child: CircularProgressIndicator(strokeWidth: 1.2)));
+                return const SizedBox(
+                  height: 80,
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 1.2)),
+                );
               },
             ),
           ),
-        );
-      },
+          if (onToggleVisibility != null)
+            Positioned(
+              bottom: 4,
+              right: 4,
+              child: GestureDetector(
+                onTap: onToggleVisibility,
+                child: Icon(
+                  isHidden == true ? Icons.visibility_off : Icons.visibility,
+                  size: 18,
+                  color: Colors.black54,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+
+  void _showColorPicker(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Chọn màu'),
+        content: SingleChildScrollView(
+          child: Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              Colors.black,
+              Colors.red,
+              Colors.green,
+              Colors.blue,
+              Colors.orange,
+              Colors.purple,
+              Colors.brown,
+              Colors.yellow,
+              Colors.pink
+            ].map((color) {
+              return GestureDetector(
+                onTap: () {
+                  controller.changeColor(color);
+                  Navigator.of(context).pop();
+                },
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    border: Border.all(width: 1.5, color: Colors.grey.shade300),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
     );
   }
 }
