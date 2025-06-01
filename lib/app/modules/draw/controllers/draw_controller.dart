@@ -7,10 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../../data/models/DrawnLine_model.dart';
 import '../views/sketcher.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
+import 'package:external_path/external_path.dart';
 
 
 class DrawController extends GetxController {
@@ -304,21 +307,45 @@ class DrawController extends GetxController {
   }
 
   Future<void> exportToVideoWithFFmpeg() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final inputPath = "${dir.path}/frames/frame_%03d.png";
-    final outputPath = "${dir.path}/output_video.mp4";
+    await Permission.storage.request();
+    final downloadPath = "/storage/emulated/0/Download";
+
+    final inputPath = "$downloadPath/frames/frame_%03d.png";
+    final outputPath = "$downloadPath/output_video.mp4";
     final fps = playbackSpeed.value;
 
-    final cmd = "-framerate $fps -i $inputPath -c:v libx264 -pix_fmt yuv420p $outputPath";
+    final dir = Directory("$downloadPath/frames");
+    if (!dir.existsSync()) {
+      print("❌ Thư mục frames không tồn tại");
+      return;
+    }
 
+    final files = dir.listSync().whereType<File>().toList();
+    if (files.isEmpty) {
+      print("❌ Không tìm thấy ảnh nào trong frames/");
+      return;
+    }
+
+    files.sort((a, b) => a.path.compareTo(b.path));
+    for (final f in files) {
+      print("📷 ${f.path}");
+    }
+    print("✅ Tìm thấy ${files.length} ảnh trong frames/");
+
+
+    print(outputPath);
+
+    final cmd = "-y -framerate $fps -pattern_type glob -i '$downloadPath/frames/frame_*.png' -c:v libx264 -pix_fmt yuv420p '$outputPath'";
     await FFmpegKit.execute(cmd).then((session) async {
       final returnCode = await session.getReturnCode();
       if (ReturnCode.isSuccess(returnCode)) {
         print("✅ Video xuất thành công: $outputPath");
       } else {
-        final failMsg = await session.getFailStackTrace();
+        final logs = await session.getAllLogsAsString();
+        final stack = await session.getFailStackTrace();
         print("❌ FFmpeg lỗi: $returnCode");
-        print("Chi tiết lỗi: $failMsg");
+        print("📝 FFmpeg log:\n$logs");
+        print("📟 Stack trace:\n$stack");
       }
     });
   }
