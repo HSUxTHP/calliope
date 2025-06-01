@@ -51,9 +51,9 @@ class DrawView extends GetView<DrawController> {
           ]),
           const SizedBox(width: 8),
           _toolbarGroup([
-            _iconButton(Icons.undo, controller.undo, tooltip: 'Hoàn tác'),
-            _iconButton(Icons.redo, controller.redo, tooltip: 'Làm lại'),
-            _iconButton(Icons.clear, controller.clearCanvas, tooltip: 'Xoá canvas'),
+            // _iconButton(Icons.undo, controller.undo, tooltip: 'Hoàn tác'),
+            // _iconButton(Icons.redo, controller.redo, tooltip: 'Làm lại'),
+            // _iconButton(Icons.clear, controller.clearCanvas, tooltip: 'Xoá canvas'),
           ]),
           const SizedBox(width: 8),
           _toolbarGroup([
@@ -98,7 +98,12 @@ class DrawView extends GetView<DrawController> {
           _toolbarGroup([
             _iconButton(Icons.save, controller.copyFrameCurrent, tooltip: 'Sao chép frame hiện tại'),
             _iconButton(Icons.paste, controller.pasteCopiedFrame, tooltip: 'Dán frame'),
+            _iconButton(Icons.movie, () async {
+              await controller.renderAllFramesToImages();
+              await controller.exportToVideoWithFFmpeg();
+            }, tooltip: 'Xuất video'),
           ]),
+
         ],
       )),
     );

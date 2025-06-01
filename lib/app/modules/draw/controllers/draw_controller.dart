@@ -1,12 +1,17 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_new/return_code.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../data/models/DrawnLine_model.dart';
 import '../views/sketcher.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+
 
 class DrawController extends GetxController {
   final repaintKey = GlobalKey();
@@ -271,7 +276,52 @@ class DrawController extends GetxController {
         point.dx <= size.width &&
         point.dy <= size.height;
   }
+  Future<void> renderAllFramesToImages() async {
+    final dir = await getApplicationDocumentsDirectory();
+    final outputDir = Directory("${dir.path}/frames");
+    if (!await outputDir.exists()) {
+      await outputDir.create(recursive: true);
+    }
 
+    for (int i = 0; i < frameLayers.length; i++) {
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, canvasSize.width, canvasSize.height));
+
+      for (int l = 0; l < 3; l++) {
+        if (!isLayerHidden(l)) {
+          Sketcher(lines: frameLayers[i][l]).paint(canvas, canvasSize);
+        }
+      }
+
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(canvasSize.width.toInt(), canvasSize.height.toInt());
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final bytes = byteData!.buffer.asUint8List();
+
+      final filePath = "${outputDir.path}/frame_${i.toString().padLeft(3, '0')}.png";
+      await File(filePath).writeAsBytes(bytes);
+    }
+  }
+
+  Future<void> exportToVideoWithFFmpeg() async {
+    final dir = await getApplicationDocumentsDirectory();
+    final inputPath = "${dir.path}/frames/frame_%03d.png";
+    final outputPath = "${dir.path}/output_video.mp4";
+    final fps = playbackSpeed.value;
+
+    final cmd = "-framerate $fps -i $inputPath -c:v libx264 -pix_fmt yuv420p $outputPath";
+
+    await FFmpegKit.execute(cmd).then((session) async {
+      final returnCode = await session.getReturnCode();
+      if (ReturnCode.isSuccess(returnCode)) {
+        print("✅ Video xuất thành công: $outputPath");
+      } else {
+        final failMsg = await session.getFailStackTrace();
+        print("❌ FFmpeg lỗi: $returnCode");
+        print("Chi tiết lỗi: $failMsg");
+      }
+    });
+  }
   void _clearThumbnailCache() {
     thumbnailCache.clear();
   }
