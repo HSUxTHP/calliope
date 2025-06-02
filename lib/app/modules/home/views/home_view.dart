@@ -3,7 +3,6 @@ import 'package:calliope/app/modules/home/views/create_project_dialog.dart';
 import 'package:calliope/app/modules/layout/controllers/layout_controller.dart';
 import 'package:calliope/app/modules/layout/views/ProjectCard.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_sticky_header/flutter_sticky_header.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
 

@@ -14,6 +14,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:external_path/external_path.dart';
+import 'package:file_picker/file_picker.dart';
 
 
 class DrawController extends GetxController {
@@ -308,47 +309,77 @@ class DrawController extends GetxController {
 
   Future<void> exportToVideoWithFFmpeg() async {
     await Permission.storage.request();
-    final downloadPath = "/storage/emulated/0/Download";
 
-    final inputPath = "$downloadPath/frames/frame_%03d.png";
-    final outputPath = "$downloadPath/output_video.mp4";
-    final fps = playbackSpeed.value;
-
-    final dir = Directory("$downloadPath/frames");
-    if (!dir.existsSync()) {
-      print("❌ Thư mục frames không tồn tại");
+    // ⚙️ Sử dụng thư mục được cấp quyền thay vì chọn tay
+    final Directory? dir = await getExternalStorageDirectory();
+    if (dir == null) {
+      print("❌ Không lấy được thư mục ngoài.");
       return;
     }
 
-    final files = dir.listSync().whereType<File>().toList();
-    if (files.isEmpty) {
-      print("❌ Không tìm thấy ảnh nào trong frames/");
-      return;
+    final outputDirectory = dir.path;
+    final framesDir = Directory(p.join(outputDirectory, "frames"));
+    if (!await framesDir.exists()) {
+      await framesDir.create(recursive: true);
     }
 
-    files.sort((a, b) => a.path.compareTo(b.path));
-    for (final f in files) {
-      print("📷 ${f.path}");
+    for (int i = 0; i < frameLayers.length; i++) {
+      currentFrameIndex.value = i;
+      currentLayerIndex.value = 0;
+      lines.value = frameLayers[i][0];
+
+      await Future.delayed(const Duration(milliseconds: 50));
+      final bytes = await captureImage();
+      if (bytes == null) continue;
+
+      final filePath = p.join(framesDir.path, 'frame_${i.toString().padLeft(3, '0')}.png');
+      await File(filePath).writeAsBytes(bytes);
     }
-    print("✅ Tìm thấy ${files.length} ảnh trong frames/");
 
+    final outputPath = p.join(outputDirectory, 'output_video.mp4');
+    final cmd =
+        "-y -framerate $fps -start_number 0 -i '${framesDir.path}/frame_%03d.png' -c:v libx264 -pix_fmt yuv420p '$outputPath'";
 
-    print(outputPath);
-
-    final cmd = "-y -framerate $fps -pattern_type glob -i '$downloadPath/frames/frame_*.png' -c:v libx264 -pix_fmt yuv420p '$outputPath'";
     await FFmpegKit.execute(cmd).then((session) async {
       final returnCode = await session.getReturnCode();
       if (ReturnCode.isSuccess(returnCode)) {
-        print("✅ Video xuất thành công: $outputPath");
+        print("✅ Xuất video thành công: $outputPath");
+        await framesDir.delete(recursive: true);
+        Get.snackbar("Thành công", "Xuất video thành công:\n$outputPath", snackPosition: SnackPosition.BOTTOM);
       } else {
-        final logs = await session.getAllLogsAsString();
-        final stack = await session.getFailStackTrace();
-        print("❌ FFmpeg lỗi: $returnCode");
-        print("📝 FFmpeg log:\n$logs");
-        print("📟 Stack trace:\n$stack");
+        Get.snackbar("Lỗi", "Xuất video thất bại", snackPosition: SnackPosition.BOTTOM);
       }
     });
+    // Kiểm tra permission
+    var status = await Permission.storage.status;
+    if (!status.isGranted) {
+      status = await Permission.storage.request();
+    }
+    if (!status.isGranted) {
+      print("Chưa cấp quyền lưu trữ");
+      return;
+    }
+
+// Kiểm tra tồn tại thư mục và ảnh
+    print("Frames dir: ${framesDir.path}");
+    final files = await framesDir.list().toList();
+    print("Files in frames dir: ${files.length}");
+
+// Log lệnh FFmpeg và kết quả
+    final session = await FFmpegKit.execute(cmd);
+    final logs = await session.getAllLogs();
+    for (var log in logs) {
+      print("FFmpeg log: ${log.getMessage()}");
+    }
+    final returnCode = await session.getReturnCode();
+    print("FFmpeg return code: $returnCode");
+    if (!ReturnCode.isSuccess(returnCode)) {
+      Get.snackbar("Lỗi", "Xuất video thất bại: $returnCode", snackPosition: SnackPosition.BOTTOM);
+    }
   }
+
+
+
   void _clearThumbnailCache() {
     thumbnailCache.clear();
   }
