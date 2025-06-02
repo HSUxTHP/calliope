@@ -307,22 +307,47 @@ class DrawController extends GetxController {
     }
   }
 
-  Future<void> exportToVideoWithFFmpeg() async {
-    await Permission.storage.request();
+  Future<bool> ensureStoragePermission() async {
+    if (Platform.isAndroid) {
+      // Android 11 trở lên cần quyền đặc biệt
+      if (await Permission.manageExternalStorage.isGranted) {
+        return true;
+      } else {
+        final status = await Permission.manageExternalStorage.request();
+        return status.isGranted;
+      }
+    } else {
+      // iOS hoặc Android thấp hơn
+      var status = await Permission.storage.status;
+      if (!status.isGranted) {
+        final result = await Permission.storage.request();
+        return result.isGranted;
+      }
+      return true;
+    }
+  }
 
-    // ⚙️ Sử dụng thư mục được cấp quyền thay vì chọn tay
-    final Directory? dir = await getExternalStorageDirectory();
-    if (dir == null) {
-      print("❌ Không lấy được thư mục ngoài.");
+  Future<void> exportToVideoWithFFmpeg() async {
+    bool granted = await ensureStoragePermission();
+    if (!granted) {
+      print("Chưa cấp quyền lưu trữ");
+      Get.snackbar("Lỗi", "Chưa cấp quyền lưu trữ", snackPosition: SnackPosition.BOTTOM);
       return;
     }
 
-    final outputDirectory = dir.path;
-    final framesDir = Directory(p.join(outputDirectory, "frames"));
+    // 🔹 Cho phép người dùng chọn thư mục lưu
+    String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+    if (selectedDirectory == null) {
+      Get.snackbar("Hủy", "Bạn chưa chọn thư mục", snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
+    final framesDir = Directory(p.join(selectedDirectory, "frames"));
     if (!await framesDir.exists()) {
       await framesDir.create(recursive: true);
     }
 
+    // Render các frame thành ảnh PNG
     for (int i = 0; i < frameLayers.length; i++) {
       currentFrameIndex.value = i;
       currentLayerIndex.value = 0;
@@ -336,49 +361,32 @@ class DrawController extends GetxController {
       await File(filePath).writeAsBytes(bytes);
     }
 
-    final outputPath = p.join(outputDirectory, 'output_video.mp4');
+    final outputPath = p.join(selectedDirectory, 'output_video.mp4');
+
+    // 🛠 FFmpeg command
     final cmd =
-        "-y -framerate $fps -start_number 0 -i '${framesDir.path}/frame_%03d.png' -c:v libx264 -pix_fmt yuv420p '$outputPath'";
+        "-y -framerate $fps -start_number 0 -i ${framesDir.path}/frame_%03d.png "
+        "-vf scale='trunc(iw/2)*2:trunc(ih/2)*2' "
+        "-c:v libx264 -pix_fmt yuv420p $outputPath";
 
-    await FFmpegKit.execute(cmd).then((session) async {
-      final returnCode = await session.getReturnCode();
-      if (ReturnCode.isSuccess(returnCode)) {
-        print("✅ Xuất video thành công: $outputPath");
-        await framesDir.delete(recursive: true);
-        Get.snackbar("Thành công", "Xuất video thành công:\n$outputPath", snackPosition: SnackPosition.BOTTOM);
-      } else {
-        Get.snackbar("Lỗi", "Xuất video thất bại", snackPosition: SnackPosition.BOTTOM);
-      }
-    });
-    // Kiểm tra permission
-    var status = await Permission.storage.status;
-    if (!status.isGranted) {
-      status = await Permission.storage.request();
-    }
-    if (!status.isGranted) {
-      print("Chưa cấp quyền lưu trữ");
-      return;
-    }
-
-// Kiểm tra tồn tại thư mục và ảnh
-    print("Frames dir: ${framesDir.path}");
-    final files = await framesDir.list().toList();
-    print("Files in frames dir: ${files.length}");
-
-// Log lệnh FFmpeg và kết quả
+    print("Running FFmpeg command: $cmd");
     final session = await FFmpegKit.execute(cmd);
+
     final logs = await session.getAllLogs();
-    for (var log in logs) {
-      print("FFmpeg log: ${log.getMessage()}");
+    for (final log in logs) {
+      print(log.getMessage());
     }
+
     final returnCode = await session.getReturnCode();
-    print("FFmpeg return code: $returnCode");
-    if (!ReturnCode.isSuccess(returnCode)) {
-      Get.snackbar("Lỗi", "Xuất video thất bại: $returnCode", snackPosition: SnackPosition.BOTTOM);
+    if (ReturnCode.isSuccess(returnCode)) {
+      print("✅ Xuất video thành công: $outputPath");
+      await framesDir.delete(recursive: true);
+      Get.snackbar("Thành công", "Xuất video thành công:\n$outputPath", snackPosition: SnackPosition.BOTTOM);
+    } else {
+      print("❌ Xuất video thất bại với mã: $returnCode");
+      Get.snackbar("Lỗi", "Xuất video thất bại với mã: $returnCode", snackPosition: SnackPosition.BOTTOM);
     }
   }
-
-
 
   void _clearThumbnailCache() {
     thumbnailCache.clear();
