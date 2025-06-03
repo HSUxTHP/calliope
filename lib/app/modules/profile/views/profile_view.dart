@@ -1,3 +1,4 @@
+import 'package:calliope/app/modules/profile/views/upload_dialog.dart';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
@@ -6,12 +7,15 @@ import '../../../widget_share/post_profile_widget.dart';
 import '../../../widget_share/post_widget.dart';
 import '../../layout/controllers/layout_controller.dart';
 import '../controllers/profile_controller.dart';
+import '../controllers/upload_controller.dart';
 
 class ProfileView extends GetView<ProfileController> {
-  const ProfileView({super.key});
+  ProfileView({super.key});
+
   @override
   Widget build(BuildContext context) {
     final layoutController = Get.find<LayoutController>();
+    final uploadController = Get.put(UploadController());
     return Scaffold(
       body: Obx(() {
         if (controller.isLoading.value) {
@@ -232,7 +236,7 @@ class ProfileView extends GetView<ProfileController> {
                                                                 .onPrimaryContainer,
                                                       ),
                                                       onPressed: () {
-                                                        // TODO: Open edit dialog
+                                                        Get.dialog(UploadDialog());
                                                       },
                                                       child: Text(
                                                         'Edit your profile',
