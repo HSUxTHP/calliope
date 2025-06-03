@@ -65,36 +65,47 @@ class UploadController extends GetxController {
       );
       progress.value = 0.1;
 
-      // Phân mảnh .mp4 thành các .webm
-      final segments = await _splitMp4ToWebm(videoFile.value!);
+      // Phân mảnh .mp4 thành HLS (.ts + .m3u8)
+      final manifestPath = await _splitMp4ToHLS(videoFile.value!);
+      final manifestFile = File(manifestPath);
+      final hlsDir = manifestFile.parent;
 
-      // Upload segments
-      List<String> segmentNames = [];
-      for (int i = 0; i < segments.length; i++) {
-        final segmentName = 'segment_$i.webm';
+      progress.value = 0.4;
+
+      // Upload toàn bộ thư mục HLS
+      final segmentFiles = hlsDir
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.ts') || f.path.endsWith('.m3u8'))
+          .toList();
+
+      for (int i = 0; i < segmentFiles.length; i++) {
+        final file = segmentFiles[i];
+        final name = p.basename(file.path);
         await client.storage.from('videos').upload(
-          '$storagePath/$segmentName',
-          segments[i],
+          '$storagePath/$name',
+          file,
           fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
         );
-        segmentNames.add(segmentName);
-        progress.value = 0.6 + ((0.3 / segments.length) * (i + 1));
+        progress.value = 0.4 + ((0.5 / segmentFiles.length) * (i + 1));
       }
 
-      // Create manifest.json
-      final manifest = {"segments": segmentNames};
-      final manifestFile = File('${videoFile.value!.parent.path}/manifest.json');
-      await manifestFile.writeAsString(jsonEncode(manifest));
-      await client.storage.from('videos').upload(
-        '$storagePath/manifest.json',
-        manifestFile,
-        fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
-      );
+      // Upload thumbnail nếu có
+      final thumbnailFile = File('${videoFile.value!.parent.path}/background.png');
+      if (await thumbnailFile.exists()) {
+        await client.storage.from('videos').upload(
+          '$storagePath/background.png',
+          thumbnailFile,
+          fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
+        );
+      }
+
       progress.value = 0.95;
 
       // Tạo post
-      final url = client.storage.from('videos').getPublicUrl('$storagePath/manifest.json');
+      final url = client.storage.from('videos').getPublicUrl('$storagePath/manifest.m3u8');
       final thumbnail = client.storage.from('videos').getPublicUrl('$storagePath/background.png');
+
       final post = PostModel(
         created_at: DateTime.now(),
         edited_at: DateTime.now(),
@@ -106,6 +117,7 @@ class UploadController extends GetxController {
         views: 0,
         thumbnail: thumbnail,
       );
+
       print(post.toJson());
       final insertResponse = await client.from('posts').insert(post.toJson()).select();
 
@@ -128,88 +140,123 @@ class UploadController extends GetxController {
 
 
 
-  Future<List<File>> _splitMp4ToWebm(File input) async {
-    print("Bắt đầu phân mảnh video: ${input.path}");
-    final List<File> outputSegments = [];
-    final dir = input.parent;
-    const int segmentLength = 4; // 10 giây mỗi đoạn
+  // Future<List<File>> _splitMp4ToWebm(File input) async {
+  //   print("Bắt đầu phân mảnh video: ${input.path}");
+  //   final List<File> outputSegments = [];
+  //   final dir = input.parent;
+  //   const int segmentLength = 4; // 10 giây mỗi đoạn
+  //
+  //   // Lấy duration video
+  //   final session = await FFmpegKit.executeWithArguments(['-i', input.path]);
+  //   final logs = await session.getLogs();
+  //
+  //   double durationSeconds = 0;
+  //   for (final log in logs) {
+  //     final message = log.getMessage();
+  //     final match = RegExp(r'Duration: (\d{2}):(\d{2}):(\d{2}\.\d+)').firstMatch(message);
+  //     if (match != null) {
+  //       final h = int.parse(match.group(1)!);
+  //       final m = int.parse(match.group(2)!);
+  //       final s = double.parse(match.group(3)!);
+  //       durationSeconds = h * 3600 + m * 60 + s;
+  //       break;
+  //     }
+  //   }
+  //
+  //   progress.value = 0.2;
+  //
+  //
+  //   final infoSession = await FFprobeKit.getMediaInformation(input.path);
+  //   final info = infoSession.getMediaInformation();
+  //   if (info != null) {
+  //     final duration = info.getDuration();
+  //     if (duration != null) {
+  //       durationSeconds = double.tryParse(duration) ?? 0;
+  //       print('Duration video infoSession: $durationSeconds');
+  //       // print('Duration video: $durationSeconds');
+  //     }
+  //   }
+  //
+  //   progress.value = 0.3;
+  //
+  //
+  //   if (durationSeconds == 0) {
+  //     print('Không lấy được duration video');
+  //     return [input]; // Trả về nguyên video nếu không lấy được duration
+  //   }
+  //
+  //   print('Duration video: $durationSeconds giây');
+  //
+  //   // Nếu video nhỏ hơn hoặc bằng 10s thì không phân mảnh
+  //   if (durationSeconds <= segmentLength) {
+  //     return [input];
+  //   }
+  //
+  //   final segmentsCount = (durationSeconds / segmentLength).ceil();
+  //   print('Số đoạn cần phân mảnh: $segmentsCount');
+  //
+  //   for (int i = 0; i < segmentsCount; i++) {
+  //     final outputPath = '${dir.path}/segment_$i.webm';
+  //     final cmd = [
+  //       '-i', input.path,
+  //       '-ss', '${i * segmentLength}',
+  //       '-t', '$segmentLength',
+  //       '-c:v', 'libvpx-vp9',
+  //       '-b:v', '1M',
+  //       outputPath,
+  //     ];
+  //
+  //     progress.value = 0.3 + ((0.3 / segmentsCount) * (i + 1));
+  //
+  //     final session = await FFmpegKit.executeWithArguments(cmd);
+  //     final returnCode = await session.getReturnCode();
+  //
+  //     int y = i + 1;
+  //     if (ReturnCode.isSuccess(returnCode)) {
+  //       outputSegments.add(File(outputPath));
+  //       print('Đoạn $y/$segmentsCount tạo thành công');
+  //     } else {
+  //       print('FFmpeg lỗi đoạn $y');
+  //     }
+  //   }
+  //
+  //   print("Phân mảnh video hoàn tất: ${outputSegments.length} đoạn");
+  //   return outputSegments;
+  // }
 
-    // Lấy duration video
-    final session = await FFmpegKit.executeWithArguments(['-i', input.path]);
-    final logs = await session.getLogs();
-
-    double durationSeconds = 0;
-    for (final log in logs) {
-      final message = log.getMessage();
-      final match = RegExp(r'Duration: (\d{2}):(\d{2}):(\d{2}\.\d+)').firstMatch(message);
-      if (match != null) {
-        final h = int.parse(match.group(1)!);
-        final m = int.parse(match.group(2)!);
-        final s = double.parse(match.group(3)!);
-        durationSeconds = h * 3600 + m * 60 + s;
-        break;
-      }
-    }
-
+  Future<String> _splitMp4ToHLS(File input) async {
+    print("Bắt đầu phân mảnh HLS: ${input.path}");
     progress.value = 0.2;
+    final segmentLength = 4; // 4 giây mỗi đoạn .ts
+    final dir = input.parent;
+    final outputDir = Directory('${dir.path}/hls_${DateTime.now().millisecondsSinceEpoch}');
+    await outputDir.create(recursive: true);
 
+    final outputManifest = '${outputDir.path}/manifest.m3u8';
 
-    final infoSession = await FFprobeKit.getMediaInformation(input.path);
-    final info = infoSession.getMediaInformation();
-    if (info != null) {
-      final duration = info.getDuration();
-      if (duration != null) {
-        durationSeconds = double.tryParse(duration) ?? 0;
-        print('Duration video infoSession: $durationSeconds');
-        // print('Duration video: $durationSeconds');
-      }
-    }
+    final args = [
+      '-i', input.path,
+      '-codec', 'copy',
+      '-start_number', '0',
+      '-hls_time', '$segmentLength',
+      '-hls_list_size', '0',
+      '-f', 'hls',
+      outputManifest,
+    ];
 
     progress.value = 0.3;
 
+    final session = await FFmpegKit.executeWithArguments(args);
+    final returnCode = await session.getReturnCode();
 
-    if (durationSeconds == 0) {
-      print('Không lấy được duration video');
-      return [input]; // Trả về nguyên video nếu không lấy được duration
+    if (ReturnCode.isSuccess(returnCode)) {
+      print('✅ HLS phân mảnh thành công!');
+      print('📄 Manifest: $outputManifest');
+      return outputManifest;
+    } else {
+      print('❌ Lỗi phân mảnh HLS');
+      return '';
     }
-
-    print('Duration video: $durationSeconds giây');
-
-    // Nếu video nhỏ hơn hoặc bằng 10s thì không phân mảnh
-    if (durationSeconds <= segmentLength) {
-      return [input];
-    }
-
-    final segmentsCount = (durationSeconds / segmentLength).ceil();
-    print('Số đoạn cần phân mảnh: $segmentsCount');
-
-    for (int i = 0; i < segmentsCount; i++) {
-      final outputPath = '${dir.path}/segment_$i.webm';
-      final cmd = [
-        '-i', input.path,
-        '-ss', '${i * segmentLength}',
-        '-t', '$segmentLength',
-        '-c:v', 'libvpx-vp9',
-        '-b:v', '1M',
-        outputPath,
-      ];
-
-      progress.value = 0.3 + ((0.3 / segmentsCount) * (i + 1));
-
-      final session = await FFmpegKit.executeWithArguments(cmd);
-      final returnCode = await session.getReturnCode();
-
-      int y = i + 1;
-      if (ReturnCode.isSuccess(returnCode)) {
-        outputSegments.add(File(outputPath));
-        print('Đoạn $y/$segmentsCount tạo thành công');
-      } else {
-        print('FFmpeg lỗi đoạn $y');
-      }
-    }
-
-    print("Phân mảnh video hoàn tất: ${outputSegments.length} đoạn");
-    return outputSegments;
   }
 
 
