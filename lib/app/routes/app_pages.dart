@@ -40,7 +40,7 @@ class AppPages {
       binding: CommunityBinding(),
     ),
     GetPage(
-      name: _Paths.PROFILE,
+      name: '/profile/:id',
       page: () => ProfileView(),
       binding: ProfileBinding(),
     ),

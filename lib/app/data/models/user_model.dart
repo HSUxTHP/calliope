@@ -5,7 +5,7 @@ part 'user_model.g.dart';
 @HiveType(typeId: 0)
 class UserModel extends HiveObject {
   @HiveField(0)
-  String id;
+  String? id;
 
   @HiveField(1)
   DateTime created_at;
@@ -26,7 +26,7 @@ class UserModel extends HiveObject {
   String? avatar_url;
 
   UserModel({
-    required this.id,
+    this.id,
     required this.created_at,
     required this.edited_at,
     required this.name,
@@ -49,7 +49,7 @@ class UserModel extends HiveObject {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      // 'id': id,
       'created_at': created_at.toIso8601String(),
       'edited_at': edited_at.toIso8601String(),
       'name': name,

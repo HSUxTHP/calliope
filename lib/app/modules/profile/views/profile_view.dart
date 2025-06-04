@@ -21,29 +21,6 @@ class ProfileView extends GetView<ProfileController> {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
-        // if (controller.user.value == null) {
-        //   return Center(
-        //     child: Column(
-        //       mainAxisAlignment: MainAxisAlignment.center,
-        //       children: [
-        //         Text(
-        //           'To view profile page, please login',
-        //           style: TextStyle(
-        //             color: Theme.of(context).colorScheme.onSurface,
-        //             fontSize: 24,
-        //           ),
-        //         ),
-        //         const SizedBox(width: 16),
-        //         ElevatedButton(
-        //           onPressed: () {
-        //             // layoutController.showLoginDialog(context);
-        //           },
-        //           child: const Text('Login'),
-        //         ),
-        //       ],
-        //     ),
-        //   );
-        // }
         return Column(
           children: [
             Container(
@@ -99,7 +76,7 @@ class ProfileView extends GetView<ProfileController> {
             ),
             Obx(
               () =>
-                  controller.user.value == null
+              !controller.isLogined.value && controller.isCurrentUser.value
                       ? Expanded(
                         child: Center(
                           child: Column(
@@ -115,7 +92,7 @@ class ProfileView extends GetView<ProfileController> {
                               const SizedBox(width: 16),
                               ElevatedButton(
                                 onPressed: () {
-                                  // layoutController.showLoginDialog(context);
+                                  controller.signInWithGoogleAndSaveToSupabase();
                                 },
                                 child: const Text('Login'),
                               ),
@@ -153,15 +130,15 @@ class ProfileView extends GetView<ProfileController> {
                                         decoration: ShapeDecoration(
                                           image: DecorationImage(
                                             image:
-                                                controller.user.value != null &&
+                                                controller.viewedUser.value != null &&
                                                         controller
-                                                                .user
+                                                                .viewedUser
                                                                 .value!
                                                                 .avatar_url !=
                                                             null
                                                     ? NetworkImage(
                                                       controller
-                                                          .user
+                                                          .viewedUser
                                                           .value!
                                                           .avatar_url!,
                                                     )
@@ -184,8 +161,8 @@ class ProfileView extends GetView<ProfileController> {
                                           () => SizedBox(
                                             height: 60,
                                             child: Text(
-                                              controller.user.value != null
-                                                  ? controller.user.value!.name
+                                              controller.viewedUser.value != null
+                                                  ? controller.viewedUser.value!.name
                                                   : '',
                                               style: TextStyle(
                                                 color:
@@ -203,8 +180,8 @@ class ProfileView extends GetView<ProfileController> {
                                           () => SizedBox(
                                             height: 43,
                                             child: Text(
-                                              controller.user.value != null
-                                                  ? controller.user.value!.bio
+                                              controller.viewedUser.value != null
+                                                  ? controller.viewedUser.value!.bio
                                                   : '',
                                               style: TextStyle(
                                                 color:
@@ -236,7 +213,9 @@ class ProfileView extends GetView<ProfileController> {
                                                                 .onPrimaryContainer,
                                                       ),
                                                       onPressed: () {
-                                                        Get.dialog(UploadDialog());
+                                                        // Get.dialog(UploadDialog());
+                                                        // controller.signOutGoogleAndClearHive();
+                                                        // Get.toNamed('/profile/1');
                                                       },
                                                       child: Text(
                                                         'Edit your profile',
@@ -267,7 +246,7 @@ class ProfileView extends GetView<ProfileController> {
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              controller.videos.value.isNotEmpty
+                              controller.post.value.isNotEmpty
                               ? GridView.builder(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
@@ -279,17 +258,16 @@ class ProfileView extends GetView<ProfileController> {
                                       crossAxisSpacing: 10,
                                       mainAxisSpacing: 10,
                                     ),
-                                itemCount: controller.videos.value.length,
+                                itemCount: controller.post.value.length,
                                 itemBuilder: (_, index) {
+                                  final post = controller.post.value[index];
                                   return PostProfileCard(
-                                    imageUrl:
-                                        "assets/video_cover_example.png",
-                                    title:
-                                        'Project that i made by myself absolutely $index',
-                                    avatarUrl: "assets/avatar.png",
-                                    userName: 'Username',
-                                    createdAt: "2023-10-01",
-                                    views: "0",
+                                    imageUrl: post.thumbnail,
+                                    title: post.name,
+                                    avatarUrl: controller.viewedUser.value?.avatar_url ?? '', // Nếu cần, lấy từ Hive
+                                    userName: controller.viewedUser.value!.name, // Hoặc lấy từ Hive current_user.name
+                                    createdAt: post.created_at.toIso8601String().substring(0, 10),
+                                    views: post.views.toString(),
                                   );
                                 },
                               )
