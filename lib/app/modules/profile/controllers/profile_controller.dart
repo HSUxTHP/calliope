@@ -4,7 +4,7 @@ import 'package:hive/hive.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../data/models/user_model.dart';
 
-class ProfileController extends GetxController {
+class ProfileController extends GetxController with GetSingleTickerProviderStateMixin {
   final isLoading = false.obs;
   final isCurrentUser = true.obs;
 
@@ -59,23 +59,13 @@ class ProfileController extends GetxController {
 
   void saveUserDEV() {
     user.value = UserModel(
-    id: '1',
-    created_at: DateTime.parse('2025-05-27T23:52:56Z'),
-    edited_at: DateTime.parse('2025-05-27T23:52:54Z'),
-    name: 'user 1',
-    bio: 'this is a bio',
-    email: 'nguyenvana@gmail.com',
-    avatar_url: null,
-  );
-}
-
-  // printUser() {
-  //   print('User ID: ${user.value.id}');
-  //   print('Created At: ${user.value.createdAt}');
-  //   print('Edited At: ${user.value.editedAt}');
-  //   print('Name: ${user.value.name}');
-  //   print('Bio: ${user.value.bio}');
-  //   print('Email: ${user.value.email}');
-  //   print('Avatar URL: ${user.value.avatarUrl ?? "No avatar"}');
-  // }
+      id: '1',
+      created_at: DateTime.parse('2025-05-27T23:52:56Z'),
+      edited_at: DateTime.parse('2025-05-27T23:52:54Z'),
+      name: 'user 1',
+      bio: 'this is a bio',
+      email: 'nguyenvana@gmail.com',
+      avatar_url: null,
+    );
+  }
 }
