@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 
+import '../../profile/controllers/profile_controller.dart';
+
 class LayoutController extends GetxController with GetSingleTickerProviderStateMixin {
   //TODO: Implement LayoutController
 
@@ -163,7 +165,10 @@ class LayoutController extends GetxController with GetSingleTickerProviderStateM
         ),
         const PopupMenuDivider(),
         PopupMenuItem<void>(
-          onTap: () {},
+          onTap: () {
+            final profileController = Get.find<ProfileController>();
+            profileController.signOutGoogleAndClearHive();
+          },
           child: Obx(() => Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
