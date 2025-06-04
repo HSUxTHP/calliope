@@ -1,8 +1,11 @@
+import 'package:calliope/app/modules/profile/controllers/profile_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 
 class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
-
+   LoginPage({super.key});
+  final profileController = Get.put(ProfileController());
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,7 +42,7 @@ class LoginPage extends StatelessWidget {
             const SizedBox(height: 24),
             OutlinedButton(
               onPressed: () {
-                // Add your login logic here
+                profileController.signInWithGoogleAndSaveToSupabase();
               },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
