@@ -201,7 +201,7 @@ class ProfileView extends GetView<ProfileController> {
                                               ),
                                             ),
                                           ),
-                                          SizedBox( //TODO: TEST
+                                          SizedBox(
                                             height: 56,
                                             child: Obx(
                                               () =>
@@ -218,10 +218,19 @@ class ProfileView extends GetView<ProfileController> {
                                                                   .onPrimaryContainer,
                                                         ),
                                                         onPressed: () {
-                                                          Get.dialog(UploadDialog());
+                                                          // Get.dialog(UploadDialog());
+                                                          controller.showEditProfileDialog(
+                                                            id: controller.viewedUser.value!.id!,
+                                                            name: controller.viewedUser.value!.name,
+                                                            bio: controller.viewedUser.value!.bio,
+                                                            avatarUrl: controller.viewedUser.value!.avatar_url,
+                                                            onUpdated: () async {
+                                                              await controller.reload();
+                                                            },
+                                                          );
                                                         },
                                                         child: Text(
-                                                          'Edit your profile', //đang dùng để test
+                                                          'Edit your profile',
                                                           style: TextStyle(
                                                             fontSize: 16,
                                                           ),
@@ -229,7 +238,7 @@ class ProfileView extends GetView<ProfileController> {
                                                       )
                                                       : const SizedBox.shrink(),
                                             ),
-                                          ), //TODO: TEST
+                                          ),
                                         ],
                                       ),
                                     ],

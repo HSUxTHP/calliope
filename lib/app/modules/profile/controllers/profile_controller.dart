@@ -1,5 +1,9 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hive/hive.dart';
@@ -242,6 +246,87 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       Get.snackbar("Lỗi đăng xuất", e.toString());
       print("Lỗi đăng xuất: $e");
     }
+  }
+
+  void showEditProfileDialog({
+    required String id,
+    required String name,
+    required String bio,
+    required String? avatarUrl,
+    required void Function() onUpdated,
+  }) {
+    final nameController = TextEditingController(text: name);
+    final bioController = TextEditingController(text: bio);
+    File? avatarFile;
+
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Edit your profile'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GestureDetector(
+                onTap: () async {
+                  final result = await FilePicker.platform.pickFiles(type: FileType.image);
+                  if (result != null && result.files.single.path != null) {
+                    avatarFile = File(result.files.single.path!);
+                  }
+                },
+                child: CircleAvatar(
+                  radius: 40,
+                  backgroundImage:
+                  avatarFile != null ? FileImage(avatarFile!) : (avatarUrl != null ? NetworkImage(avatarUrl) : null) as ImageProvider?,
+                  child: avatarUrl == null && avatarFile == null
+                      ? const Icon(Icons.camera_alt)
+                      : null,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Name'),
+              ),
+              TextField(
+                controller: bioController,
+                decoration: const InputDecoration(labelText: 'Bio'),
+                maxLines: 3,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              final editedAt = DateTime.now().toIso8601String();
+              String? newAvatarUrl = avatarUrl;
+
+              if (avatarFile != null) {
+                final fileName = "${DateTime.now().millisecondsSinceEpoch}.jpg";
+                await Supabase.instance.client.storage
+                    .from('users/avatar')
+                    .upload(fileName, avatarFile!, fileOptions: const FileOptions(upsert: true));
+                newAvatarUrl = Supabase.instance.client.storage
+                    .from('users/avatar')
+                    .getPublicUrl(fileName);
+              }
+
+              await Supabase.instance.client.from('users').update({
+                'name': nameController.text,
+                'bio': bioController.text,
+                'edited_at': editedAt,
+                if (newAvatarUrl != avatarUrl) 'avatar_url': newAvatarUrl,
+              }).eq('id', id);
+
+              onUpdated();
+              Get.back();
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
   }
 
 }
