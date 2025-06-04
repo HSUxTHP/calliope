@@ -28,11 +28,14 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
   @override
   void onReady() async {
     super.onReady();
+    await reload();
+  }
+
+  Future<void> reload() async {
+    isLoading.value = true;
     final idStr = Get.parameters['id'];
     final userId = int.tryParse(idStr ?? '');
     print('userId: $userId');
-
-    // userId = 1; // Giả sử userId là 1, bạn có thể thay đổi giá trị này để kiểm tra
 
     if (userId != null) {
       isCurrentUser.value = false;
@@ -41,6 +44,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       isCurrentUser.value = true;
       await initProfile(null);
     }
+    isLoading.value = false;
   }
 
   Future<void> initProfile(int? userId) async {
@@ -177,7 +181,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
         userData = {
           'name': user.displayName ?? '',
           'email': user.email!,
-          'bio': 'EMPTY',
+          'bio': 'This is bio.',
           'avatar_url': user.photoURL ?? '',
           'created_at': DateTime.now().toIso8601String(),
           'edited_at': DateTime.now().toIso8601String(),

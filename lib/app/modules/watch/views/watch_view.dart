@@ -41,26 +41,26 @@ class WatchView extends GetView<WatchController> {
             ),
             betterPlayerDataSource: dataSource,
           );
-          return Column(
-            children: [
-              AspectRatio(
-                aspectRatio: 16 / 9,
-                child: BetterPlayer(controller: _controller),
-              ),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(12),
-                  children: [
-                    Text(video.name, style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Text(video.description ?? ''),
-                    const SizedBox(height: 8),
-                    Text("Lượt xem: ${video.views}"),
-                  ],
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: BetterPlayer(controller: _controller),
                 ),
-              ),
-            ],
+                // ListView(
+                //   padding: const EdgeInsets.all(12),
+                //   children: [
+                //     Text(video.name, style: const TextStyle(
+                //         fontSize: 18, fontWeight: FontWeight.bold)),
+                //     const SizedBox(height: 8),
+                //     Text(video.description ?? ''),
+                //     const SizedBox(height: 8),
+                //     Text("Lượt xem: ${video.views}"),
+                //   ],
+                // ),
+              ],
+            ),
           );
         }),
       ),

@@ -102,183 +102,186 @@ class ProfileView extends GetView<ProfileController> {
                         ),
                       )
                       : Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    bottom: BorderSide(
-                                      width: 1,
-                                      color:
-                                          Theme.of(context).colorScheme.outline,
-                                    ),
-                                  ),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 60,
-                                  vertical: 40,
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Obx(
-                                      () => Container(
-                                        width: 160,
-                                        height: 160,
-                                        decoration: ShapeDecoration(
-                                          image: DecorationImage(
-                                            image:
-                                                controller.viewedUser.value != null &&
-                                                        controller
-                                                                .viewedUser
-                                                                .value!
-                                                                .avatar_url !=
-                                                            null
-                                                    ? NetworkImage(
-                                                      controller
-                                                          .viewedUser
-                                                          .value!
-                                                          .avatar_url!,
-                                                    )
-                                                    : const AssetImage(
-                                                          'assets/avatar.png',
-                                                        )
-                                                        as ImageProvider,
-                                            fit: BoxFit.contain,
-                                          ),
-                                          shape: const OvalBorder(),
-                                        ),
+                        child: RefreshIndicator(
+                          onRefresh: () async {
+                            await controller.reload();
+                          },
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                        width: 1,
+                                        color:
+                                            Theme.of(context).colorScheme.outline,
                                       ),
                                     ),
-                                    const SizedBox(width: 60),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Obx(
-                                          () => SizedBox(
-                                            height: 60,
-                                            child: Text(
-                                              controller.viewedUser.value != null
-                                                  ? controller.viewedUser.value!.name
-                                                  : '',
-                                              style: TextStyle(
-                                                color:
-                                                    Theme.of(
-                                                      context,
-                                                    ).colorScheme.onSurface,
-                                                fontSize: 32,
-                                                fontWeight: FontWeight.w500,
-                                                height: 1.25,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 60,
+                                    vertical: 40,
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Obx(
+                                        () => Container(
+                                          width: 160,
+                                          height: 160,
+                                          decoration: ShapeDecoration(
+                                            image: DecorationImage(
+                                              image:
+                                                  controller.viewedUser.value != null &&
+                                                          controller
+                                                                  .viewedUser
+                                                                  .value!
+                                                                  .avatar_url !=
+                                                              null
+                                                      ? NetworkImage(
+                                                        controller
+                                                            .viewedUser
+                                                            .value!
+                                                            .avatar_url!,
+                                                      )
+                                                      : const AssetImage(
+                                                            'assets/avatar.png',
+                                                          )
+                                                          as ImageProvider,
+                                              fit: BoxFit.contain,
+                                            ),
+                                            shape: const OvalBorder(),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 60),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Obx(
+                                            () => SizedBox(
+                                              height: 60,
+                                              child: Text(
+                                                controller.viewedUser.value != null
+                                                    ? controller.viewedUser.value!.name
+                                                    : '',
+                                                style: TextStyle(
+                                                  color:
+                                                      Theme.of(
+                                                        context,
+                                                      ).colorScheme.onSurface,
+                                                  fontSize: 32,
+                                                  fontWeight: FontWeight.w500,
+                                                  height: 1.25,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                        Obx(
-                                          () => SizedBox(
-                                            height: 43,
-                                            child: Text(
-                                              controller.viewedUser.value != null
-                                                  ? controller.viewedUser.value!.bio
-                                                  : '',
-                                              style: TextStyle(
-                                                color:
-                                                    Theme.of(
-                                                      context,
-                                                    ).colorScheme.onSurface,
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w400,
-                                                height: 1.50,
-                                                letterSpacing: 0.50,
+                                          Obx(
+                                            () => SizedBox(
+                                              height: 43,
+                                              child: Text(
+                                                controller.viewedUser.value != null
+                                                    ? controller.viewedUser.value!.bio
+                                                    : '',
+                                                style: TextStyle(
+                                                  color:
+                                                      Theme.of(
+                                                        context,
+                                                      ).colorScheme.onSurface,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w400,
+                                                  height: 1.50,
+                                                  letterSpacing: 0.50,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                        // SizedBox(
-                                        //   height: 56,
-                                        //   child: Obx(
-                                        //     () =>
-                                        //         controller.isCurrentUser.value
-                                        //             ? TextButton(
-                                        //               style: TextButton.styleFrom(
-                                        //                 backgroundColor:
-                                        //                     Theme.of(context)
-                                        //                         .colorScheme
-                                        //                         .primaryContainer,
-                                        //                 foregroundColor:
-                                        //                     Theme.of(context)
-                                        //                         .colorScheme
-                                        //                         .onPrimaryContainer,
-                                        //               ),
-                                        //               onPressed: () {
-                                        //                 // Get.dialog(UploadDialog());
-                                        //                 // controller.signOutGoogleAndClearHive();
-                                        //                 // Get.toNamed('/profile/1');
-                                        //               },
-                                        //               child: Text(
-                                        //                 'Edit your profile',
-                                        //                 style: TextStyle(
-                                        //                   fontSize: 16,
-                                        //                 ),
-                                        //               ),
-                                        //             )
-                                        //             : const SizedBox.shrink(),
-                                        //   ),
-                                        // ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.only(top: 16),
-                                child: Text(
-                                  controller.isCurrentUser.value
-                                      ? 'Your video'
-                                      : 'Newest video',
-                                  style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                    fontSize: 24,
+                                          SizedBox( //TODO: TEST
+                                            height: 56,
+                                            child: Obx(
+                                              () =>
+                                                  controller.isCurrentUser.value
+                                                      ? TextButton(
+                                                        style: TextButton.styleFrom(
+                                                          backgroundColor:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .primaryContainer,
+                                                          foregroundColor:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .onPrimaryContainer,
+                                                        ),
+                                                        onPressed: () {
+                                                          Get.dialog(UploadDialog());
+                                                        },
+                                                        child: Text(
+                                                          'Edit your profile', //đang dùng để test
+                                                          style: TextStyle(
+                                                            fontSize: 16,
+                                                          ),
+                                                        ),
+                                                      )
+                                                      : const SizedBox.shrink(),
+                                            ),
+                                          ), //TODO: TEST
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 16),
-                              controller.post.value.isNotEmpty
-                              ? GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                padding: const EdgeInsets.all(8),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 3,
-                                      childAspectRatio: 1,
-                                      crossAxisSpacing: 10,
-                                      mainAxisSpacing: 10,
-                                    ),
-                                itemCount: controller.post.value.length,
-                                itemBuilder: (_, index) {
-                                  final post = controller.post.value[index];
-                                  return PostProfileCard(
-                                    post: post,
-                                  );
-                                },
-                              )
-                              : Center(
+                                Container(
+                                  padding: const EdgeInsets.only(top: 16),
                                   child: Text(
-                                    'No videos found',
+                                    controller.isCurrentUser.value
+                                        ? 'Your video'
+                                        : 'Newest video',
                                     style: TextStyle(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                      fontSize: 18,
+                                      color:
+                                          Theme.of(context).colorScheme.onSurface,
+                                      fontSize: 24,
                                     ),
                                   ),
                                 ),
-                            ],
+                                const SizedBox(height: 16),
+                                controller.post.value.isNotEmpty
+                                ? GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.all(8),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        childAspectRatio: 1,
+                                        crossAxisSpacing: 10,
+                                        mainAxisSpacing: 10,
+                                      ),
+                                  itemCount: controller.post.value.length,
+                                  itemBuilder: (_, index) {
+                                    final post = controller.post.value[index];
+                                    return PostProfileCard(
+                                      post: post,
+                                    );
+                                  },
+                                )
+                                : Center(
+                                    child: Text(
+                                      'No videos found',
+                                      style: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
