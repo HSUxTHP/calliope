@@ -1,21 +1,12 @@
+import 'package:calliope/app/data/models/post_model.dart';
 import 'package:flutter/material.dart';
 
 class PostProfileCard extends StatelessWidget {
   const PostProfileCard({super.key,
-    required this.imageUrl,
-    required this.title,
-    required this.avatarUrl,
-    required this.userName,
-    required this.createdAt,
-    required this.views,
+    required this.post
   });
 
-  final String imageUrl;
-  final String title;
-  final String views;
-  final String createdAt;
-  final String avatarUrl;
-  final String userName;
+  final PostModel post;
 
 
   @override
@@ -39,7 +30,7 @@ class PostProfileCard extends StatelessWidget {
               spacing: 16,
               children: [
                 Image.network(
-                  imageUrl,
+                  post.thumbnail,
                   width: double.infinity, // Match the width of the Card
                   height: MediaQuery.sizeOf(context).width * 0.14, // Fixed height for the image
                   fit: BoxFit.cover, // Ensure the image covers the available space
@@ -57,7 +48,7 @@ class PostProfileCard extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             Text(
-                              title,
+                              post.name,
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -77,7 +68,7 @@ class PostProfileCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Text(
-                        "$views Views",
+                        "${post.views} Views",
                         style: TextStyle(
                           fontSize: 14,
                           color: Theme.of(context).colorScheme.onSurface,
@@ -99,7 +90,7 @@ class PostProfileCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        createdAt,
+                        post.created_at.toString(),
                         style: TextStyle(
                           fontSize: 14,
                           color: Theme.of(context).colorScheme.onSurface,

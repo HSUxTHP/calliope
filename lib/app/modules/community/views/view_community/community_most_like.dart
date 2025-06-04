@@ -1,3 +1,4 @@
+import 'package:calliope/app/data/models/post_model.dart';
 import 'package:calliope/app/modules/community/controllers/community_controller.dart';
 import 'package:calliope/app/widget_share/post_widget.dart';
 import 'package:flutter/material.dart';
@@ -22,12 +23,18 @@ class MostLikeCommunity extends GetView<CommunityController> {
         itemCount: 20,
         itemBuilder: (context, index) {
           return PostCard(
-              imageUrl: "assets/video_cover_example.png",
-              title: "Project that i made by myself absolutely",
-              avatarUrl: "assets/avatar.png",
-              userName: "Username1",
-              createdAt: "2023-10-01",
-              views: "0"
+            post: PostModel(
+              id: index,
+              created_at: DateTime.parse("2023-10-01"),
+              edited_at: DateTime.parse("2023-10-01"),
+              name: 'Project that I made by myself absolutely $index',
+              description: null,
+              url: '',
+              status: 1,
+              user_id: 1,
+              views: 0,
+              thumbnail: "assets/video_cover_example.png",
+            ),
           );
         },
       ),

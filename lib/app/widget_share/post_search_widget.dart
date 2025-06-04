@@ -1,25 +1,13 @@
+import 'package:calliope/app/data/models/post_model.dart';
 import 'package:flutter/material.dart';
 
 class PostSearchCard extends StatelessWidget {
   const PostSearchCard({
     super.key,
-    required this.imageUrl,
-    required this.title,
-    required this.avatarUrl,
-    required this.userName,
-    required this.createdAt,
-    required this.views,
-    required this.desc,
+    required this.post
   });
 
-  final String imageUrl;
-  final String title;
-  final String views;
-  final String createdAt;
-  final String avatarUrl;
-  final String userName;
-  final String desc;
-
+  final PostModel post;
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -44,7 +32,7 @@ class PostSearchCard extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.network(
-                    imageUrl,
+                    post.thumbnail,
                     width: MediaQuery.sizeOf(context).width * 0.2,
                     height: MediaQuery.sizeOf(context).width * 0.13,
                     fit: BoxFit.cover,
@@ -56,7 +44,7 @@ class PostSearchCard extends StatelessWidget {
                     spacing: 16,
                     children: [
                       Text(
-                        title,
+                        post.name,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -69,11 +57,11 @@ class PostSearchCard extends StatelessWidget {
                         children: [
                           CircleAvatar(
                             radius: 16,
-                            backgroundImage: NetworkImage(avatarUrl),
+                            backgroundImage: NetworkImage(post.user_id.toString()),
                           ),
                           Expanded(
                             child: Text(
-                              userName,
+                              post.user_id.toString(),
                               style: const TextStyle(fontSize: 14),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -81,7 +69,7 @@ class PostSearchCard extends StatelessWidget {
                         ],
                       ),
                       Text(
-                        desc,
+                        post.description ?? '',
                         style: const TextStyle(fontSize: 12),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -91,7 +79,7 @@ class PostSearchCard extends StatelessWidget {
                         spacing: 16,
                         children: [
                           Text(
-                            "$views Views",
+                            "${post.views} Views",
                             style: TextStyle(
                               fontSize: 12,
                               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -105,7 +93,7 @@ class PostSearchCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            createdAt,
+                            post.created_at.toString(),
                             style: TextStyle(
                               fontSize: 12,
                               color: Theme.of(context).colorScheme.onSurfaceVariant,
