@@ -49,7 +49,7 @@ dependencies:
   permission_handler: ^11.0.1
   ffmpeg_kit_flutter_new: ^1.6.1
   file_picker: ^10.1.9
-  better_player: ^0.0.84
+#  better_player: ^0.0.84
 dev_dependencies:
   flutter_test:
     sdk: flutter

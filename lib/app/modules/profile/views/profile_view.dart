@@ -197,37 +197,37 @@ class ProfileView extends GetView<ProfileController> {
                                             ),
                                           ),
                                         ),
-                                        SizedBox(
-                                          height: 56,
-                                          child: Obx(
-                                            () =>
-                                                controller.isCurrentUser.value
-                                                    ? TextButton(
-                                                      style: TextButton.styleFrom(
-                                                        backgroundColor:
-                                                            Theme.of(context)
-                                                                .colorScheme
-                                                                .primaryContainer,
-                                                        foregroundColor:
-                                                            Theme.of(context)
-                                                                .colorScheme
-                                                                .onPrimaryContainer,
-                                                      ),
-                                                      onPressed: () {
-                                                        // Get.dialog(UploadDialog());
-                                                        // controller.signOutGoogleAndClearHive();
-                                                        // Get.toNamed('/profile/1');
-                                                      },
-                                                      child: Text(
-                                                        'Edit your profile',
-                                                        style: TextStyle(
-                                                          fontSize: 16,
-                                                        ),
-                                                      ),
-                                                    )
-                                                    : const SizedBox.shrink(),
-                                          ),
-                                        ),
+                                        // SizedBox(
+                                        //   height: 56,
+                                        //   child: Obx(
+                                        //     () =>
+                                        //         controller.isCurrentUser.value
+                                        //             ? TextButton(
+                                        //               style: TextButton.styleFrom(
+                                        //                 backgroundColor:
+                                        //                     Theme.of(context)
+                                        //                         .colorScheme
+                                        //                         .primaryContainer,
+                                        //                 foregroundColor:
+                                        //                     Theme.of(context)
+                                        //                         .colorScheme
+                                        //                         .onPrimaryContainer,
+                                        //               ),
+                                        //               onPressed: () {
+                                        //                 // Get.dialog(UploadDialog());
+                                        //                 // controller.signOutGoogleAndClearHive();
+                                        //                 // Get.toNamed('/profile/1');
+                                        //               },
+                                        //               child: Text(
+                                        //                 'Edit your profile',
+                                        //                 style: TextStyle(
+                                        //                   fontSize: 16,
+                                        //                 ),
+                                        //               ),
+                                        //             )
+                                        //             : const SizedBox.shrink(),
+                                        //   ),
+                                        // ),
                                       ],
                                     ),
                                   ],
