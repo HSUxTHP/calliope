@@ -52,4 +52,30 @@ class PostModel {
       'thumbnail': thumbnail,
     };
   }
+
+  PostModel copyWith({
+    int? id,
+    DateTime? created_at,
+    DateTime? edited_at,
+    String? name,
+    String? description,
+    String? url,
+    int? status,
+    int? user_id,
+    int? views,
+    String? thumbnail,
+  }) {
+    return PostModel(
+      id: id ?? this.id,
+      created_at: created_at ?? this.created_at,
+      edited_at: edited_at ?? this.edited_at,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      url: url ?? this.url,
+      status: status ?? this.status,
+      user_id: user_id ?? this.user_id,
+      views: views ?? this.views,
+      thumbnail: thumbnail ?? this.thumbnail,
+    );
+  }
 }

@@ -47,8 +47,8 @@ class AppPages {
       binding: ProfileBinding(),
     ),
     GetPage(
-      name: _Paths.WATCH,
-      page: () => const WatchView(),
+      name: '/watch/:id',
+      page: () => WatchView(),
       binding: WatchBinding(),
     ),
   ];

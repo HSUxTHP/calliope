@@ -1,5 +1,7 @@
 import 'package:calliope/app/data/models/post_model.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 
 class PostProfileCard extends StatelessWidget {
   const PostProfileCard({super.key,
@@ -21,7 +23,7 @@ class PostProfileCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () {
-      
+            Get.toNamed('/watch/${post.id}');
           },
           child: ClipRRect(
             child: Column(
