@@ -161,6 +161,25 @@ class LayoutController extends GetxController with GetSingleTickerProviderStateM
             ],
           )),
         ),
+        const PopupMenuDivider(),
+        PopupMenuItem<void>(
+          onTap: () {},
+          child: Obx(() => Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                  "Logout",
+                  style: TextStyle(
+                    color: isDark.value ? Colors.white : Colors.black,
+                  )
+              ),
+              Icon(
+                Icons.logout,
+                color: isDark.value ? Colors.white : Colors.black,
+              ),
+            ],
+          )),
+        ),
       ],
     );
   }
