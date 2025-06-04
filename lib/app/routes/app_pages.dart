@@ -10,6 +10,8 @@ import '../modules/layout/bindings/layout_binding.dart';
 import '../modules/layout/views/layout_view.dart';
 import '../modules/profile/bindings/profile_binding.dart';
 import '../modules/profile/views/profile_view.dart';
+import '../modules/watch/bindings/watch_binding.dart';
+import '../modules/watch/views/watch_view.dart';
 
 part 'app_routes.dart';
 
@@ -26,7 +28,7 @@ class AppPages {
     ),
     GetPage(
       name: _Paths.DRAW,
-      page: () =>  DrawView(),
+      page: () => DrawView(),
       binding: DrawBinding(),
     ),
     GetPage(
@@ -43,6 +45,11 @@ class AppPages {
       name: _Paths.PROFILE,
       page: () => const ProfileView(),
       binding: ProfileBinding(),
+    ),
+    GetPage(
+      name: _Paths.WATCH,
+      page: () => const WatchView(),
+      binding: WatchBinding(),
     ),
   ];
 }
