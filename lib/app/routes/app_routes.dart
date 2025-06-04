@@ -8,6 +8,7 @@ abstract class Routes {
   static const COMMUNITY = _Paths.COMMUNITY;
   static const LAYOUT = _Paths.LAYOUT;
   static const PROFILE = _Paths.PROFILE;
+  static const WATCH = _Paths.WATCH;
 }
 
 abstract class _Paths {
@@ -17,4 +18,5 @@ abstract class _Paths {
   static const COMMUNITY = '/community';
   static const LAYOUT = '/layout';
   static const PROFILE = '/profile';
+  static const WATCH = '/watch';
 }

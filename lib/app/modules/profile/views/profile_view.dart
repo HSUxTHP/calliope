@@ -1,3 +1,4 @@
+import 'package:calliope/app/data/models/post_model.dart';
 import 'package:calliope/app/modules/profile/views/upload_dialog.dart';
 import 'package:flutter/material.dart';
 
@@ -262,12 +263,7 @@ class ProfileView extends GetView<ProfileController> {
                                 itemBuilder: (_, index) {
                                   final post = controller.post.value[index];
                                   return PostProfileCard(
-                                    imageUrl: post.thumbnail,
-                                    title: post.name,
-                                    avatarUrl: controller.viewedUser.value?.avatar_url ?? '', // Nếu cần, lấy từ Hive
-                                    userName: controller.viewedUser.value!.name, // Hoặc lấy từ Hive current_user.name
-                                    createdAt: post.created_at.toIso8601String().substring(0, 10),
-                                    views: post.views.toString(),
+                                    post: post,
                                   );
                                 },
                               )
