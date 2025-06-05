@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'app/data/models/user_model.dart';
 import 'app/modules/layout/controllers/layout_controller.dart';
+import 'app/modules/profile/controllers/profile_controller.dart';
 import 'app/routes/app_pages.dart';
 import 'firebase_options.dart';
 
@@ -42,6 +43,8 @@ Future<void> main() async {
     displayMedium: TextStyle(fontSize: 36.0, fontStyle: FontStyle.italic),
     bodyLarge: TextStyle(fontSize: 14.0, fontFamily: 'Lexend'),
   );
+  final profileController = Get.put(ProfileController());
+  await profileController.loadCurrentUserFromHive();
   final layoutController = Get.put(LayoutController());
   layoutController.loadTheme();
   runApp(

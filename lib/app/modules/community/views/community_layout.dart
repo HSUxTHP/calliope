@@ -1,6 +1,7 @@
 import 'package:calliope/app/modules/community/views/community_view.dart';
 import 'package:calliope/app/modules/community/views/searching_view.dart';
 import 'package:calliope/app/modules/layout/controllers/layout_controller.dart';
+import 'package:calliope/app/modules/profile/controllers/profile_controller.dart';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
@@ -8,7 +9,8 @@ import 'package:get/get.dart';
 import '../controllers/community_controller.dart';
 
 class CommunityLayout extends GetView<CommunityController> {
-  const CommunityLayout({super.key});
+   CommunityLayout({super.key});
+  final profileController = Get.find<ProfileController>();
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -94,9 +96,11 @@ class CommunityLayout extends GetView<CommunityController> {
                       width: 2,
                     ),
                   ),
-                  child: const CircleAvatar(
+                  child: CircleAvatar(
                     radius: 18,
-                    backgroundImage: AssetImage('assets/avatar.png'), // hoặc NetworkImage(...)
+                    backgroundImage: profileController.isLogined.value
+                        ? NetworkImage(profileController.currentUser.value?.avatar_url ?? 'https://via.placeholder.com/150')
+                        : AssetImage('assets/avatar.png'),
                     backgroundColor: Colors.transparent,
                   ),
                 ),

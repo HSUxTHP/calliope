@@ -1,5 +1,6 @@
 import 'package:calliope/app/data/models/post_model.dart';
 import 'package:calliope/app/modules/profile/views/upload_dialog.dart';
+import 'package:calliope/app/widget_share/login_page.dart';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
@@ -65,9 +66,15 @@ class ProfileView extends GetView<ProfileController> {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.black, width: 2),
                       ),
-                      child: const CircleAvatar(
+                      child: CircleAvatar(
                         radius: 18,
-                        backgroundImage: AssetImage('assets/avatar.png'),
+                        backgroundImage:
+                            controller.isLogined.value
+                                ? NetworkImage(
+                                  controller.currentUser.value?.avatar_url ??
+                                      'https://via.placeholder.com/150',
+                                )
+                                : AssetImage('assets/avatar.png'),
                         backgroundColor: Colors.transparent,
                       ),
                     ),
@@ -77,30 +84,8 @@ class ProfileView extends GetView<ProfileController> {
             ),
             Obx(
               () =>
-              !controller.isLogined.value && controller.isCurrentUser.value
-                      ? Expanded(
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'To view profile page, please login',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                  fontSize: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              ElevatedButton(
-                                onPressed: () {
-                                  controller.signInWithGoogleAndSaveToSupabase();
-                                },
-                                child: const Text('Login'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
+                  !controller.isLogined.value && controller.isCurrentUser.value
+                      ? Expanded(child: LoginPage())
                       : Expanded(
                         child: RefreshIndicator(
                           onRefresh: () async {
@@ -117,7 +102,9 @@ class ProfileView extends GetView<ProfileController> {
                                       bottom: BorderSide(
                                         width: 1,
                                         color:
-                                            Theme.of(context).colorScheme.outline,
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.outline,
                                       ),
                                     ),
                                   ),
@@ -126,7 +113,8 @@ class ProfileView extends GetView<ProfileController> {
                                     vertical: 40,
                                   ),
                                   child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Obx(
                                         () => Container(
@@ -135,7 +123,8 @@ class ProfileView extends GetView<ProfileController> {
                                           decoration: ShapeDecoration(
                                             image: DecorationImage(
                                               image:
-                                                  controller.viewedUser.value != null &&
+                                                  controller.viewedUser.value !=
+                                                              null &&
                                                           controller
                                                                   .viewedUser
                                                                   .value!
@@ -166,8 +155,12 @@ class ProfileView extends GetView<ProfileController> {
                                             () => SizedBox(
                                               height: 60,
                                               child: Text(
-                                                controller.viewedUser.value != null
-                                                    ? controller.viewedUser.value!.name
+                                                controller.viewedUser.value !=
+                                                        null
+                                                    ? controller
+                                                        .viewedUser
+                                                        .value!
+                                                        .name
                                                     : '',
                                                 style: TextStyle(
                                                   color:
@@ -185,8 +178,12 @@ class ProfileView extends GetView<ProfileController> {
                                             () => SizedBox(
                                               height: 43,
                                               child: Text(
-                                                controller.viewedUser.value != null
-                                                    ? controller.viewedUser.value!.bio
+                                                controller.viewedUser.value !=
+                                                        null
+                                                    ? controller
+                                                        .viewedUser
+                                                        .value!
+                                                        .bio
                                                     : '',
                                                 style: TextStyle(
                                                   color:
@@ -218,16 +215,33 @@ class ProfileView extends GetView<ProfileController> {
                                                                   .onPrimaryContainer,
                                                         ),
                                                         onPressed: () {
-                                                          // Get.dialog(UploadDialog());
-                                                          controller.showEditProfileDialog(
-                                                            id: controller.viewedUser.value!.id!,
-                                                            name: controller.viewedUser.value!.name,
-                                                            bio: controller.viewedUser.value!.bio,
-                                                            avatarUrl: controller.viewedUser.value!.avatar_url,
-                                                            onUpdated: () async {
-                                                              await controller.reload();
-                                                            },
-                                                          );
+                                                          Get.dialog(UploadDialog());
+                                                          // controller.showEditProfileDialog(
+                                                          //   id:
+                                                          //       controller
+                                                          //           .currentUser
+                                                          //           .value!
+                                                          //           .id!,
+                                                          //   name:
+                                                          //       controller
+                                                          //           .currentUser
+                                                          //           .value!
+                                                          //           .name,
+                                                          //   bio:
+                                                          //       controller
+                                                          //           .currentUser
+                                                          //           .value!
+                                                          //           .bio,
+                                                          //   avatarUrl:
+                                                          //       controller
+                                                          //           .currentUser
+                                                          //           .value!
+                                                          //           .avatar_url,
+                                                          //   onUpdated: () async {
+                                                          //     await controller
+                                                          //         .reload();
+                                                          //   },
+                                                          // );
                                                         },
                                                         child: Text(
                                                           'Edit your profile',
@@ -252,43 +266,46 @@ class ProfileView extends GetView<ProfileController> {
                                         : 'Newest video',
                                     style: TextStyle(
                                       color:
-                                          Theme.of(context).colorScheme.onSurface,
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
                                       fontSize: 24,
                                     ),
                                   ),
                                 ),
                                 const SizedBox(height: 16),
                                 controller.post.value.isNotEmpty
-                                ? GridView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  padding: const EdgeInsets.all(8),
-                                  gridDelegate:
-                                      const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 3,
-                                        childAspectRatio: 1,
-                                        crossAxisSpacing: 10,
-                                        mainAxisSpacing: 10,
-                                      ),
-                                  itemCount: controller.post.value.length,
-                                  itemBuilder: (_, index) {
-                                    final post = controller.post.value[index];
-                                    return PostProfileCard(
-                                      post: post,
-                                    );
-                                  },
-                                )
-                                : Center(
-                                    child: Text(
-                                      'No videos found',
-                                      style: TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface,
-                                        fontSize: 18,
+                                    ? GridView.builder(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      padding: const EdgeInsets.all(8),
+                                      gridDelegate:
+                                          const SliverGridDelegateWithFixedCrossAxisCount(
+                                            crossAxisCount: 3,
+                                            childAspectRatio: 1,
+                                            crossAxisSpacing: 10,
+                                            mainAxisSpacing: 10,
+                                          ),
+                                      itemCount: controller.post.value.length,
+                                      itemBuilder: (_, index) {
+                                        final post =
+                                            controller.post.value[index];
+                                        return PostProfileCard(post: post);
+                                      },
+                                    )
+                                    : Center(
+                                      child: Text(
+                                        'No videos found',
+                                        style: TextStyle(
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.onSurface,
+                                          fontSize: 18,
+                                        ),
                                       ),
                                     ),
-                                  ),
                               ],
                             ),
                           ),

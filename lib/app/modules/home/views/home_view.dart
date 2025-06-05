@@ -2,12 +2,15 @@ import 'package:calliope/app/modules/draw/views/draw_view.dart';
 import 'package:calliope/app/modules/home/views/create_project_dialog.dart';
 import 'package:calliope/app/modules/layout/controllers/layout_controller.dart';
 import 'package:calliope/app/modules/layout/views/ProjectCard.dart';
+import 'package:calliope/app/modules/profile/controllers/profile_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
 
 class HomeView extends GetView<HomeController> {
-  const HomeView({super.key});
+  HomeView({super.key});
+
+  final profileController = Get.find<ProfileController>();
 
   @override
   Widget build(BuildContext context) {
@@ -60,9 +63,11 @@ class HomeView extends GetView<HomeController> {
                         width: 2,
                       ),
                     ),
-                    child: const CircleAvatar(
+                    child: CircleAvatar(
                       radius: 18,
-                      backgroundImage: AssetImage('assets/avatar.png'), // hoặc NetworkImage(...)
+                      backgroundImage: profileController.isLogined.value
+                          ? NetworkImage(profileController.currentUser.value?.avatar_url ?? 'https://via.placeholder.com/150')
+                          : AssetImage('assets/avatar.png'),
                       backgroundColor: Colors.transparent,
                     ),
                   ),

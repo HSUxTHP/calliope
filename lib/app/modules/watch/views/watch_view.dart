@@ -36,7 +36,9 @@ class WatchView extends GetView<WatchController> {
               looping: true,
               fit: BoxFit.contain,
               controlsConfiguration: BetterPlayerControlsConfiguration(
-                enableFullscreen: false,
+                enableSubtitles: false,
+                enableQualities: false,
+                enableAudioTracks: false,
               ),
             ),
             betterPlayerDataSource: dataSource,

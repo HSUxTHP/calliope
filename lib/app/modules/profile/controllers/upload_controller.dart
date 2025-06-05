@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:calliope/app/modules/profile/controllers/profile_controller.dart';
 import 'package:ffmpeg_kit_flutter_new/ffprobe_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/return_code.dart';
 import 'package:file_picker/file_picker.dart';
@@ -16,7 +17,15 @@ class UploadController extends GetxController {
   final isUploading = false.obs;
   final progress = 0.0.obs;
 
-  final userId = 1; // Đã biết
+  final profileController = Get.find<ProfileController>();
+
+  late final int userId;
+
+  @override
+  void onInit() {
+    super.onInit();
+    userId = int.parse(profileController.currentUser.value!.id!);
+  }
   final Rx<File?> videoFile = Rx<File?>(null);
   final Rx<File?> backgroundFile = Rx<File?>(null);
 
@@ -45,7 +54,7 @@ class UploadController extends GetxController {
 
   Future<void> uploadVideo() async {
     if (videoFile.value == null || backgroundFile.value == null) {
-      Get.snackbar('Thiếu file', 'Vui lòng chọn file .mp4 và .png');
+      Get.snackbar('Missing file', 'Please select .mp4 and .png files');
       return;
     }
 
@@ -110,7 +119,7 @@ class UploadController extends GetxController {
         created_at: DateTime.now(),
         edited_at: DateTime.now(),
         name: p.basenameWithoutExtension(videoFile.value!.path), //TODO: Lấy tên video
-        description: 'Tải lên lúc ${DateTime.now()}', //TODO: Lấy mô tả từ project
+        description: 'Upload at ${DateTime.now()}', //TODO: Lấy mô tả từ project
         url: url,
         status: 1, //TODO: Trạng thái bài đăng (1: công khai, dùng để phát triển cho tương lai, chắc vậy :v )
         user_id: userId, //TODO: Lấy userId từ UserModel
@@ -122,7 +131,7 @@ class UploadController extends GetxController {
       final insertResponse = await client.from('posts').insert(post.toJson()).select();
 
       if (insertResponse == null || insertResponse.isEmpty) {
-        throw Exception('Không thể tạo bài đăng: kết quả trả về trống');
+        throw Exception('Unable to create post: returned empty results');
       }
 
       progress.value = 1.0;
@@ -131,10 +140,10 @@ class UploadController extends GetxController {
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }
-      Get.snackbar('Thành công', 'Video đã được tải lên!');
+      Get.snackbar('Success', 'Video uploaded!');
     } catch (e) {
       isUploading.value = false;
-      Get.snackbar('Lỗi', e.toString());
+      Get.snackbar('Error', e.toString());
     }
   }
 

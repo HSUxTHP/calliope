@@ -50,8 +50,8 @@ class LayoutView extends GetView<LayoutController> {
             child: TabBarView(
               controller: controller.tabController,
               children: [
-                const HomeView(),
-                const CommunityLayout(),
+                HomeView(),
+                CommunityLayout(),
                 ProfileView(),
               ],
             ),
