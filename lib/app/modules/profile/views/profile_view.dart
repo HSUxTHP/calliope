@@ -215,7 +215,7 @@ class ProfileView extends GetView<ProfileController> {
                                                                   .onPrimaryContainer,
                                                         ),
                                                         onPressed: () {
-                                                          Get.dialog(UploadDialog());
+                                                          Get.dialog(UploadDialog()); //TODO: TEST ONLY
                                                           // controller.showEditProfileDialog(
                                                           //   id:
                                                           //       controller

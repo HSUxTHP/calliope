@@ -1,16 +1,34 @@
 import 'package:calliope/app/data/models/post_model.dart';
+import 'package:calliope/app/data/models/user_model.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
+
+import '../modules/profile/controllers/profile_controller.dart';
 
 class PostCard extends StatelessWidget {
-  const PostCard({super.key,
+  PostCard({super.key,
     required this.post
   });
 
   final PostModel post;
 
-
   @override
   Widget build(BuildContext context) {
+    final profileController = Get.find<ProfileController>();
+
+    return FutureBuilder<UserModel>(
+        future: profileController.getUser(post.user_id),
+    builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+    return const Center(child: CircularProgressIndicator());
+    } else if (snapshot.hasError) {
+    return Center(child: Text('Error: ${snapshot.error}'));
+    } else if (!snapshot.hasData) {
+    return const Center(child: Text('User not found'));
+    }
+
+    final UserModel user = snapshot.data!;
     return GestureDetector(
       onTap: () {
         // Add your tap logic here
@@ -21,7 +39,7 @@ class PostCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () {
-
+            Get.toNamed('/watch/${post.id}');
           },
           child: ClipRRect(
             child: Column(
@@ -44,7 +62,7 @@ class PostCard extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 20,
-                        backgroundImage: NetworkImage(post.user_id.toString()),
+                        backgroundImage: NetworkImage(user.avatar_url ?? 'https://via.placeholder.com/150'),
                       ),
                       Expanded(
                         child: Column(
@@ -62,7 +80,7 @@ class PostCard extends StatelessWidget {
                             ),
 
                             Text(
-                              post.user_id.toString(),
+                              user.name,
                               style: const TextStyle(
                                 fontSize: 16,
                               ),
@@ -119,5 +137,6 @@ class PostCard extends StatelessWidget {
         ),
       ),
     );
+        });
   }
 }

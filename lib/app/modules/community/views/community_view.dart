@@ -27,7 +27,7 @@ class CommunityView extends GetView<CommunityController> {
               children: [
                 _buildTabItem(controller, 'Trending', 0),
                 _buildTabItem(controller, 'Newest', 1),
-                _buildTabItem(controller, 'Most Liked', 2),
+                // _buildTabItem(controller, 'Most Liked', 2),
               ],
             ),
           )),
@@ -41,7 +41,7 @@ class CommunityView extends GetView<CommunityController> {
               children: [
                 TrendingCommunity(),
                 NewestCommunity(),
-                MostLikeCommunity(),
+                // MostLikeCommunity(),
               ],
             ),
           )

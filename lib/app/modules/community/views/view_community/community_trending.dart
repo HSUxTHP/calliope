@@ -9,9 +9,14 @@ class TrendingCommunity extends GetView<CommunityController> {
   const TrendingCommunity({super.key});
   @override
   Widget build(BuildContext context) {
+    if (controller.isLoading.value) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
     return RefreshIndicator(
       onRefresh: () async {
-        await Future.delayed(const Duration(seconds: 1));
+        await controller.reload();
       },
       child: GridView.builder(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -20,21 +25,10 @@ class TrendingCommunity extends GetView<CommunityController> {
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
         ),
-        itemCount: 20,
+        itemCount: controller.post.value.length,
         itemBuilder: (context, index) {
           return PostCard(
-            post: PostModel(
-              id: index,
-              created_at: DateTime.parse("2023-10-01"),
-              edited_at: DateTime.parse("2023-10-01"),
-              name: 'Project that I made by myself absolutely $index',
-              description: null,
-              url: '',
-              status: 1,
-              user_id: 1,
-              views: 0,
-              thumbnail: "assets/video_cover_example.png",
-            ),
+              post: controller.post.value[index]
           );
         },
       ),
