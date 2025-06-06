@@ -1,12 +1,18 @@
 import 'package:calliope/app/data/models/post_model.dart';
+import 'package:calliope/app/data/models/user_model.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 
 class PostCard extends StatelessWidget {
   const PostCard({super.key,
-    required this.post
+    required this.post,
+    // required this.user,
   });
 
   final PostModel post;
+
+  // final UserModel user;
 
 
   @override
@@ -21,7 +27,7 @@ class PostCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () {
-
+            Get.toNamed('/watch/${post.id}');
           },
           child: ClipRRect(
             child: Column(
@@ -44,7 +50,7 @@ class PostCard extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 20,
-                        backgroundImage: NetworkImage(post.user_id.toString()),
+                        backgroundImage: NetworkImage(post.user?.avatar_url ?? 'https://via.placeholder.com/150'),
                       ),
                       Expanded(
                         child: Column(
@@ -62,7 +68,7 @@ class PostCard extends StatelessWidget {
                             ),
 
                             Text(
-                              post.user_id.toString(),
+                              post.user?.name ?? 'Unknown User',
                               style: const TextStyle(
                                 fontSize: 16,
                               ),
@@ -94,7 +100,7 @@ class PostCard extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                                "|",
+                              "|",
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Theme.of(context).colorScheme.onSurface,
