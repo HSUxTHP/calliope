@@ -56,6 +56,7 @@ class CommunityController extends GetxController
   void increment() => count.value++;
 
   Future<void> reload() async {
+    isLoading.value = true;
     print(selectedTabIndex.value);
     if (selectedTabIndex.value == 0) {
       // Reload trending posts
@@ -67,7 +68,7 @@ class CommunityController extends GetxController
       // Reload most liked posts
       await getAllPosts(0);
     }
-    // isLoading.value = false;
+    isLoading.value = false;
   }
 
   Future<void> getAllPosts(int index) async {

@@ -19,7 +19,7 @@ class NewestCommunity extends GetView<CommunityController> {
     }
     return RefreshIndicator(
       onRefresh: () async {
-        await controller.reload();
+        await controller.getAllPosts(1);
       },
       child: GridView.builder(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
