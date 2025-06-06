@@ -5,8 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
+import '../../../profile/controllers/profile_controller.dart';
+
 class NewestCommunity extends GetView<CommunityController> {
-  const NewestCommunity({super.key});
+  NewestCommunity({super.key});
+  final profileController = Get.find<ProfileController>();
   @override
   Widget build(BuildContext context) {
     if (controller.isLoading.value) {
@@ -26,9 +29,9 @@ class NewestCommunity extends GetView<CommunityController> {
           mainAxisSpacing: 10,
         ),
         itemCount: controller.post.value.length,
-        itemBuilder: (context, index) {
+        itemBuilder: (context, index)  {
           return PostCard(
-            post: controller.post.value[index]
+            post: controller.post.value[index],
           );
         },
       ),

@@ -4,31 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 
-import '../modules/profile/controllers/profile_controller.dart';
-
 class PostCard extends StatelessWidget {
-  PostCard({super.key,
-    required this.post
+  const PostCard({super.key,
+    required this.post,
+    // required this.user,
   });
 
   final PostModel post;
 
+  // final UserModel user;
+
+
   @override
   Widget build(BuildContext context) {
-    final profileController = Get.find<ProfileController>();
-
-    return FutureBuilder<UserModel>(
-        future: profileController.getUser(post.user_id),
-    builder: (context, snapshot) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-    return const Center(child: CircularProgressIndicator());
-    } else if (snapshot.hasError) {
-    return Center(child: Text('Error: ${snapshot.error}'));
-    } else if (!snapshot.hasData) {
-    return const Center(child: Text('User not found'));
-    }
-
-    final UserModel user = snapshot.data!;
     return GestureDetector(
       onTap: () {
         // Add your tap logic here
@@ -62,7 +50,7 @@ class PostCard extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 20,
-                        backgroundImage: NetworkImage(user.avatar_url ?? 'https://via.placeholder.com/150'),
+                        backgroundImage: NetworkImage(post.user?.avatar_url ?? 'https://via.placeholder.com/150'),
                       ),
                       Expanded(
                         child: Column(
@@ -80,7 +68,7 @@ class PostCard extends StatelessWidget {
                             ),
 
                             Text(
-                              user.name,
+                              post.user?.name ?? 'Unknown User',
                               style: const TextStyle(
                                 fontSize: 16,
                               ),
@@ -112,7 +100,7 @@ class PostCard extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                                "|",
+                              "|",
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Theme.of(context).colorScheme.onSurface,
@@ -137,6 +125,5 @@ class PostCard extends StatelessWidget {
         ),
       ),
     );
-        });
   }
 }

@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../data/models/user_model.dart';
+import '../../profile/controllers/profile_controller.dart';
+
 class CommunityController extends GetxController
     with GetSingleTickerProviderStateMixin {
   //TODO: Implement CommunityController
@@ -14,10 +17,13 @@ class CommunityController extends GetxController
 
   final post = <PostModel>[].obs;
 
+  UserModel? user;
+
+
   void changeTab(int index) async {
     selectedTabIndex.value = index;
     tabController.animateTo(index);
-
+    await reload();
   }
 
   var searchText = ''.obs;
@@ -50,6 +56,7 @@ class CommunityController extends GetxController
   void increment() => count.value++;
 
   Future<void> reload() async {
+    print(selectedTabIndex.value);
     if (selectedTabIndex.value == 0) {
       // Reload trending posts
       await getAllPosts(0);
@@ -60,12 +67,14 @@ class CommunityController extends GetxController
       // Reload most liked posts
       await getAllPosts(0);
     }
+    // isLoading.value = false;
   }
 
   Future<void> getAllPosts(int index) async {
     try {
       isLoading.value = true;
       PostgrestList response;
+
       if (index == 0) {
         response = await Supabase.instance.client
             .from('posts')
@@ -82,26 +91,33 @@ class CommunityController extends GetxController
             .select()
             .order('create_at', ascending: false);
       }
-      var data = response;
 
-      print(data);
+      final profileController = Get.find<ProfileController>();
 
-      post.value = (data as List).map((post) => PostModel(
-        id: post['id'],
-        created_at: DateTime.parse(post['created_at']),
-        edited_at: DateTime.parse(post['edited_at']),
-        name: post['name'],
-        description: post['description'],
-        url: post['url'],
-        status: post['status'],
-        user_id: post['user_id'],
-        views: post['views'],
-        thumbnail: post['thumbnail'],
-      )).toList();
+      final postsWithUser = await Future.wait(response.map((post) async {
+        final user = await profileController.getUser(post['user_id']);
+        return PostModel(
+          id: post['id'],
+          created_at: DateTime.parse(post['created_at']),
+          edited_at: DateTime.parse(post['edited_at']),
+          name: post['name'],
+          description: post['description'],
+          url: post['url'],
+          status: post['status'],
+          user_id: post['user_id'],
+          views: post['views'],
+          thumbnail: post['thumbnail'],
+          user: user, // gán user ở đây
+        );
+      }));
+
+      post.value = postsWithUser;
       isLoading.value = false;
     } catch (e) {
       print("Lỗi khi lấy bài viết: $e");
       post.value = [];
+      isLoading.value = false;
+    } finally {
       isLoading.value = false;
     }
   }

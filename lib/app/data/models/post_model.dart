@@ -1,3 +1,5 @@
+import 'package:calliope/app/data/models/user_model.dart';
+
 class PostModel {
   final int? id;
   final DateTime created_at;
@@ -9,6 +11,7 @@ class PostModel {
   final int user_id;
   final int views;
   final String thumbnail;
+  UserModel? user;
 
   PostModel({
     this.id,
@@ -21,6 +24,7 @@ class PostModel {
     required this.user_id,
     required this.views,
     required this.thumbnail,
+    this.user,
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
