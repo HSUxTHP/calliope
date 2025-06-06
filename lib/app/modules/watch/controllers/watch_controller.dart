@@ -1,11 +1,21 @@
+import 'package:better_player_plus/better_player_plus.dart';
+import 'package:calliope/app/data/models/post_model.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../data/models/post_model.dart';
+import '../../../data/models/user_model.dart';
+import '../../profile/controllers/profile_controller.dart';
+// ...
 
 class WatchController extends GetxController {
   final post = Rxn<PostModel>();
   final isLoading = true.obs;
+  final user = Rxn<UserModel>();
+  final profileController = Get.find<ProfileController>();
+
+  BetterPlayerController? playerController;
 
   @override
   void onInit() {
@@ -16,6 +26,12 @@ class WatchController extends GetxController {
     }
   }
 
+  @override
+  void onClose() {
+    playerController?.dispose(); // 💡 Giải phóng tài nguyên
+    super.onClose();
+  }
+
   void fetchVideo(int id) async {
     isLoading.value = true;
     final res = await Supabase.instance.client
@@ -24,20 +40,40 @@ class WatchController extends GetxController {
         .eq('id', id)
         .single();
     post.value = PostModel.fromJson(res);
-    // print(post.value?.url);
+
     // Tăng lượt xem lên 1
     final updatedViews = (post.value?.views ?? 0) + 1;
     await Supabase.instance.client
         .from('posts')
         .update({'views': updatedViews})
         .eq('id', id);
-
-    // Cập nhật lại post với số lượt xem mới
     post.value = post.value?.copyWith(views: updatedViews);
 
-    // print(post.value?.views);
+    user.value = await profileController.getUser(post.value?.user_id ?? 0);
 
-    // print(post.value?.url);
+    // 🔁 Tạo player controller sau khi có URL
+    final dataSource = BetterPlayerDataSource(
+      BetterPlayerDataSourceType.network,
+      post.value!.url,
+      useAsmsSubtitles: true,
+      useAsmsTracks: true,
+      videoFormat: BetterPlayerVideoFormat.hls,
+    );
+    playerController = BetterPlayerController(
+      const BetterPlayerConfiguration(
+        aspectRatio: 16 / 9,
+        autoPlay: true,
+        looping: true,
+        fit: BoxFit.contain,
+        controlsConfiguration: BetterPlayerControlsConfiguration(
+          enableSubtitles: false,
+          enableQualities: false,
+          enableAudioTracks: false,
+        ),
+      ),
+      betterPlayerDataSource: dataSource,
+    );
+
     isLoading.value = false;
   }
 }
