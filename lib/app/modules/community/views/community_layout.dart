@@ -48,19 +48,18 @@ class CommunityLayout extends GetView<CommunityController> {
               // Search Bar
               SizedBox(
                 width: MediaQuery.sizeOf(context).width * 0.45,
-                child: Obx (()=> TextField(
+                child: Obx(() => TextField(
                   controller: controller.searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search your project here',
-                    prefixIcon: const Icon(
-                      Icons.search,
-                    ),
+                    hintText: 'Search post here...',
+                    prefixIcon: const Icon(Icons.search),
                     suffixIcon: controller.isSearching
                         ? IconButton(
                       icon: const Icon(Icons.clear),
                       onPressed: () {
                         controller.searchController.clear();
                         controller.updateSearch('');
+                        controller.reload();
                       },
                     )
                         : null,
@@ -68,17 +67,24 @@ class CommunityLayout extends GetView<CommunityController> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(100),
                       borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.primary, // Border color
+                        color: Theme.of(context).colorScheme.primary,
                         width: 2.0,
                       ),
                     ),
                   ),
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface, // Text color
-                    fontWeight: FontWeight.normal, // Font weight
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.normal,
                   ),
-                  onChanged: controller.updateSearch,
-                ),)
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (value) {
+                    controller.updateSearch(value);
+                    controller.searchPosts(value);
+                    if (value.trim().isEmpty) {
+                      controller.reload();
+                    }
+                  },
+                )),
               ),
 
               // Avatar
