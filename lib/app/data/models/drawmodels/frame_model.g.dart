@@ -1,41 +1,30 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'line_model.dart';
+part of 'frame_model.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
 // **************************************************************************
 
-class LineModelAdapter extends TypeAdapter<LineModel> {
+class FrameModelAdapter extends TypeAdapter<FrameModel> {
   @override
-  final int typeId = 2;
+  final int typeId = 4;
 
   @override
-  LineModel read(BinaryReader reader) {
+  FrameModel read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return LineModel(
-      id: fields[0] as int,
-      color_value: fields[1] as int,
-      points: (fields[2] as List).cast<Offset>(),
-      project_id: fields[5] as int,
-    );
+    return FrameModel()..layers = (fields[0] as List).cast<LayerModel>();
   }
 
   @override
-  void write(BinaryWriter writer, LineModel obj) {
+  void write(BinaryWriter writer, FrameModel obj) {
     writer
-      ..writeByte(4)
-      ..writeByte(0)
-      ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.color_value)
-      ..writeByte(2)
-      ..write(obj.points)
-      ..writeByte(5)
-      ..write(obj.project_id);
+      ..writeByte(0)
+      ..write(obj.layers);
   }
 
   @override
@@ -44,7 +33,7 @@ class LineModelAdapter extends TypeAdapter<LineModel> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is LineModelAdapter &&
+      other is FrameModelAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

@@ -113,7 +113,7 @@ class DrawSidebar extends StatelessWidget {
       buildDefaultDragHandles: false,
       scrollController: controller.scrollController,
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
-      itemCount: controller.frameLayers.length,
+      itemCount: controller.frames.length,
       itemBuilder: (_, index) {
         final isSelected = controller.currentFrameIndex.value == index;
         return Dismissible(
@@ -126,7 +126,7 @@ class DrawSidebar extends StatelessWidget {
             child: const Icon(Icons.delete, color: Colors.red),
           ),
           confirmDismiss: (_) async {
-            if (controller.frameLayers.length <= 1) return false;
+            if (controller.frames.length <= 1) return false;
             return await Get.dialog<bool>(
               AlertDialog(
                 title: const Text('Xác nhận xoá'),
@@ -142,8 +142,8 @@ class DrawSidebar extends StatelessWidget {
           onDismissed: (_) {
             Future.microtask(() {
               controller.removeFrame(index);
-              if (controller.currentFrameIndex.value >= controller.frameLayers.length) {
-                controller.selectFrame(controller.frameLayers.length - 1);
+              if (controller.currentFrameIndex.value >= controller.frames.length) {
+                controller.selectFrame(controller.frames.length - 1);
               }
             });
           },

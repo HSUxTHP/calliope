@@ -6,9 +6,12 @@ import 'package:ffmpeg_kit_flutter_new/return_code.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
+import 'package:hive/hive.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../../../data/models/DrawnLine_model.dart';
+import '../../../data/models/drawmodels/draw_project_model.dart';
+import '../../../data/models/drawmodels/drawn_line_model.dart';
+import '../../../data/models/drawmodels/frame_model.dart';
 import '../views/sketcher.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
@@ -21,7 +24,6 @@ class DrawController extends GetxController {
   final repaintKey = GlobalKey();
   final scrollController = ScrollController();
 
-  final lines = <DrawnLine>[].obs;
   final undoStack = <List<DrawnLine>>[];
   final redoStack = <List<DrawnLine>>[];
 
@@ -29,7 +31,7 @@ class DrawController extends GetxController {
   final selectedWidth = 4.0.obs;
   final isEraser = false.obs;
 
-  final frameLayers = <List<List<DrawnLine>>>[].obs;
+  final frames = <FrameModel>[].obs;
   final currentFrameIndex = 0.obs;
   final currentLayerIndex = 0.obs;
 
@@ -38,11 +40,48 @@ class DrawController extends GetxController {
   final isShowingLayout = true.obs;
 
   final playbackSpeed = 6.obs; // Mặc định 6 FPS
+  final _box = Hive.box<DrawProjectModel>('draw_project');
+
+  Future<void> saveProjectToHive(String projectId) async {
+    final project = DrawProjectModel(
+      id: projectId,
+      name: 'Project name', // hoặc cho người dùng đặt
+      updatedAt: DateTime.now(),
+      frames: frames.toList(),
+    );
+    await _box.put(projectId, project);
+  }
+  void loadFromProjectId(String id) {
+    final project = _box.get(id);
+    if (project != null) {
+      frames.assignAll(project.frames);
+      currentFrameIndex.value = 0;
+      currentLayerIndex.value = 0;
+    }
+  }
+
+
+
+  Future<void> loadProjectFromHive(String projectId) async {
+    final savedProject = _box.get(projectId);
+    if (savedProject != null) {
+      frames.assignAll(savedProject.frames);
+      currentFrameIndex.value = 0;
+      currentLayerIndex.value = 0;
+    }
+  }
 
   final Map<String, Uint8List> thumbnailCache = {};
   Timer? _playbackTimer;
   int _currentIndex = 0;
   int fps = 6;
+
+  List<DrawnLine> get currentLines =>
+      frames[currentFrameIndex.value].layers[currentLayerIndex.value].lines;
+
+  set currentLines(List<DrawnLine> newLines) =>
+      frames[currentFrameIndex.value].layers[currentLayerIndex.value].lines = newLines;
+
 
   List<List<DrawnLine>>? copiedFrame;
   static const Size canvasSize = Size(1600, 900);
@@ -58,48 +97,51 @@ class DrawController extends GetxController {
   }
 
   void startStroke(Offset point) {
-    undoStack.add(List.from(lines.map((l) => l.copy())));
+    undoStack.add(List.from(currentLines.map((l) => l.copy())));
     redoStack.clear();
     final color = isEraser.value ? Colors.white : selectedColor.value;
-    lines.add(DrawnLine(points: [point], color: color, width: selectedWidth.value));
+    currentLines.add(DrawnLine(points: [point], colorValue: color.value, width: selectedWidth.value));
   }
 
+
   void addPoint(Offset point) {
-    if (lines.isNotEmpty) {
-      lines.last.points.add(point);
-      lines.refresh();
+    if (currentLines.isNotEmpty) {
+      currentLines.last.points.add(point);
+      frames.refresh();
     }
+
   }
 
   void endStroke() {
-    if (lines.isNotEmpty) {
-      lines.refresh();        // Cập nhật UI
-      saveCurrentFrame();     // Lưu vào layer tương ứng
+    if (currentLines.isNotEmpty) {
+      frames.refresh();        // Cập nhật UI
+      saveCurrentFrame();      // Lưu vào layer tương ứng
     }
   }
+
 
 
   void undo() {
     if (undoStack.isNotEmpty) {
-      redoStack.add(List.from(lines.map((l) => l.copy())));
-      lines.value = undoStack.removeLast();
-      saveCurrentFrame();
+      redoStack.add(List.from(currentLines.map((l) => l.copy())));
+      currentLines = undoStack.removeLast();
+      frames.refresh();
     }
   }
-
   void redo() {
     if (redoStack.isNotEmpty) {
-      undoStack.add(List.from(lines.map((l) => l.copy())));
-      lines.value = redoStack.removeLast();
-      saveCurrentFrame();
+      undoStack.add(List.from(currentLines.map((l) => l.copy())));
+      currentLines = redoStack.removeLast();
+      frames.refresh();
     }
   }
 
   void clearCanvas() {
-    undoStack.add(List.from(lines.map((l) => l.copy())));
-    lines.clear();
-    saveCurrentFrame();
+    undoStack.add(List.from(currentLines.map((l) => l.copy())));
+    currentLines.clear();
+    frames.refresh();
   }
+
 
   void toggleEraser() => isEraser.toggle();
   void changeColor(Color color) => selectedColor.value = color;
@@ -107,42 +149,42 @@ class DrawController extends GetxController {
   void toggleFrameList() => isFrameListExpanded.toggle();
 
   void addFrame() {
-    final layers = List.generate(3, (_) => <DrawnLine>[]);
-    frameLayers.insert(0, layers);
+    final newFrame = FrameModel(); // tự khởi tạo 3 layer rỗng
+    frames.insert(0, newFrame);
     currentFrameIndex.value = 0;
     currentLayerIndex.value = 0;
-    lines.value = layers[0];
   }
+
 
   void selectFrame(int index) {
     saveCurrentFrame();
     currentFrameIndex.value = index;
     currentLayerIndex.value = 0;
-    lines.value = frameLayers[index][0];
   }
+
 
   void switchLayer(int layerIndex) {
     saveCurrentFrame();
     currentLayerIndex.value = layerIndex;
-    lines.value = frameLayers[currentFrameIndex.value][layerIndex];
   }
+
 
   void saveCurrentFrame() {
-    final fIndex = currentFrameIndex.value;
-    final lIndex = currentLayerIndex.value;
-    if (fIndex < frameLayers.length) {
-      frameLayers[fIndex][lIndex] = lines.map((l) => l.copy()).toList();
-      _clearThumbnailCache();
-    }
+    final copied = currentLines.map((l) => l.copy()).toList();
+    currentLines = copied;
+    _clearThumbnailCache();
   }
 
+
   void copyFrame(int index) {
-    if (index >= 0 && index < frameLayers.length) {
-      copiedFrame = frameLayers[index]
-          .map((layer) => layer.map((line) => line.copy()).toList())
+    if (index >= 0 && index < frames.length) {
+      copiedFrame = frames[index]
+          .layers
+          .map((layer) => layer.lines.map((line) => line.copy()).toList())
           .toList();
     }
   }
+
 
   void copyFrameCurrent() {
     final index = currentFrameIndex.value;
@@ -151,18 +193,24 @@ class DrawController extends GetxController {
 
   void pasteCopiedFrame() {
     if (copiedFrame == null) return;
-    final newFrame = copiedFrame!
-        .map((layer) => layer.map((line) => line.copy()).toList())
-        .toList();
+
+    final newFrame = FrameModel();
+    for (int i = 0; i < 3; i++) {
+      newFrame.layers[i].lines = copiedFrame![i].map((line) => line.copy()).toList();
+    }
+
     final insertIndex = currentFrameIndex.value + 1;
-    frameLayers.insert(insertIndex, newFrame);
+    frames.insert(insertIndex, newFrame);
     selectFrame(insertIndex);
   }
+
   void reorderFrame(int oldIndex, int newIndex) {
     if (newIndex > oldIndex) newIndex--;
 
-    final item = frameLayers.removeAt(oldIndex);
-    frameLayers.insert(newIndex, item);
+    final item = frames.removeAt(oldIndex);
+    frames.insert(newIndex, item);
+    frames.refresh();
+
 
     if (currentFrameIndex.value == oldIndex) {
       currentFrameIndex.value = newIndex;
@@ -197,9 +245,10 @@ class DrawController extends GetxController {
   }
 
   void removeFrame(int index) {
-    frameLayers.removeAt(index);
-    frameLayers.refresh(); // BẮT BUỘC để cập nhật .obs
+    frames.removeAt(index);
+    frames.refresh();
   }
+
 
 
   void togglePlayback() {
@@ -209,14 +258,16 @@ class DrawController extends GetxController {
     if (isPlaying.value) {
       _currentIndex = 0;
       _playbackTimer = Timer.periodic(Duration(milliseconds: 1000 ~/ fps), (_) {
-        if (frameLayers.isEmpty) return;
-        _currentIndex = (_currentIndex + 1) % frameLayers.length;
-        lines.value = frameLayers[_currentIndex][0];
+        if (frames.isEmpty) return;
+
+        _currentIndex = (_currentIndex + 1) % frames.length;
         currentFrameIndex.value = _currentIndex;
         currentLayerIndex.value = 0;
+        frames.refresh(); // Cập nhật lại frame hiển thị
       });
     }
   }
+
 
   void setFps(int value) {
     fps = value;
@@ -256,11 +307,14 @@ class DrawController extends GetxController {
 
     if (layerIndex == null) {
       for (int i = 0; i < 3; i++) {
-        Sketcher(lines: frameLayers[frameIndex][i]).paint(canvas, canvasSize);
+        if (!isLayerHidden(i)) {
+          Sketcher(lines: frames[frameIndex].layers[i].lines).paint(canvas, canvasSize);
+        }
       }
     } else {
-      Sketcher(lines: frameLayers[frameIndex][layerIndex]).paint(canvas, canvasSize);
+      Sketcher(lines: frames[frameIndex].layers[layerIndex].lines).paint(canvas, canvasSize);
     }
+
 
     final picture = recorder.endRecording();
     final image = await picture.toImage(thumbWidth.toInt(), thumbHeight.toInt());
@@ -287,13 +341,13 @@ class DrawController extends GetxController {
       await outputDir.create(recursive: true);
     }
 
-    for (int i = 0; i < frameLayers.length; i++) {
+    for (int i = 0; i < frames.length; i++) {
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, canvasSize.width, canvasSize.height));
 
       for (int l = 0; l < 3; l++) {
         if (!isLayerHidden(l)) {
-          Sketcher(lines: frameLayers[i][l]).paint(canvas, canvasSize);
+          Sketcher(lines: frames[i].layers[l].lines).paint(canvas, canvasSize);
         }
       }
 
@@ -348,10 +402,9 @@ class DrawController extends GetxController {
     }
 
     // Render các frame thành ảnh PNG
-    for (int i = 0; i < frameLayers.length; i++) {
+    for (int i = 0; i < frames.length; i++) {
       currentFrameIndex.value = i;
       currentLayerIndex.value = 0;
-      lines.value = frameLayers[i][0];
 
       await Future.delayed(const Duration(milliseconds: 50));
       final bytes = await captureImage();

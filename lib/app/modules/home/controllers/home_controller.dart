@@ -1,28 +1,35 @@
 import 'package:get/get.dart';
+import 'package:hive/hive.dart';
+import '../../../data/models/drawmodels/draw_project_model.dart';
 
 class HomeController extends GetxController {
-  //TODO: Implement HomeController
+  final projects = <DrawProjectModel>[].obs;
 
-  final count = 0.obs;
+  final fps = 12.obs;
+  final fpsOptions = [6, 12, 24];
 
-  final List<int> fpsOptions = [1,2,4,8,12];
-  final List<int> onionSkinOptions = [0, 1, 2, 3];
-  final fps = 2.obs;
   final onionSkin = 1.obs;
+  final onionSkinOptions = [0, 1, 2, 3];
+
+  late Box<DrawProjectModel> _projectBox;
+
   @override
   void onInit() {
     super.onInit();
+    _projectBox = Hive.box<DrawProjectModel>('draw_project');    loadProjects();
   }
 
-  @override
-  void onReady() {
-    super.onReady();
+  void loadProjects() {
+    projects.assignAll(_projectBox.values.toList());
   }
 
-  @override
-  void onClose() {
-    super.onClose();
+  void addProject(DrawProjectModel project) {
+    _projectBox.put(project.id, project);
+    projects.add(project);
   }
 
-  void increment() => count.value++;
+  void deleteProject(String id) {
+    _projectBox.delete(id);
+    projects.removeWhere((p) => p.id == id);
+  }
 }
