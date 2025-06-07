@@ -4,23 +4,29 @@ import 'package:get/get.dart';
 import '../controllers/draw_controller.dart';
 import 'canvas_area.dart';
 
-class DrawView extends GetView<DrawController> {
+class DrawView extends StatefulWidget {
+  const DrawView({super.key});
+
+  @override
+  State<DrawView> createState() => _DrawViewState();
+}
+
+class _DrawViewState extends State<DrawView> {
+  final DrawController controller = Get.find();
   late final String projectId;
 
-  DrawView({super.key})
-  {
+  @override
+  void initState() {
+    super.initState();
     projectId = Get.arguments as String;
-
+    controller.loadFromProjectId(projectId); // ✅ Gọi đúng, chỉ 1 lần
   }
 
   @override
   Widget build(BuildContext context) {
-    controller.loadFromProjectId(projectId); // ✅ Gọi đúng
-
     return Scaffold(
       backgroundColor: const Color(0xFFF2F4F7),
       body: Column(
-
         children: [
           _buildTopToolbar(),
           Expanded(

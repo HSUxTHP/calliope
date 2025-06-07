@@ -34,6 +34,8 @@ class DrawController extends GetxController {
   final frames = <FrameModel>[].obs;
   final currentFrameIndex = 0.obs;
   final currentLayerIndex = 0.obs;
+  String? currentProjectId;
+  String? currentProjectName;
 
   final isPlaying = false.obs;
   final isFrameListExpanded = true.obs;
@@ -42,23 +44,29 @@ class DrawController extends GetxController {
   final playbackSpeed = 6.obs; // Mặc định 6 FPS
   final _box = Hive.box<DrawProjectModel>('draw_project');
 
-  Future<void> saveProjectToHive(String projectId) async {
+  Future<void> saveProjectToHive(String projectId, String name) async {
     final project = DrawProjectModel(
       id: projectId,
-      name: 'Project name', // hoặc cho người dùng đặt
+      name: name,
       updatedAt: DateTime.now(),
-      frames: frames.toList(),
+      frames: frames.map((f) => f.copy()).toList(), // copy để tránh trùng tham chiếu
     );
     await _box.put(projectId, project);
   }
+
+
   void loadFromProjectId(String id) {
     final project = _box.get(id);
     if (project != null) {
-      frames.assignAll(project.frames);
+      frames.assignAll(project.frames.map((f) => f.copy()).toList());
       currentFrameIndex.value = 0;
       currentLayerIndex.value = 0;
+      currentProjectId = id;                    // thêm dòng này
+      currentProjectName = project.name;        // thêm dòng này
     }
   }
+
+
 
 
 
@@ -114,10 +122,16 @@ class DrawController extends GetxController {
 
   void endStroke() {
     if (currentLines.isNotEmpty) {
-      frames.refresh();        // Cập nhật UI
-      saveCurrentFrame();      // Lưu vào layer tương ứng
+      frames.refresh();
+      saveCurrentFrame();
+
+      // Auto-save nếu có id
+      if (currentProjectId != null && currentProjectName != null) {
+        saveProjectToHive(currentProjectId!, currentProjectName!);
+      }
     }
   }
+
 
 
 

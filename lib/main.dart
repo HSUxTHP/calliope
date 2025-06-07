@@ -7,6 +7,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+import 'app/data/models/drawmodels/offset_adapter.dart';
 import 'firebase_options.dart';
 import 'app/data/models/drawmodels/draw_project_model.dart';
 import 'app/data/models/drawmodels/drawn_line_model.dart';
@@ -22,6 +23,7 @@ Future<void> main() async {
 
   // Hive init và đăng ký adapter
   await Hive.initFlutter();
+  Hive.registerAdapter(OffsetAdapter());
   Hive.registerAdapter(UserModelAdapter());
   Hive.registerAdapter(DrawnLineAdapter());
   Hive.registerAdapter(LayerModelAdapter());
