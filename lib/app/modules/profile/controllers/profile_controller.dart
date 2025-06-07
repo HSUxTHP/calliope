@@ -15,8 +15,8 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
   final isLoading = false.obs;
   final isCurrentUser = false.obs;
 
-  final currentUser = Rxn<UserModel>();
-  final viewedUser = Rxn<UserModel>();
+  var currentUser = Rxn<UserModel>();
+  var viewedUser = Rxn<UserModel>();
 
   final isLogined = false.obs;
 
@@ -33,57 +33,79 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
   void onReady() async {
     super.onReady();
     await reload();
+    print('currentUser: ${currentUser.value}');
+    print('currentUser.id: ${currentUser.value?.id}');
+    print('viewedUser: ${viewedUser.value}');
   }
 
   Future<void> reload() async {
     isLoading.value = true;
+
     final idStr = Get.parameters['id'];
-    final userId = int.tryParse(idStr ?? '');
-    print('userId: $userId');
+    final routeUserId = int.tryParse(idStr ?? '');
 
-    if (userId != null) {
-      isCurrentUser.value = false;
-      await initProfile(userId);
-    } else {
-      isCurrentUser.value = true;
-      await initProfile(null);
-    }
-    isLoading.value = false;
-  }
-
-  Future<void> initProfile(int? userId) async {
     await loadCurrentUserFromHive();
 
     final self = currentUser.value;
-    if (self == null || self.id == null) {
-      print('Không tìm thấy currentUser');
+
+    if (routeUserId != null) {
+      // Xem người khác (hoặc bản thân thông qua ID)
+      final selfId = int.tryParse(self?.id ?? '');
+      final isSelf = selfId != null && selfId == routeUserId;
+      isCurrentUser.value = isSelf;
+
+      await initProfile(routeUserId);
+    } else {
+      // Xem chính mình
+      isCurrentUser.value = true;
+      if (self != null && self.id != null) {
+        final selfId = int.tryParse(self.id!);
+        if (selfId != null) {
+          viewedUser.value = self;
+          await fetchPostsByUser(selfId);
+        } else {
+          print('ID của currentUser không hợp lệ');
+        }
+      } else {
+        print('Không có thông tin currentUser');
+      }
+    }
+
+    isLoading.value = false;
+  }
+
+
+
+
+  Future<void> initProfile(int? userId) async {
+    if (userId == null || userId <= 0) {
+      print('Không có ID hợp lệ để tải profile');
       return;
     }
 
-    int idToLoad = userId ?? int.parse(self.id!);
-
     try {
-      final user = await getUser(idToLoad);
+      final user = await getUser(userId);
       viewedUser.value = user;
-      isCurrentUser.value = user.id != null && user.id.toString() == self.id;
+
+      final selfId = int.tryParse(currentUser.value?.id ?? '');
+      isCurrentUser.value = selfId != null && user.id == selfId;
     } catch (e) {
       print('Lỗi khi lấy dữ liệu người dùng từ Supabase: $e');
     }
 
-    checkIsCurrentUser(idToLoad);
-
-    await fetchPostsByUser(idToLoad);
+    await fetchPostsByUser(userId);
   }
 
 
-  void checkIsCurrentUser(int userId) {
-    final user = currentUser.value;
-    if (user != null && user.id != null) {
-      isCurrentUser.value = int.parse(user.id!) == userId;
-    } else {
-      isCurrentUser.value = false;
-    }
-  }
+
+  // void checkIsCurrentUser(int userId) {
+  //   final user = currentUser.value;
+  //   if (user != null && user.id != null) {
+  //     isCurrentUser.value = int.parse(user.id!) == userId;
+  //   } else {
+  //     isCurrentUser.value = false;
+  //   }
+  // }
 
   //load user from Hive
   Future<void> loadCurrentUserFromHive() async {
@@ -111,10 +133,10 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       if (response != null) {
         return UserModel.fromJson(response);
       } else {
-        throw Exception("Không tìm thấy người dùng với id: $userId");
+        throw Exception("No user found with id: $userId");
       }
     } catch (e) {
-      print("Lỗi khi lấy user: $e");
+      print("Error while taking user: $e");
       rethrow;
     } finally {
       isLoading.value = false;
@@ -144,7 +166,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
         thumbnail: post['thumbnail'],
       )).toList();
     } catch (e) {
-      print("Lỗi khi lấy bài viết: $e");
+      print("Error when getting post: $e");
       post.value = [];
     }
   }
@@ -219,9 +241,10 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       await initProfile(null);
       print('Đã lưu UserModel vào Hive: ${userModel.toJson()}');
 
-      Get.snackbar("Đăng nhập thành công", "Chào ${userModel.id}");
+      Get.snackbar("Log in successfully", "Hello ${userModel.name}");
+      await reload();
     } catch (e) {
-      Get.snackbar("Lỗi đăng nhập", e.toString());
+      Get.snackbar("Login error", e.toString());
       print("Lỗi đăng nhập: $e");
     }
   }
@@ -238,12 +261,13 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       final box = await Hive.openBox<UserModel>('users');
       await box.delete('current_user');
       currentUser.value = null;
+      viewedUser.value = null;
       isLogined.value = false;
       print('Đã xoá current_user khỏi Hive');
-
-      Get.snackbar("Đăng xuất", "Bạn đã đăng xuất thành công");
+      // Get.toNamed('/layout');
+      Get.snackbar("Sign out", "You have successfully logged out.");
     } catch (e) {
-      Get.snackbar("Lỗi đăng xuất", e.toString());
+      Get.snackbar("Logout error", e.toString());
       print("Lỗi đăng xuất: $e");
     }
   }

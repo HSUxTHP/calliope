@@ -1,5 +1,6 @@
 import 'package:calliope/app/data/models/post_model.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class PostSearchCard extends StatelessWidget {
   const PostSearchCard({
@@ -10,6 +11,9 @@ class PostSearchCard extends StatelessWidget {
   final PostModel post;
   @override
   Widget build(BuildContext context) {
+    final formattedDate = post.created_at != null
+        ? DateFormat('dd/MM/yyyy HH:mm').format(post.created_at)
+        : 'Không rõ ngày đăng';
     return GestureDetector(
       onTap: () {
         // Add your tap logic here
@@ -57,11 +61,11 @@ class PostSearchCard extends StatelessWidget {
                         children: [
                           CircleAvatar(
                             radius: 16,
-                            backgroundImage: NetworkImage(post.user_id.toString()),
+                            backgroundImage: NetworkImage(post.user?.avatar_url ?? 'https://via.placeholder.com/150'),
                           ),
                           Expanded(
                             child: Text(
-                              post.user_id.toString(),
+                              post.user?.name ?? 'Unknown User',
                               style: const TextStyle(fontSize: 14),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -93,7 +97,7 @@ class PostSearchCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            post.created_at.toString(),
+                            formattedDate.toString(),
                             style: TextStyle(
                               fontSize: 12,
                               color: Theme.of(context).colorScheme.onSurfaceVariant,

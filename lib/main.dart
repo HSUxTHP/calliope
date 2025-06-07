@@ -70,8 +70,11 @@ Future<void> main() async {
 
   final layoutController = Get.put(LayoutController());
   layoutController.loadTheme();
-
-  // Chạy ứng dụng
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    print('Lỗi Flutter: ${details.exception}');
+    print('Stack trace: ${details.stack}');
+  };
   runApp(
     GetMaterialApp(
       debugShowCheckedModeBanner: false,

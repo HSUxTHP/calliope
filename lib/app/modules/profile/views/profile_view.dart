@@ -68,13 +68,11 @@ class ProfileView extends GetView<ProfileController> {
                       ),
                       child: CircleAvatar(
                         radius: 18,
-                        backgroundImage:
-                            controller.isLogined.value
-                                ? NetworkImage(
-                                  controller.currentUser.value?.avatar_url ??
-                                      'https://via.placeholder.com/150',
-                                )
-                                : AssetImage('assets/avatar.png'),
+                        backgroundImage: controller.isLogined.value
+                            ? (controller.currentUser.value?.avatar_url != null
+                            ? NetworkImage(controller.currentUser.value?.avatar_url ?? '')
+                            : const AssetImage('assets/avatar.png') as ImageProvider)
+                            : const AssetImage('assets/avatar.png'),
                         backgroundColor: Colors.transparent,
                       ),
                     ),
@@ -127,14 +125,14 @@ class ProfileView extends GetView<ProfileController> {
                                                               null &&
                                                           controller
                                                                   .viewedUser
-                                                                  .value!
-                                                                  .avatar_url !=
+                                                                  .value
+                                                                  ?.avatar_url !=
                                                               null
                                                       ? NetworkImage(
                                                         controller
                                                             .viewedUser
-                                                            .value!
-                                                            .avatar_url!,
+                                                            .value
+                                                            ?.avatar_url ?? '',
                                                       )
                                                       : const AssetImage(
                                                             'assets/avatar.png',
@@ -157,10 +155,7 @@ class ProfileView extends GetView<ProfileController> {
                                               child: Text(
                                                 controller.viewedUser.value !=
                                                         null
-                                                    ? controller
-                                                        .viewedUser
-                                                        .value!
-                                                        .name
+                                                    ? controller.viewedUser.value?.name ?? ''
                                                     : '',
                                                 style: TextStyle(
                                                   color:
@@ -182,8 +177,8 @@ class ProfileView extends GetView<ProfileController> {
                                                         null
                                                     ? controller
                                                         .viewedUser
-                                                        .value!
-                                                        .bio
+                                                        .value
+                                                        ?.bio ?? ''
                                                     : '',
                                                 style: TextStyle(
                                                   color:
@@ -220,23 +215,23 @@ class ProfileView extends GetView<ProfileController> {
                                                           //   id:
                                                           //       controller
                                                           //           .currentUser
-                                                          //           .value!
-                                                          //           .id!,
+                                                          //           .value
+                                                          //           ?.id ?? '',
                                                           //   name:
                                                           //       controller
                                                           //           .currentUser
-                                                          //           .value!
-                                                          //           .name,
+                                                          //           .value
+                                                          //           ?.name ?? '',
                                                           //   bio:
                                                           //       controller
                                                           //           .currentUser
-                                                          //           .value!
-                                                          //           .bio,
+                                                          //           .value
+                                                          //           ?.bio ?? '',
                                                           //   avatarUrl:
                                                           //       controller
                                                           //           .currentUser
-                                                          //           .value!
-                                                          //           .avatar_url,
+                                                          //           .value
+                                                          //           ?.avatar_url ?? '',
                                                           //   onUpdated: () async {
                                                           //     await controller
                                                           //         .reload();

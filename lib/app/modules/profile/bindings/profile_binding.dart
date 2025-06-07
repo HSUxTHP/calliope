@@ -6,11 +6,9 @@ import '../controllers/upload_controller.dart';
 class ProfileBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut<ProfileController>(
-      () => ProfileController(),
-    );
-    Get.lazyPut<UploadController>(
-      () => UploadController(),
-    );
+    Get.put(ProfileController());
+    // Get.lazyPut<UploadController>(
+    //   () => UploadController(),
+    // );
   }
 }
