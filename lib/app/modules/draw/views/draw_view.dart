@@ -5,13 +5,22 @@ import '../controllers/draw_controller.dart';
 import 'canvas_area.dart';
 
 class DrawView extends GetView<DrawController> {
-  DrawView({super.key});
+  late final String projectId;
+
+  DrawView({super.key})
+  {
+    projectId = Get.arguments as String;
+
+  }
 
   @override
   Widget build(BuildContext context) {
+    controller.loadFromProjectId(projectId); // ✅ Gọi đúng
+
     return Scaffold(
       backgroundColor: const Color(0xFFF2F4F7),
       body: Column(
+
         children: [
           _buildTopToolbar(),
           Expanded(
@@ -47,7 +56,9 @@ class DrawView extends GetView<DrawController> {
       child: Obx(() => Row(
         children: [
           _toolbarGroup([
-            _iconButton(Icons.arrow_back, () {}, tooltip: 'Quay lại'),
+            _iconButton(Icons.arrow_back, () {
+              Get.back(); // hoặc Navigator.pop(context);
+            }, tooltip: 'Quay lại'),
           ]),
           const SizedBox(width: 8),
           _toolbarGroup([
@@ -57,12 +68,19 @@ class DrawView extends GetView<DrawController> {
           ]),
           const SizedBox(width: 8),
           _toolbarGroup([
-            _iconButton(controller.currentToolIcon, controller.toggleEraser,
-                tooltip: controller.currentToolTooltip),
-            _iconButton(Icons.color_lens, () => _showColorPicker(Get.context!),
-                tooltip: 'Chọn màu',
-                color: controller.selectedColor.value),
+            Obx(() => _iconButton(
+              controller.currentToolIcon,
+              controller.toggleEraser,
+              tooltip: controller.currentToolTooltip,
+            )),
+            Obx(() => _iconButton(
+              Icons.color_lens,
+                  () => _showColorPicker(Get.context!),
+              tooltip: 'Chọn màu',
+              color: controller.selectedColor.value,
+            )),
           ]),
+
           const SizedBox(width: 8),
           _roundedControl(
             label: '${controller.selectedWidth.value.toInt()} px',
@@ -109,13 +127,15 @@ class DrawView extends GetView<DrawController> {
     );
   }
 
-  Widget _iconButton(IconData icon, VoidCallback onPressed, {String? tooltip, Color? color}) {
+  Widget _iconButton(IconData icon, VoidCallback onPressed,
+      {String? tooltip, Color? color}) {
     return IconButton(
       icon: Icon(icon, size: 20, color: color ?? Colors.black),
       tooltip: tooltip,
       onPressed: onPressed,
     );
   }
+
 
   Widget _toolbarGroup(List<Widget> children) {
     return Row(
@@ -289,9 +309,11 @@ class DrawView extends GetView<DrawController> {
       buildDefaultDragHandles: false,
       scrollController: controller.scrollController,
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
-      itemCount: controller.frameLayers.length,
+      itemCount: controller.frames.length,
       itemBuilder: (_, index) {
         final isSelected = controller.currentFrameIndex.value == index;
+        final frame = controller.frames[index];
+
         return Dismissible(
           key: ValueKey('frame_$index'),
           direction: DismissDirection.endToStart,
@@ -302,7 +324,7 @@ class DrawView extends GetView<DrawController> {
             child: const Icon(Icons.delete, color: Colors.red),
           ),
           confirmDismiss: (_) async {
-            if (controller.frameLayers.length <= 1) return false;
+            if (controller.frames.length <= 1) return false;
             return await Get.dialog<bool>(
               AlertDialog(
                 title: const Text('Xác nhận xoá'),
@@ -322,8 +344,9 @@ class DrawView extends GetView<DrawController> {
           onDismissed: (_) {
             Future.microtask(() {
               controller.removeFrame(index);
-              if (controller.currentFrameIndex.value >= controller.frameLayers.length) {
-                controller.selectFrame(controller.frameLayers.length - 1);
+              if (controller.currentFrameIndex.value >=
+                  controller.frames.length) {
+                controller.selectFrame(controller.frames.length - 1);
               }
             });
           },
@@ -334,12 +357,15 @@ class DrawView extends GetView<DrawController> {
               onTap: () => controller.selectFrame(index),
               futureImage: controller.renderThumbnail(index),
               borderColor: Colors.blue,
+              isHidden: frame.isHidden,
+              onToggleVisibility: () => controller.toggleFrameVisibility(index),
             ),
           ),
         );
       },
     ));
   }
+
 
 
 

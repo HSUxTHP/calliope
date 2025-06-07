@@ -20,7 +20,8 @@ class DrawingCanvas extends StatelessWidget {
         controller.addPoint(point);
       },
       onPanEnd: (_) => controller.endStroke(),
-      child: ClipRect(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
         child: RepaintBoundary(
           key: controller.repaintKey,
           child: Container(
@@ -30,22 +31,27 @@ class DrawingCanvas extends StatelessWidget {
             child: Obx(() {
               final frameIndex = controller.currentFrameIndex.value;
               final layerIndex = controller.currentLayerIndex.value;
-              final layers = controller.frameLayers[frameIndex];
+              final frame = controller.frames[frameIndex];
 
-              // 👉 Layout mode: chỉ hiển thị layer hiện tại + các nét mới vẽ
               if (controller.isShowingLayout.value) {
-                final currentLines = [...layers[layerIndex], ...controller.lines];
+                final currentLines = [
+                  ...frame.layers[layerIndex].lines,
+                  ...controller.currentLines
+                ];
                 return CustomPaint(painter: Sketcher(lines: currentLines));
               }
 
-              // 👉 Frame mode: hiển thị 3 layer gộp + nét mới vẽ của layer hiện tại
               return Stack(
                 children: [
                   for (int i = 2; i >= 0; i--)
-                    CustomPaint(painter: Sketcher(lines: [
-                      ...layers[i],
-                      if (i == layerIndex) ...controller.lines
-                    ])),
+                    CustomPaint(
+                      painter: Sketcher(
+                        lines: [
+                          ...frame.layers[i].lines,
+                          if (i == layerIndex) ...controller.currentLines,
+                        ],
+                      ),
+                    ),
                 ],
               );
             }),

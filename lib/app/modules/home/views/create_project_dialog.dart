@@ -1,5 +1,10 @@
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:uuid/uuid.dart';
+
+import '../../../data/models/drawmodels/draw_project_model.dart';
+import '../../../data/models/drawmodels/frame_model.dart';
 
 class CreateProjectDialog extends StatelessWidget {
   final dynamic controller;
@@ -8,6 +13,8 @@ class CreateProjectDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final nameController = TextEditingController();
+
     return Dialog(
       backgroundColor: Theme.of(context).colorScheme.surface,
       child: SizedBox(
@@ -34,6 +41,7 @@ class CreateProjectDialog extends StatelessWidget {
                   child: Column(
                     children: [
                       TextField(
+                        controller: nameController,
                         decoration: const InputDecoration(
                           labelText: 'Your project name',
                           border: OutlineInputBorder(),
@@ -44,7 +52,7 @@ class CreateProjectDialog extends StatelessWidget {
                         context: context,
                         title: "Frames Per Second (FPS)",
                         subtitle:
-                        "Customize the number of frames displayed per second to control the animation playback speed.",
+                        "Customize number of frames per second for playback speed.",
                         valueRx: controller.fps,
                         items: controller.fpsOptions,
                       ),
@@ -53,7 +61,7 @@ class CreateProjectDialog extends StatelessWidget {
                         context: context,
                         title: "Onion Skin",
                         subtitle:
-                        "Show previous and next frames for smoother drawing between frames",
+                        "Show previous and next frames to draw smoother animations.",
                         valueRx: controller.onionSkin,
                         items: controller.onionSkinOptions,
                       ),
@@ -71,7 +79,17 @@ class CreateProjectDialog extends StatelessWidget {
                   const SizedBox(width: 8),
                   FilledButton(
                     onPressed: () {
-                      // Handle project creation logic here
+                      final name = nameController.text.trim();
+                      if (name.isEmpty) return;
+
+                      final newProject = DrawProjectModel(
+                        id: const Uuid().v4(), // tạo id duy nhất
+                        name: name,
+                        updatedAt: DateTime.now(),
+                        frames: [FrameModel()], // frame đầu tiên mặc định
+                      );
+
+                      controller.addProject(newProject); // cập nhật Hive
                       Navigator.of(context).pop();
                     },
                     child: const Text("Create"),
@@ -93,37 +111,35 @@ class CreateProjectDialog extends StatelessWidget {
     required List<int> items,
   }) {
     return Obx(() => Container(
-      padding: EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        spacing: 8,
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                Text(subtitle, style: TextStyle(fontSize: 12)),
+                Text(subtitle, style: const TextStyle(fontSize: 12)),
                 const SizedBox(height: 8),
               ],
             ),
           ),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: Theme.of(context).colorScheme.onSurface, // Border color
-                width: 2.0,          // Border width
+                color: Theme.of(context).colorScheme.onSurface,
+                width: 2.0,
               ),
             ),
             child: DropdownButton<int>(
-
               value: valueRx.value,
               isExpanded: false,
               onChanged: (value) => valueRx.value = value!,

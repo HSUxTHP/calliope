@@ -27,10 +27,11 @@ class AppPages {
       binding: HomeBinding(),
     ),
     GetPage(
-      name: _Paths.DRAW,
-      page: () => DrawView(),
-      binding: DrawBinding(),
-    ),
+    name: '/draw',
+  page: () => DrawView(), // ✅ Không truyền arguments ở đây
+  binding: DrawBinding(),
+  ),
+
     GetPage(
       name: _Paths.LAYOUT,
       page: () => const LayoutView(),
