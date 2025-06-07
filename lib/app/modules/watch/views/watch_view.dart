@@ -1,10 +1,13 @@
 import 'package:better_player_plus/better_player_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
 import 'package:get/get_state_manager/src/simple/get_view.dart';
 import 'package:intl/intl.dart';
 
+import '../../profile/controllers/profile_controller.dart';
 import '../controllers/watch_controller.dart';
 
 class WatchView extends GetView<WatchController> {
@@ -12,6 +15,7 @@ class WatchView extends GetView<WatchController> {
 
   @override
   Widget build(BuildContext context) {
+    final profileController = Get.find<ProfileController>();
     return Scaffold(
       body: SafeArea(
         child: Obx(() {
@@ -48,23 +52,30 @@ class WatchView extends GetView<WatchController> {
                       const SizedBox(height: 16),
 
                       /// Thông tin người đăng
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 24,
-                            backgroundImage: NetworkImage(
-                              user.avatar_url ?? 'https://via.placeholder.com/150',
+                      GestureDetector(
+                        onTap: () async {
+                          // Navigate to user profile
+                          Get.toNamed('/profile/${user.id}');
+                          await profileController.reload();
+                        },
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 24,
+                              backgroundImage: NetworkImage(
+                                user.avatar_url ?? 'https://via.placeholder.com/150',
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            user.name,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
+                            const SizedBox(width: 12),
+                            Text(
+                              user.name,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 16),
 

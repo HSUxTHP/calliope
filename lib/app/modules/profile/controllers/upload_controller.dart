@@ -19,12 +19,9 @@ class UploadController extends GetxController {
 
   final profileController = Get.find<ProfileController>();
 
-  late final int userId;
-
   @override
   void onInit() {
     super.onInit();
-    userId = int.parse(profileController.currentUser.value!.id!);
   }
   final Rx<File?> videoFile = Rx<File?>(null);
   final Rx<File?> backgroundFile = Rx<File?>(null);
@@ -52,11 +49,13 @@ class UploadController extends GetxController {
   }
 
 
-  Future<void> uploadVideo() async {
+  Future<void> uploadVideo(int userId) async {
     if (videoFile.value == null || backgroundFile.value == null) {
       Get.snackbar('Missing file', 'Please select .mp4 and .png files');
       return;
     }
+
+    print('Tải lên video cho user ${userId}');
 
     isUploading.value = true;
     progress.value = 0.0;

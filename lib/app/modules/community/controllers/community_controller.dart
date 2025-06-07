@@ -122,4 +122,44 @@ class CommunityController extends GetxController
       isLoading.value = false;
     }
   }
+
+  Future<void> searchPosts(String query) async {
+    if (query.isEmpty) {
+      post.value = [];
+      return;
+    }
+    try {
+      isLoading.value = true;
+      final response = await Supabase.instance.client
+          .from('posts')
+          .select()
+          .ilike('name', '%$query%');
+
+      final profileController = Get.find<ProfileController>();
+
+      final postsWithUser = await Future.wait(response.map((post) async {
+        final user = await profileController.getUser(post['user_id']);
+        return PostModel(
+          id: post['id'],
+          created_at: DateTime.parse(post['created_at']),
+          edited_at: DateTime.parse(post['edited_at']),
+          name: post['name'],
+          description: post['description'],
+          url: post['url'],
+          status: post['status'],
+          user_id: post['user_id'],
+          views: post['views'],
+          thumbnail: post['thumbnail'],
+          user: user, // gán user ở đây
+        );
+      }));
+
+      post.value = postsWithUser;
+    } catch (e) {
+      print("Lỗi khi tìm kiếm bài viết: $e");
+      post.value = [];
+    } finally {
+      isLoading.value = false;
+    }
+  }
 }
