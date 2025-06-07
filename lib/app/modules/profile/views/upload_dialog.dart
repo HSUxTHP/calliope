@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 
+import '../controllers/profile_controller.dart';
 import '../controllers/upload_controller.dart';
 
 //TODO: cách dùng
 // Get.dialog(UploadDialog());
 // final uploadController = Get.put(UploadController());
+  final profileController = Get.find<ProfileController>();
 
 class UploadDialog extends StatelessWidget {
   final UploadController controller = Get.find<UploadController>();
@@ -38,7 +40,7 @@ class UploadDialog extends StatelessWidget {
               } else {
                 return ElevatedButton(
                   onPressed: () async {
-                    await controller.uploadVideo();
+                    await controller.uploadVideo(int.parse(profileController.currentUser.value!.id!));
                     if (!controller.isUploading.value) Get.back();
                   },
                   child: Text('Tải lên'),

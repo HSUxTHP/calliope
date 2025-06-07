@@ -15,8 +15,8 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
   final isLoading = false.obs;
   final isCurrentUser = false.obs;
 
-  final currentUser = Rxn<UserModel>();
-  final viewedUser = Rxn<UserModel>();
+  var currentUser = Rxn<UserModel>();
+  var viewedUser = Rxn<UserModel>();
 
   final isLogined = false.obs;
 
@@ -33,6 +33,9 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
   void onReady() async {
     super.onReady();
     await reload();
+    print('currentUser: ${currentUser.value}');
+    print('currentUser.id: ${currentUser.value?.id}');
+    print('viewedUser: ${viewedUser.value}');
   }
 
   Future<void> reload() async {
@@ -55,12 +58,24 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
     await loadCurrentUserFromHive();
 
     final self = currentUser.value;
-    if (self == null || self.id == null) {
+    if (self == null) {
       print('Không tìm thấy currentUser');
       return;
     }
 
-    int idToLoad = userId ?? int.parse(self.id!);
+    int idToLoad;
+    if (userId != null) {
+      idToLoad = userId;
+    } else if (self.id != null) {
+      idToLoad = int.tryParse(self.id!) ?? -1;
+      if (idToLoad == -1) {
+        print('ID không hợp lệ');
+        return;
+      }
+    } else {
+      print('Không có ID người dùng');
+      return;
+    }
 
     try {
       final user = await getUser(idToLoad);
@@ -74,6 +89,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
 
     await fetchPostsByUser(idToLoad);
   }
+
 
 
   void checkIsCurrentUser(int userId) {
@@ -111,10 +127,10 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       if (response != null) {
         return UserModel.fromJson(response);
       } else {
-        throw Exception("Không tìm thấy người dùng với id: $userId");
+        throw Exception("No user found with id: $userId");
       }
     } catch (e) {
-      print("Lỗi khi lấy user: $e");
+      print("Error while taking user: $e");
       rethrow;
     } finally {
       isLoading.value = false;
@@ -144,7 +160,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
         thumbnail: post['thumbnail'],
       )).toList();
     } catch (e) {
-      print("Lỗi khi lấy bài viết: $e");
+      print("Error when getting post: $e");
       post.value = [];
     }
   }
@@ -219,9 +235,9 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       await initProfile(null);
       print('Đã lưu UserModel vào Hive: ${userModel.toJson()}');
 
-      Get.snackbar("Đăng nhập thành công", "Chào ${userModel.id}");
+      Get.snackbar("Log in successfully", "Hello ${userModel.name}");
     } catch (e) {
-      Get.snackbar("Lỗi đăng nhập", e.toString());
+      Get.snackbar("Login error", e.toString());
       print("Lỗi đăng nhập: $e");
     }
   }
@@ -238,12 +254,13 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       final box = await Hive.openBox<UserModel>('users');
       await box.delete('current_user');
       currentUser.value = null;
+      viewedUser.value = null;
       isLogined.value = false;
       print('Đã xoá current_user khỏi Hive');
-
-      Get.snackbar("Đăng xuất", "Bạn đã đăng xuất thành công");
+      // Get.toNamed('/layout');
+      Get.snackbar("Sign out", "You have successfully logged out.");
     } catch (e) {
-      Get.snackbar("Lỗi đăng xuất", e.toString());
+      Get.snackbar("Logout error", e.toString());
       print("Lỗi đăng xuất: $e");
     }
   }

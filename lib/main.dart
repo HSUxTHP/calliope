@@ -43,6 +43,11 @@ Future<void> main() async {
   await profileController.loadCurrentUserFromHive();
   final layoutController = Get.put(LayoutController());
   layoutController.loadTheme();
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    print('Lỗi Flutter: ${details.exception}');
+    print('Stack trace: ${details.stack}');
+  };
   runApp(
       GetMaterialApp(
         debugShowCheckedModeBanner: false,
