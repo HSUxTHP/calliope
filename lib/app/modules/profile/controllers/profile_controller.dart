@@ -242,6 +242,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       print('Đã lưu UserModel vào Hive: ${userModel.toJson()}');
 
       Get.snackbar("Log in successfully", "Hello ${userModel.name}");
+      await reload();
     } catch (e) {
       Get.snackbar("Login error", e.toString());
       print("Lỗi đăng nhập: $e");
