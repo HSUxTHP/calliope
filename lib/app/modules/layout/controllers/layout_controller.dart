@@ -36,9 +36,13 @@ class LayoutController extends GetxController with GetSingleTickerProviderStateM
     loadTheme();
   }
 
-  void onTabChange(int index) {
+  void onTabChange(int index) async {
     currentIndex.value = index;
     tabController.animateTo(index);
+    if (index == 2) {
+      await Future.delayed(const Duration(milliseconds: 1000));
+      await profileController.reload();
+    }
   }
 
   @override

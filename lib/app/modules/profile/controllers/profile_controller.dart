@@ -40,66 +40,72 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
 
   Future<void> reload() async {
     isLoading.value = true;
+
     final idStr = Get.parameters['id'];
-    final userId = int.tryParse(idStr ?? '');
-    print('userId: $userId');
+    final routeUserId = int.tryParse(idStr ?? '');
 
-    if (userId != null) {
-      isCurrentUser.value = false;
-      await initProfile(userId);
-    } else {
-      isCurrentUser.value = true;
-      await initProfile(null);
-    }
-    isLoading.value = false;
-  }
-
-  Future<void> initProfile(int? userId) async {
     await loadCurrentUserFromHive();
 
     final self = currentUser.value;
-    if (self == null) {
-      print('Không tìm thấy currentUser');
-      return;
+
+    if (routeUserId != null) {
+      // Xem người khác (hoặc bản thân thông qua ID)
+      final selfId = int.tryParse(self?.id ?? '');
+      final isSelf = selfId != null && selfId == routeUserId;
+      isCurrentUser.value = isSelf;
+
+      await initProfile(routeUserId);
+    } else {
+      // Xem chính mình
+      isCurrentUser.value = true;
+      if (self != null && self.id != null) {
+        final selfId = int.tryParse(self.id!);
+        if (selfId != null) {
+          viewedUser.value = self;
+          await fetchPostsByUser(selfId);
+        } else {
+          print('ID của currentUser không hợp lệ');
+        }
+      } else {
+        print('Không có thông tin currentUser');
+      }
     }
 
-    int idToLoad;
-    if (userId != null) {
-      idToLoad = userId;
-    } else if (self.id != null) {
-      idToLoad = int.tryParse(self.id!) ?? -1;
-      if (idToLoad == -1) {
-        print('ID không hợp lệ');
-        return;
-      }
-    } else {
-      print('Không có ID người dùng');
+    isLoading.value = false;
+  }
+
+
+
+
+  Future<void> initProfile(int? userId) async {
+    if (userId == null || userId <= 0) {
+      print('Không có ID hợp lệ để tải profile');
       return;
     }
 
     try {
-      final user = await getUser(idToLoad);
+      final user = await getUser(userId);
       viewedUser.value = user;
-      isCurrentUser.value = user.id != null && user.id.toString() == self.id;
+
+      final selfId = int.tryParse(currentUser.value?.id ?? '');
+      isCurrentUser.value = selfId != null && user.id == selfId;
     } catch (e) {
       print('Lỗi khi lấy dữ liệu người dùng từ Supabase: $e');
     }
 
-    checkIsCurrentUser(idToLoad);
-
-    await fetchPostsByUser(idToLoad);
+    await fetchPostsByUser(userId);
   }
 
 
 
-  void checkIsCurrentUser(int userId) {
-    final user = currentUser.value;
-    if (user != null && user.id != null) {
-      isCurrentUser.value = int.parse(user.id!) == userId;
-    } else {
-      isCurrentUser.value = false;
-    }
-  }
+  // void checkIsCurrentUser(int userId) {
+  //   final user = currentUser.value;
+  //   if (user != null && user.id != null) {
+  //     isCurrentUser.value = int.parse(user.id!) == userId;
+  //   } else {
+  //     isCurrentUser.value = false;
+  //   }
+  // }
 
   //load user from Hive
   Future<void> loadCurrentUserFromHive() async {
