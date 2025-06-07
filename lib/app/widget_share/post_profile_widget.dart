@@ -2,6 +2,7 @@ import 'package:calliope/app/data/models/post_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
+import 'package:intl/intl.dart';
 
 class PostProfileCard extends StatelessWidget {
   const PostProfileCard({super.key,
@@ -13,6 +14,9 @@ class PostProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final formattedDate = post.created_at != null
+        ? DateFormat('dd/MM/yyyy HH:mm').format(post.created_at)
+        : 'Không rõ ngày đăng';
     return GestureDetector(
       onTap: () {
 
@@ -92,7 +96,7 @@ class PostProfileCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        post.created_at.toString(),
+                        formattedDate.toString(),
                         style: TextStyle(
                           fontSize: 14,
                           color: Theme.of(context).colorScheme.onSurface,
