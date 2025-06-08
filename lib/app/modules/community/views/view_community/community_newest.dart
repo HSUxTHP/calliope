@@ -21,7 +21,7 @@ class NewestCommunity extends GetView<CommunityController> {
 
       return RefreshIndicator(
         onRefresh: () async {
-          await controller.getAllPosts(1);
+          await controller.getAllPosts(controller.selectedTabIndex.value);
         },
         child: GridView.builder(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
