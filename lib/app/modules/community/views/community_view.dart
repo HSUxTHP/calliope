@@ -37,6 +37,7 @@ class CommunityView extends GetView<CommunityController> {
           // Content Grid
           Expanded(
             child: TabBarView(
+              physics: NeverScrollableScrollPhysics(),
               controller: controller.tabController,
               children: [
                 TrendingCommunity(),

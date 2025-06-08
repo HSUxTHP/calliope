@@ -18,7 +18,7 @@ class TrendingCommunity extends GetView<CommunityController> {
 
       return RefreshIndicator(
         onRefresh: () async {
-          await controller.getAllPosts(2);
+          await controller.getAllPosts(controller.selectedTabIndex.value);
         },
         child: GridView.builder(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
