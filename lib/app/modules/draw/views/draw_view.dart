@@ -48,6 +48,7 @@ class _DrawViewState extends State<DrawView> {
   Widget _buildTopToolbar() {
     return Container(
       height: 58,
+      width: double.infinity, // 👈 đảm bảo full width
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -59,79 +60,113 @@ class _DrawViewState extends State<DrawView> {
           bottomRight: Radius.circular(16),
         ),
       ),
-      child: Obx(() => Row(
-        children: [
-          _toolbarGroup([
-            _iconButton(Icons.arrow_back, () {
-              Get.back(); // hoặc Navigator.pop(context);
-            }, tooltip: 'Quay lại'),
-          ]),
-          const SizedBox(width: 8),
-          _toolbarGroup([
-            // _iconButton(Icons.undo, controller.undo, tooltip: 'Hoàn tác'),
-            // _iconButton(Icons.redo, controller.redo, tooltip: 'Làm lại'),
-            // _iconButton(Icons.clear, controller.clearCanvas, tooltip: 'Xoá canvas'),
-          ]),
-          const SizedBox(width: 8),
-          _toolbarGroup([
-            Obx(() => _iconButton(
-              controller.currentToolIcon,
-              controller.toggleEraser,
-              tooltip: controller.currentToolTooltip,
-            )),
-            Obx(() => _iconButton(
-              Icons.color_lens,
-                  () => _showColorPicker(Get.context!),
-              tooltip: 'Chọn màu',
-              color: controller.selectedColor.value,
-            )),
-          ]),
+      child: Obx(() => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 1200), // 👈 optional: đảm bảo cuộn tốt
+          child: Row(
+            children: [
 
-          const SizedBox(width: 8),
-          _roundedControl(
-            label: '${controller.selectedWidth.value.toInt()} px',
-            onMinus: () => controller.changeWidth(controller.selectedWidth.value - 1),
-            onPlus: () => controller.changeWidth(controller.selectedWidth.value + 1),
-          ),
-          const SizedBox(width: 8),
-          _roundedControl(
-            label: '${controller.playbackSpeed.value}fps',
-            onMinus: () => controller.playbackSpeed.value =
-                (controller.playbackSpeed.value - 1).clamp(3, 24),
-            onPlus: () => controller.playbackSpeed.value =
-                (controller.playbackSpeed.value + 1).clamp(3, 24),
-            trailing: Padding(
-              padding: const EdgeInsets.only(left: 4),
-              child: IconButton(
-                icon: Icon(
-                  controller.isPlaying.value
-                      ? Icons.pause_circle_filled
-                      : Icons.play_circle_fill,
-                  size: 30,
-                  color: Colors.black,
+              _toolbarGroup([
+                _iconButton(Icons.arrow_back, () => Get.back(), tooltip: 'Quay lại'),
+              ]),
+
+              const SizedBox(width: 12),
+
+              _toolbarGroup([
+                _iconButton(Icons.undo, controller.undo, tooltip: 'Hoàn tác'),
+                _iconButton(Icons.redo, controller.redo, tooltip: 'Làm lại'),
+                _iconButton(Icons.clear, controller.clearCanvas, tooltip: 'Xoá canvas'),
+              ]),
+
+              const SizedBox(width: 12),
+
+              _toolbarGroup([
+                _iconButton(
+                  controller.showOnionSkin.value ? Icons.visibility : Icons.visibility_off,
+                  controller.toggleOnionSkin,
+                  tooltip: "Bật/tắt Onion Skin",
                 ),
-                onPressed: controller.togglePlayback,
-                tooltip: controller.isPlaying.value ? 'Pause' : 'Play',
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
+                const SizedBox(width: 4),
+                const Text("Frame trước:", style: TextStyle(fontSize: 12)),
+                Slider(
+                  value: controller.onionSkinCount.value.toDouble(),
+                  min: 1,
+                  max: 5,
+                  divisions: 4,
+                  label: "${controller.onionSkinCount.value}",
+                  onChanged: (value) => controller.onionSkinCount.value = value.toInt(),
+                ),
+              ]),
+
+              const SizedBox(width: 12),
+
+              _toolbarGroup([
+                _iconButton(
+                  controller.currentToolIcon,
+                  controller.toggleEraser,
+                  tooltip: controller.currentToolTooltip,
+                ),
+                _iconButton(
+                  Icons.color_lens,
+                      () => _showColorPicker(Get.context!),
+                  tooltip: 'Chọn màu',
+                  color: controller.selectedColor.value,
+                ),
+              ]),
+
+              const SizedBox(width: 12),
+
+              _roundedControl(
+                label: '${controller.selectedWidth.value.toInt()} px',
+                onMinus: () => controller.changeWidth(controller.selectedWidth.value - 1),
+                onPlus: () => controller.changeWidth(controller.selectedWidth.value + 1),
               ),
-            ),
+
+              const SizedBox(width: 8),
+
+              _roundedControl(
+                label: '${controller.playbackSpeed.value}fps',
+                onMinus: () => controller.playbackSpeed.value =
+                    (controller.playbackSpeed.value - 1).clamp(3, 24),
+                onPlus: () => controller.playbackSpeed.value =
+                    (controller.playbackSpeed.value + 1).clamp(3, 24),
+                trailing: Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: IconButton(
+                    icon: Icon(
+                      controller.isPlaying.value
+                          ? Icons.pause_circle_filled
+                          : Icons.play_circle_fill,
+                      size: 30,
+                      color: Colors.black,
+                    ),
+                    onPressed: controller.togglePlayback,
+                    tooltip: controller.isPlaying.value ? 'Pause' : 'Play',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              _toolbarGroup([
+                _iconButton(Icons.save, controller.copyFrameCurrent, tooltip: 'Sao chép frame'),
+                _iconButton(Icons.paste, controller.pasteCopiedFrame, tooltip: 'Dán frame'),
+                _iconButton(Icons.movie, () async {
+                  await controller.renderAllFramesToImages();
+                  await controller.exportToVideoWithFFmpeg();
+                }, tooltip: 'Xuất video'),
+              ]),
+            ],
           ),
-
-          const Spacer(),
-          _toolbarGroup([
-            _iconButton(Icons.save, controller.copyFrameCurrent, tooltip: 'Sao chép frame hiện tại'),
-            _iconButton(Icons.paste, controller.pasteCopiedFrame, tooltip: 'Dán frame'),
-            _iconButton(Icons.movie, () async {
-              await controller.renderAllFramesToImages();
-              await controller.exportToVideoWithFFmpeg();
-            }, tooltip: 'Xuất video'),
-          ]),
-
-        ],
+        ),
       )),
     );
   }
+
+
 
   Widget _iconButton(IconData icon, VoidCallback onPressed,
       {String? tooltip, Color? color}) {

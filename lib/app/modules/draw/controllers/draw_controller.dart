@@ -31,6 +31,14 @@ class DrawController extends GetxController {
   final selectedWidth = 4.0.obs;
   final isEraser = false.obs;
 
+  final showOnionSkin = true.obs;
+  final onionSkinEnabled = true.obs;
+  final onionSkinRangeBefore = 2;
+  final onionSkinRangeAfter = 1;
+  final onionSkinCount = 2.obs; // số frame trước muốn hiển thị
+
+  void toggleOnionSkin() => showOnionSkin.toggle();
+
   final frames = <FrameModel>[].obs;
   final currentFrameIndex = 0.obs;
   final currentLayerIndex = 0.obs;
@@ -66,8 +74,56 @@ class DrawController extends GetxController {
     }
   }
 
+  List<MapEntry<List<DrawnLine>, double>> getPreviousFramesLines() {
+    final index = currentFrameIndex.value;
+    final result = <MapEntry<List<DrawnLine>, double>>[];
 
+    for (int i = 1; i <= onionSkinCount.value; i++) {
+      final idx = index - i;
+      if (idx >= 0 && idx < frames.length) {
+        final lines = frames[idx].layers.expand((layer) => layer.lines).toList();
+        final opacity = (1.0 - i / (onionSkinCount.value + 1)) * 0.4; // ví dụ: 0.4, 0.27, 0.2
+        result.add(MapEntry(lines, opacity));
+      }
+    }
 
+    return result;
+  }
+
+  List<DrawnLine>? getPreviousFrameLines() {
+    final index = currentFrameIndex.value;
+    if (index <= 0 || index >= frames.length) return null;
+
+    final prevFrame = frames[index - 1];
+    return prevFrame.layers.expand((layer) => layer.lines).toList();
+  }
+
+  List<MapEntry<List<DrawnLine>, double>> getMultiOnionLines() {
+    final index = currentFrameIndex.value;
+    final List<MapEntry<List<DrawnLine>, double>> onionLayers = [];
+
+    // Frame trước (mờ hơn khi xa)
+    for (int i = 1; i <= onionSkinRangeBefore; i++) {
+      final idx = index - i;
+      if (idx >= 0 && idx < frames.length) {
+        final lines = frames[idx].layers.expand((layer) => layer.lines).toList();
+        double alpha = (1.0 - i / (onionSkinRangeBefore + 1)) * 0.5; // max 0.5 opacity
+        onionLayers.add(MapEntry(lines, alpha));
+      }
+    }
+
+    // Frame sau
+    for (int i = 1; i <= onionSkinRangeAfter; i++) {
+      final idx = index + i;
+      if (idx >= 0 && idx < frames.length) {
+        final lines = frames[idx].layers.expand((layer) => layer.lines).toList();
+        double alpha = (1.0 - i / (onionSkinRangeAfter + 1)) * 0.3; // max 0.3 opacity
+        onionLayers.add(MapEntry(lines, alpha));
+      }
+    }
+
+    return onionLayers;
+  }
 
 
   Future<void> loadProjectFromHive(String projectId) async {

@@ -33,6 +33,7 @@ class DrawingCanvas extends StatelessWidget {
               final layerIndex = controller.currentLayerIndex.value;
               final frame = controller.frames[frameIndex];
 
+              // 🎯 Layout mode: chỉ vẽ 1 layer đang chọn
               if (controller.isShowingLayout.value) {
                 final currentLines = [
                   ...frame.layers[layerIndex].lines,
@@ -41,8 +42,20 @@ class DrawingCanvas extends StatelessWidget {
                 return CustomPaint(painter: Sketcher(lines: currentLines));
               }
 
+              // 🎯 Frame mode: hỗ trợ onion skin nhiều frame trước
               return Stack(
                 children: [
+                  if (controller.showOnionSkin.value)
+                    ...controller.getPreviousFramesLines().map(
+                          (entry) => CustomPaint(
+                        painter: Sketcher(
+                          lines: entry.key,
+                          opacity: entry.value,
+                        ),
+                      ),
+                    ),
+
+                  // Vẽ các layer hiện tại
                   for (int i = 2; i >= 0; i--)
                     CustomPaint(
                       painter: Sketcher(

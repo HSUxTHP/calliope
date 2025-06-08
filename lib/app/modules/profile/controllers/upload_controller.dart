@@ -40,7 +40,7 @@ class UploadController extends GetxController {
   Future<void> pickBackgroundFile() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['png'],
+      allowedExtensions: ['png', 'jpg', 'jpeg'],
     );
 
     if (result != null && result.files.isNotEmpty) {
