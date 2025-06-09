@@ -20,6 +20,17 @@ class UploadDialog extends StatelessWidget {
       content: SingleChildScrollView(
         child: Column(
           children: [
+            TextField(
+              controller: controller.nameController,
+              decoration: InputDecoration(labelText: 'Tên video'),
+            ),
+            SizedBox(height: 8),
+            TextField(
+              controller: controller.descriptionController,
+              decoration: InputDecoration(labelText: 'Mô tả'),
+              maxLines: 2,
+            ),
+            SizedBox(height: 16),
             ElevatedButton(
               onPressed: controller.pickVideoFile,
               child: Text("Chọn video"),
