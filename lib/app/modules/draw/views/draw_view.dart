@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/draw_controller.dart';
 import 'canvas_area.dart';
+import 'package:blur/blur.dart';
 
 class DrawView extends StatefulWidget {
   const DrawView({super.key});
@@ -32,9 +34,12 @@ class _DrawViewState extends State<DrawView> {
           Expanded(
             child: Row(
               children: [
-                Obx(() => controller.isFrameListExpanded.value
-                    ? _buildSidebar()
-                    : _buildCollapsedSidebar()),
+                Obx(
+                  () =>
+                      controller.isFrameListExpanded.value
+                          ? _buildSidebar()
+                          : _buildCollapsedSidebar(),
+                ),
                 const VerticalDivider(width: 1, thickness: 1),
                 const Expanded(child: CanvasArea()),
               ],
@@ -60,116 +65,141 @@ class _DrawViewState extends State<DrawView> {
           bottomRight: Radius.circular(16),
         ),
       ),
-      child: Obx(() => SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 1200), // 👈 optional: đảm bảo cuộn tốt
-          child: Row(
-            children: [
+      child: Obx(
+        () => SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minWidth: 1200,
+            ), // 👈 optional: đảm bảo cuộn tốt
+            child: Row(
+              children: [
+                _toolbarGroup([
+                  _iconButton(
+                    Icons.arrow_back,
+                    () => Get.back(),
+                    tooltip: 'Quay lại',
+                  ),
+                ]),
 
-              _toolbarGroup([
-                _iconButton(Icons.arrow_back, () => Get.back(), tooltip: 'Quay lại'),
-              ]),
+                const SizedBox(width: 12),
 
-              const SizedBox(width: 12),
+                _toolbarGroup([
+                  _iconButton(Icons.undo, controller.undo, tooltip: 'Hoàn tác'),
+                  _iconButton(Icons.redo, controller.redo, tooltip: 'Làm lại'),
+                  _iconButton(
+                    Icons.clear,
+                    controller.clearCanvas,
+                    tooltip: 'Xoá canvas',
+                  ),
+                ]),
 
-              _toolbarGroup([
-                _iconButton(Icons.undo, controller.undo, tooltip: 'Hoàn tác'),
-                _iconButton(Icons.redo, controller.redo, tooltip: 'Làm lại'),
-                _iconButton(Icons.clear, controller.clearCanvas, tooltip: 'Xoá canvas'),
-              ]),
+                const SizedBox(width: 12),
 
-              const SizedBox(width: 12),
+                _toolbarGroup([
+                  _iconButton(
+                    controller.showOnionSkin.value
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                    controller.toggleOnionSkin,
+                    tooltip: "Bật/tắt Onion Skin",
+                  ),
+                  const SizedBox(width: 4),
+                  const Text("Frame trước:", style: TextStyle(fontSize: 12)),
+                  Slider(
+                    value: controller.onionSkinCount.value.toDouble(),
+                    min: 1,
+                    max: 5,
+                    divisions: 4,
+                    label: "${controller.onionSkinCount.value}",
+                    onChanged:
+                        (value) =>
+                            controller.onionSkinCount.value = value.toInt(),
+                  ),
+                ]),
 
-              _toolbarGroup([
-                _iconButton(
-                  controller.showOnionSkin.value ? Icons.visibility : Icons.visibility_off,
-                  controller.toggleOnionSkin,
-                  tooltip: "Bật/tắt Onion Skin",
+                const SizedBox(width: 12),
+
+                _toolbarGroup([
+                  _iconButton(
+                    controller.currentToolIcon,
+                    controller.toggleEraser,
+                    tooltip: controller.currentToolTooltip,
+                  ),
+                  _iconButton(
+                    Icons.color_lens,
+                    () => _showColorPicker(Get.context!),
+                    tooltip: 'Chọn màu',
+                    color: controller.selectedColor.value,
+                  ),
+                ]),
+
+                const SizedBox(width: 12),
+
+                _roundedControl(
+                  label: '${controller.selectedWidth.value.toInt()} px',
+                  onMinus:
+                      () => controller.changeWidth(
+                        controller.selectedWidth.value - 1,
+                      ),
+                  onPlus:
+                      () => controller.changeWidth(
+                        controller.selectedWidth.value + 1,
+                      ),
                 ),
-                const SizedBox(width: 4),
-                const Text("Frame trước:", style: TextStyle(fontSize: 12)),
-                Slider(
-                  value: controller.onionSkinCount.value.toDouble(),
-                  min: 1,
-                  max: 5,
-                  divisions: 4,
-                  label: "${controller.onionSkinCount.value}",
-                  onChanged: (value) => controller.onionSkinCount.value = value.toInt(),
-                ),
-              ]),
 
-              const SizedBox(width: 12),
+                const SizedBox(width: 8),
 
-              _toolbarGroup([
-                _iconButton(
-                  controller.currentToolIcon,
-                  controller.toggleEraser,
-                  tooltip: controller.currentToolTooltip,
-                ),
-                _iconButton(
-                  Icons.color_lens,
-                      () => _showColorPicker(Get.context!),
-                  tooltip: 'Chọn màu',
-                  color: controller.selectedColor.value,
-                ),
-              ]),
-
-              const SizedBox(width: 12),
-
-              _roundedControl(
-                label: '${controller.selectedWidth.value.toInt()} px',
-                onMinus: () => controller.changeWidth(controller.selectedWidth.value - 1),
-                onPlus: () => controller.changeWidth(controller.selectedWidth.value + 1),
-              ),
-
-              const SizedBox(width: 8),
-
-              _roundedControl(
-                label: '${controller.playbackSpeed.value}fps',
-                onMinus: () => controller.playbackSpeed.value =
-                    (controller.playbackSpeed.value - 1).clamp(3, 24),
-                onPlus: () => controller.playbackSpeed.value =
-                    (controller.playbackSpeed.value + 1).clamp(3, 24),
-                trailing: Padding(
+                Padding(
                   padding: const EdgeInsets.only(left: 4),
                   child: IconButton(
-                    icon: Icon(
-                      controller.isPlaying.value
-                          ? Icons.pause_circle_filled
-                          : Icons.play_circle_fill,
+                    icon: const Icon(
+                      Icons.play_circle_fill,
                       size: 30,
                       color: Colors.black,
                     ),
-                    onPressed: controller.togglePlayback,
-                    tooltip: controller.isPlaying.value ? 'Pause' : 'Play',
+                    onPressed: _showPreviewDialog, // 👈 Xem trước Animation
+                    tooltip: 'Xem trước Animation',
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
                 ),
-              ),
 
-              const SizedBox(width: 12),
+                const SizedBox(width: 12),
 
-              _toolbarGroup([
-                _iconButton(Icons.save, controller.copyFrameCurrent, tooltip: 'Sao chép frame'),
-                _iconButton(Icons.paste, controller.pasteCopiedFrame, tooltip: 'Dán frame'),
-                _iconButton(Icons.movie, () async {
-                  await controller.renderAllFramesToImages();
-                  await controller.exportToVideoWithFFmpeg();
-                }, tooltip: 'Xuất video'),
-              ]),
-            ],
+                _toolbarGroup([
+                  _iconButton(Icons.save, controller.copyFrameCurrent, tooltip: 'Sao chép frame'),
+                  _iconButton(Icons.paste, controller.pasteCopiedFrame, tooltip: 'Dán frame'),
+                  _iconButton(Icons.delete, () {
+                    // Xác nhận xoá
+                    Get.defaultDialog(
+                      title: 'Xác nhận',
+                      middleText: 'Bạn có chắc muốn xoá frame này?',
+                      textCancel: 'Huỷ',
+                      textConfirm: 'Xoá',
+                      confirmTextColor: Colors.white,
+                      onConfirm: () {
+                        Get.back();
+                        controller.deleteCurrentFrame();
+                      },
+                    );
+                  }, tooltip: 'Xoá frame hiện tại'),
+                ]),
+
+              ],
+            ),
           ),
         ),
-      )),
+      ),
     );
   }
 
-
-
-  Widget _iconButton(IconData icon, VoidCallback onPressed,
-      {String? tooltip, Color? color}) {
+  Widget _iconButton(
+    IconData icon,
+    VoidCallback onPressed, {
+    String? tooltip,
+    Color? color,
+  }) {
     return IconButton(
       icon: Icon(icon, size: 20, color: color ?? Colors.black),
       tooltip: tooltip,
@@ -177,12 +207,17 @@ class _DrawViewState extends State<DrawView> {
     );
   }
 
-
   Widget _toolbarGroup(List<Widget> children) {
     return Row(
-      children: children
-          .map((w) => Padding(padding: const EdgeInsets.symmetric(horizontal: 2), child: w))
-          .toList(),
+      children:
+          children
+              .map(
+                (w) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: w,
+                ),
+              )
+              .toList(),
     );
   }
 
@@ -212,7 +247,14 @@ class _DrawViewState extends State<DrawView> {
             ),
           ),
           const SizedBox(width: 6),
-          Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+            ),
+          ),
           const SizedBox(width: 6),
           GestureDetector(
             onTap: onPlus,
@@ -227,7 +269,6 @@ class _DrawViewState extends State<DrawView> {
       ),
     );
   }
-
 
   Widget _buildCollapsedSidebar() {
     return Padding(
@@ -256,14 +297,20 @@ class _DrawViewState extends State<DrawView> {
       child: Column(
         children: [
           _buildSidebarHeader(),
-          Obx(() => controller.isShowingLayout.value
-              ? const SizedBox(height: 8)
-              : _buildFrameToggle()),
+          Obx(
+            () =>
+                controller.isShowingLayout.value
+                    ? const SizedBox(height: 8)
+                    : _buildFrameToggle(),
+          ),
           const SizedBox(height: 8),
           Expanded(
-            child: Obx(() => controller.isShowingLayout.value
-                ? _buildLayoutList()
-                : _buildFrameList()),
+            child: Obx(
+              () =>
+                  controller.isShowingLayout.value
+                      ? _buildLayoutList()
+                      : _buildFrameList(),
+            ),
           ),
         ],
       ),
@@ -301,32 +348,36 @@ class _DrawViewState extends State<DrawView> {
 
   Widget _sidebarTab(String label, bool layoutTab) {
     return Expanded(
-      child: Obx(() => GestureDetector(
-        onTap: () {
-          controller.isShowingLayout.value = layoutTab;
-          controller.scrollToTop();
-        },
-        child: Container(
-          height: 36,
-          margin: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: controller.isShowingLayout.value == layoutTab
-                ? Colors.white
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: controller.isShowingLayout.value == layoutTab
-                  ? Colors.black
-                  : Colors.grey,
+      child: Obx(
+        () => GestureDetector(
+          onTap: () {
+            controller.isShowingLayout.value = layoutTab;
+            controller.scrollToTop();
+          },
+          child: Container(
+            height: 36,
+            margin: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color:
+                  controller.isShowingLayout.value == layoutTab
+                      ? Colors.white
+                      : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color:
+                    controller.isShowingLayout.value == layoutTab
+                        ? Colors.black
+                        : Colors.grey,
+              ),
             ),
           ),
         ),
-      )),
+      ),
     );
   }
 
@@ -344,7 +395,7 @@ class _DrawViewState extends State<DrawView> {
   }
 
   Widget _buildFrameList() {
-    return Obx(() => ReorderableListView.builder(
+    return ReorderableListView.builder(
       key: const PageStorageKey('frame_list_key'),
       onReorder: controller.reorderFrame,
       buildDefaultDragHandles: false,
@@ -352,8 +403,10 @@ class _DrawViewState extends State<DrawView> {
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
       itemCount: controller.frames.length,
       itemBuilder: (_, index) {
-        final isSelected = controller.currentFrameIndex.value == index;
         final frame = controller.frames[index];
+        final futureImage = controller.renderThumbnail(index);
+        final itemKey = controller.frameItemKeys[index] ?? GlobalKey();
+        controller.frameItemKeys[index] = itemKey;
 
         return Dismissible(
           key: ValueKey('frame_$index'),
@@ -367,19 +420,21 @@ class _DrawViewState extends State<DrawView> {
           confirmDismiss: (_) async {
             if (controller.frames.length <= 1) return false;
             return await Get.dialog<bool>(
-              AlertDialog(
-                title: const Text('Xác nhận xoá'),
-                content: const Text('Bạn có chắc muốn xoá frame này?'),
-                actions: [
-                  TextButton(
-                      onPressed: () => Get.back(result: false),
-                      child: const Text('Huỷ')),
-                  TextButton(
-                      onPressed: () => Get.back(result: true),
-                      child: const Text('Xoá')),
-                ],
-              ),
-            ) ??
+                  AlertDialog(
+                    title: const Text('Xác nhận xoá'),
+                    content: const Text('Bạn có chắc muốn xoá frame này?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Get.back(result: false),
+                        child: const Text('Huỷ'),
+                      ),
+                      TextButton(
+                        onPressed: () => Get.back(result: true),
+                        child: const Text('Xoá'),
+                      ),
+                    ],
+                  ),
+                ) ??
                 false;
           },
           onDismissed: (_) {
@@ -393,23 +448,25 @@ class _DrawViewState extends State<DrawView> {
           },
           child: ReorderableDragStartListener(
             index: index,
-            child: _thumbnailItem(
-              isSelected: isSelected,
-              onTap: () => controller.selectFrame(index),
-              futureImage: controller.renderThumbnail(index),
-              borderColor: Colors.blue,
-              isHidden: frame.isHidden,
-              onToggleVisibility: () => controller.toggleFrameVisibility(index),
+            child: KeyedSubtree(
+              key: itemKey,
+              child: Obx(
+                () => _thumbnailItem(
+                  isSelected: controller.currentFrameIndex.value == index,
+                  onTap: () => controller.selectFrame(index),
+                  futureImage: futureImage,
+                  borderColor: Colors.blue,
+                  isHidden: frame.isHidden,
+                  onToggleVisibility:
+                      () => controller.toggleFrameVisibility(index),
+                ),
+              ),
             ),
           ),
         );
       },
-    ));
+    );
   }
-
-
-
-
 
   Widget _buildLayoutList() {
     final index = controller.currentFrameIndex.value;
@@ -453,7 +510,8 @@ class _DrawViewState extends State<DrawView> {
             child: FutureBuilder<Uint8List>(
               future: futureImage,
               builder: (_, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+                if (snapshot.connectionState == ConnectionState.done &&
+                    snapshot.hasData) {
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Opacity(
@@ -464,7 +522,9 @@ class _DrawViewState extends State<DrawView> {
                 }
                 return const SizedBox(
                   height: 80,
-                  child: Center(child: CircularProgressIndicator(strokeWidth: 1.2)),
+                  child: Center(
+                    child: CircularProgressIndicator(strokeWidth: 1.2),
+                  ),
                 );
               },
             ),
@@ -487,46 +547,262 @@ class _DrawViewState extends State<DrawView> {
     );
   }
 
+  void _showPreviewDialog() async {
+    final frames = await controller.getAllFrameThumbnails();
+    if (frames.isEmpty) {
+      Get.snackbar("Lỗi", "Không có frame nào để xem trước");
+      return;
+    }
+
+    int current = 0;
+    int localFps = controller.fps;
+    bool isPlaying = true;
+    Timer? timer;
+
+    showDialog(
+      context: Get.context!,
+      barrierDismissible: true,
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            void startTimer() {
+              timer?.cancel();
+              timer = Timer.periodic(
+                Duration(milliseconds: 1000 ~/ localFps),
+                (_) => setState(() => current = (current + 1) % frames.length),
+              );
+              setState(() => isPlaying = true);
+            }
+
+            void stopTimer() {
+              timer?.cancel();
+              timer = null;
+              setState(() => isPlaying = false);
+            }
+
+            if (timer == null && isPlaying) startTimer();
+
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.all(16),
+              child: Container(
+                width: 1100,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E2E).withOpacity(0.95),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [BoxShadow(color: Colors.black45, blurRadius: 20)],
+                ),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 🖥 Video display
+                    Container(
+                      width: double.infinity,
+                      height: 576,
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white12, width: 1),
+                      ),
+                      padding: const EdgeInsets.all(8),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.memory(
+                          frames[current],
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // 🎬 Timeline (YouTube-style)
+                    Stack(
+                      alignment: Alignment.centerLeft,
+                      children: [
+                        Container(
+                          height: 6,
+                          margin: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade700,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            double progress = current / (frames.length - 1);
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 100),
+                              width: constraints.maxWidth * progress,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: Colors.redAccent,
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            );
+                          },
+                        ),
+                        SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            trackHeight: 0,
+                            thumbShape: const RoundSliderThumbShape(
+                              enabledThumbRadius: 6,
+                            ),
+                            overlayShape: const RoundSliderOverlayShape(
+                              overlayRadius: 12,
+                            ),
+                          ),
+                          child: Slider(
+                            min: 0,
+                            max: (frames.length - 1).toDouble(),
+                            value: current.toDouble(),
+                            onChanged: (value) {
+                              stopTimer();
+                              setState(() => current = value.toInt());
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // 🔘 Control bar
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Text(
+                              "FPS",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 160,
+                              child: Slider(
+                                min: 1,
+                                max: 24,
+                                divisions: 23,
+                                value: localFps.toDouble(),
+                                label: "$localFps",
+                                onChanged: (value) {
+                                  setState(() {
+                                    localFps = value.toInt();
+                                    if (isPlaying) startTimer();
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: Icon(
+                                isPlaying
+                                    ? Icons.pause_circle
+                                    : Icons.play_circle,
+                                size: 36,
+                                color:
+                                    isPlaying
+                                        ? Colors.redAccent
+                                        : Colors.greenAccent,
+                              ),
+                              onPressed:
+                                  () => isPlaying ? stopTimer() : startTimer(),
+                            ),
+                            const SizedBox(width: 12),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.movie_creation_outlined),
+                              label: const Text("Xuất video"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.indigo,
+                                foregroundColor: Colors.white,
+                              ),
+                              onPressed: () async {
+                                timer?.cancel();
+                                Navigator.of(context).pop();
+                                await controller.renderAllFramesToImages();
+                                await controller.exportToVideoWithFFmpeg(
+                                  localFps,
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.close),
+                              label: const Text("Đóng"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey.shade700,
+                                foregroundColor: Colors.white,
+                              ),
+                              onPressed: () {
+                                timer?.cancel();
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ).then((_) => timer?.cancel());
+  }
 
   void _showColorPicker(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Chọn màu'),
-        content: SingleChildScrollView(
-          child: Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              Colors.black,
-              Colors.red,
-              Colors.green,
-              Colors.blue,
-              Colors.orange,
-              Colors.purple,
-              Colors.brown,
-              Colors.yellow,
-              Colors.pink
-            ].map((color) {
-              return GestureDetector(
-                onTap: () {
-                  controller.changeColor(color);
-                  Navigator.of(context).pop();
-                },
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    border: Border.all(width: 1.5, color: Colors.grey.shade300),
-                  ),
-                ),
-              );
-            }).toList(),
+      builder:
+          (_) => AlertDialog(
+            title: const Text('Chọn màu'),
+            content: SingleChildScrollView(
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children:
+                    [
+                      Colors.black,
+                      Colors.red,
+                      Colors.green,
+                      Colors.blue,
+                      Colors.orange,
+                      Colors.purple,
+                      Colors.brown,
+                      Colors.yellow,
+                      Colors.pink,
+                    ].map((color) {
+                      return GestureDetector(
+                        onTap: () {
+                          controller.changeColor(color);
+                          Navigator.of(context).pop();
+                        },
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              width: 1.5,
+                              color: Colors.grey.shade300,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+              ),
+            ),
           ),
-        ),
-      ),
     );
   }
 }

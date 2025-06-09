@@ -30,6 +30,7 @@ class DrawController extends GetxController {
   final selectedColor = Colors.black.obs;
   final selectedWidth = 4.0.obs;
   final isEraser = false.obs;
+  final Map<int, GlobalKey> frameItemKeys = {};
 
   final showOnionSkin = true.obs;
   final onionSkinEnabled = true.obs;
@@ -227,10 +228,24 @@ class DrawController extends GetxController {
 
 
   void selectFrame(int index) {
+    // ✅ LUÔN lưu frame hiện tại trước khi đổi
     saveCurrentFrame();
+
     currentFrameIndex.value = index;
     currentLayerIndex.value = 0;
+
+    // ✅ Scroll đến đúng vị trí frame đã chọn
+    final context = frameItemKeys[index]?.currentContext;
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 300),
+        alignment: 0.5,
+      );
+    }
   }
+
+
 
 
   void switchLayer(int layerIndex) {
@@ -243,7 +258,13 @@ class DrawController extends GetxController {
     final copied = currentLines.map((l) => l.copy()).toList();
     currentLines = copied;
     _clearThumbnailCache();
+
+    // 🔥 Thêm vào để lưu lại sau mỗi lần chỉnh sửa
+    if (currentProjectId != null && currentProjectName != null) {
+      saveProjectToHive(currentProjectId!, currentProjectName!);
+    }
   }
+
 
 
   void copyFrame(int index) {
@@ -260,7 +281,6 @@ class DrawController extends GetxController {
     final index = currentFrameIndex.value;
     copyFrame(index);
   }
-
   void pasteCopiedFrame() {
     if (copiedFrame == null) return;
 
@@ -272,6 +292,11 @@ class DrawController extends GetxController {
     final insertIndex = currentFrameIndex.value + 1;
     frames.insert(insertIndex, newFrame);
     selectFrame(insertIndex);
+
+    // ✅ Ghi lại vào Hive sau khi paste
+    if (currentProjectId != null && currentProjectName != null) {
+      saveProjectToHive(currentProjectId!, currentProjectName!);
+    }
   }
 
   void reorderFrame(int oldIndex, int newIndex) {
@@ -279,9 +304,12 @@ class DrawController extends GetxController {
 
     final item = frames.removeAt(oldIndex);
     frames.insert(newIndex, item);
+
+    // ✅ Xoá cache thumbnail (QUAN TRỌNG)
+    _clearThumbnailCache();
     frames.refresh();
 
-
+    // ✅ Giữ frame đang chọn đúng vị trí mới
     if (currentFrameIndex.value == oldIndex) {
       currentFrameIndex.value = newIndex;
     } else if (currentFrameIndex.value == newIndex) {
@@ -292,6 +320,7 @@ class DrawController extends GetxController {
       currentFrameIndex.value += 1;
     }
   }
+
   RxSet<int> hiddenFrames = <int>{}.obs;
   RxSet<int> hiddenLayers = <int>{}.obs;
 
@@ -317,6 +346,20 @@ class DrawController extends GetxController {
   void removeFrame(int index) {
     frames.removeAt(index);
     frames.refresh();
+
+    // 🔥 Thêm dòng này để lưu lại thay đổi vào Hive
+    if (currentProjectId != null && currentProjectName != null) {
+      saveProjectToHive(currentProjectId!, currentProjectName!);
+    }
+  }
+
+  void deleteCurrentFrame() {
+    if (frames.length <= 1) return; // Không cho xoá nếu chỉ còn 1 frame
+    final index = currentFrameIndex.value;
+    removeFrame(index);
+    if (index >= frames.length) {
+      currentFrameIndex.value = frames.length - 1;
+    }
   }
 
 
@@ -367,24 +410,24 @@ class DrawController extends GetxController {
     final cacheKey = layerIndex == null ? '$frameIndex' : '$frameIndex-$layerIndex';
     if (thumbnailCache.containsKey(cacheKey)) return thumbnailCache[cacheKey]!;
 
-    const double thumbWidth = 160;
-    const double thumbHeight = 90;
+    const double thumbWidth = 640;
+    const double thumbHeight = 360;
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, thumbWidth, thumbHeight));
     final scale = thumbWidth / canvasSize.width;
     canvas.scale(scale, scale);
 
+    // ✅ THÊM dòng này để vẽ nền trắng thay vì bị đen
+    canvas.drawColor(Colors.white, BlendMode.src);
+
     if (layerIndex == null) {
       for (int i = 0; i < 3; i++) {
-        if (!isLayerHidden(i)) {
-          Sketcher(lines: frames[frameIndex].layers[i].lines).paint(canvas, canvasSize);
-        }
+        Sketcher(lines: frames[frameIndex].layers[i].lines).paint(canvas, canvasSize);
       }
     } else {
       Sketcher(lines: frames[frameIndex].layers[layerIndex].lines).paint(canvas, canvasSize);
     }
-
 
     final picture = recorder.endRecording();
     final image = await picture.toImage(thumbWidth.toInt(), thumbHeight.toInt());
@@ -394,6 +437,8 @@ class DrawController extends GetxController {
     thumbnailCache[cacheKey] = bytes;
     return bytes;
   }
+
+
 
   bool isInsideCanvas(Offset point) {
     final box = repaintKey.currentContext?.findRenderObject() as RenderBox?;
@@ -451,7 +496,8 @@ class DrawController extends GetxController {
     }
   }
 
-  Future<void> exportToVideoWithFFmpeg() async {
+  Future<void> exportToVideoWithFFmpeg(int fps) async {
+
     bool granted = await ensureStoragePermission();
     if (!granted) {
       print("Chưa cấp quyền lưu trữ");
@@ -492,6 +538,7 @@ class DrawController extends GetxController {
         "-vf scale='trunc(iw/2)*2:trunc(ih/2)*2' "
         "-c:v libx264 -pix_fmt yuv420p $outputPath";
 
+
     print("Running FFmpeg command: $cmd");
     final session = await FFmpegKit.execute(cmd);
 
@@ -510,6 +557,18 @@ class DrawController extends GetxController {
       Get.snackbar("Lỗi", "Xuất video thất bại với mã: $returnCode", snackPosition: SnackPosition.BOTTOM);
     }
   }
+  Future<List<Uint8List>> getAllFrameThumbnails() async {
+    List<Uint8List> framesData = [];
+
+    for (int i = 0; i < frames.length; i++) {
+      final bytes = await renderThumbnail(i);
+      print("📸 Thumbnail $i - size: ${bytes.length} bytes"); // để kiểm tra
+      framesData.add(bytes);
+    }
+
+    return framesData;
+  }
+
 
   void _clearThumbnailCache() {
     thumbnailCache.clear();
