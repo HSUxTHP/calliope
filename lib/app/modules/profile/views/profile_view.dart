@@ -1,3 +1,6 @@
+import 'package:calliope/app/data/models/post_model.dart';
+import 'package:calliope/app/modules/profile/views/upload_dialog.dart';
+import 'package:calliope/app/widget_share/login_page.dart';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
@@ -6,40 +9,20 @@ import '../../../widget_share/post_profile_widget.dart';
 import '../../../widget_share/post_widget.dart';
 import '../../layout/controllers/layout_controller.dart';
 import '../controllers/profile_controller.dart';
+import '../controllers/upload_controller.dart';
 
 class ProfileView extends GetView<ProfileController> {
-  const ProfileView({super.key});
+  ProfileView({super.key});
+
   @override
   Widget build(BuildContext context) {
     final layoutController = Get.find<LayoutController>();
+    final uploadController = Get.put(UploadController());
     return Scaffold(
       body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
-        // if (controller.user.value == null) {
-        //   return Center(
-        //     child: Column(
-        //       mainAxisAlignment: MainAxisAlignment.center,
-        //       children: [
-        //         Text(
-        //           'To view profile page, please login',
-        //           style: TextStyle(
-        //             color: Theme.of(context).colorScheme.onSurface,
-        //             fontSize: 24,
-        //           ),
-        //         ),
-        //         const SizedBox(width: 16),
-        //         ElevatedButton(
-        //           onPressed: () {
-        //             // layoutController.showLoginDialog(context);
-        //           },
-        //           child: const Text('Login'),
-        //         ),
-        //       ],
-        //     ),
-        //   );
-        // }
         return Column(
           children: [
             Container(
@@ -83,9 +66,13 @@ class ProfileView extends GetView<ProfileController> {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.black, width: 2),
                       ),
-                      child: const CircleAvatar(
+                      child: CircleAvatar(
                         radius: 18,
-                        backgroundImage: AssetImage('assets/avatar.png'),
+                        backgroundImage: controller.isLogined.value
+                            ? (controller.currentUser.value?.avatar_url != null
+                            ? NetworkImage(controller.currentUser.value?.avatar_url ?? '')
+                            : const AssetImage('assets/avatar.png') as ImageProvider)
+                            : const AssetImage('assets/avatar.png'),
                         backgroundColor: Colors.transparent,
                       ),
                     ),
@@ -95,212 +82,231 @@ class ProfileView extends GetView<ProfileController> {
             ),
             Obx(
               () =>
-                  controller.user.value == null
-                      ? Expanded(
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'To view profile page, please login',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                  fontSize: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              ElevatedButton(
-                                onPressed: () {
-                                  // layoutController.showLoginDialog(context);
-                                },
-                                child: const Text('Login'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
+                  !controller.isLogined.value && controller.isCurrentUser.value
+                      ? Expanded(child: LoginPage())
                       : Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    bottom: BorderSide(
-                                      width: 1,
+                        child: RefreshIndicator(
+                          onRefresh: () async {
+                            await controller.reload();
+                          },
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                        width: 1,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.outline,
+                                      ),
+                                    ),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 60,
+                                    vertical: 40,
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Obx(
+                                        () => Container(
+                                          width: 160,
+                                          height: 160,
+                                          decoration: ShapeDecoration(
+                                            image: DecorationImage(
+                                              image:
+                                                  controller.viewedUser.value !=
+                                                              null &&
+                                                          controller
+                                                                  .viewedUser
+                                                                  .value
+                                                                  ?.avatar_url !=
+                                                              null
+                                                      ? NetworkImage(
+                                                        controller
+                                                            .viewedUser
+                                                            .value
+                                                            ?.avatar_url ?? '',
+                                                      )
+                                                      : const AssetImage(
+                                                            'assets/avatar.png',
+                                                          )
+                                                          as ImageProvider,
+                                              fit: BoxFit.contain,
+                                            ),
+                                            shape: const OvalBorder(),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 60),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Obx(
+                                            () => SizedBox(
+                                              height: 60,
+                                              child: Text(
+                                                controller.viewedUser.value !=
+                                                        null
+                                                    ? controller.viewedUser.value?.name ?? ''
+                                                    : '',
+                                                style: TextStyle(
+                                                  color:
+                                                      Theme.of(
+                                                        context,
+                                                      ).colorScheme.onSurface,
+                                                  fontSize: 32,
+                                                  fontWeight: FontWeight.w500,
+                                                  height: 1.25,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          Obx(
+                                            () => SizedBox(
+                                              height: 43,
+                                              child: Text(
+                                                controller.viewedUser.value !=
+                                                        null
+                                                    ? controller
+                                                        .viewedUser
+                                                        .value
+                                                        ?.bio ?? ''
+                                                    : '',
+                                                style: TextStyle(
+                                                  color:
+                                                      Theme.of(
+                                                        context,
+                                                      ).colorScheme.onSurface,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w400,
+                                                  height: 1.50,
+                                                  letterSpacing: 0.50,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            height: 56,
+                                            child: Obx(
+                                              () =>
+                                                  controller.isCurrentUser.value
+                                                      ? TextButton(
+                                                        style: TextButton.styleFrom(
+                                                          backgroundColor:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .primaryContainer,
+                                                          foregroundColor:
+                                                              Theme.of(context)
+                                                                  .colorScheme
+                                                                  .onPrimaryContainer,
+                                                        ),
+                                                        onPressed: () {
+                                                          Get.dialog(
+                                                            UploadDialog(),
+                                                            barrierDismissible: false,
+                                                          );
+                                                          //TODO: TEST ONLY
+                                                          // controller.showEditProfileDialog(
+                                                          //   id:
+                                                          //       controller
+                                                          //           .currentUser
+                                                          //           .value
+                                                          //           ?.id ?? '',
+                                                          //   name:
+                                                          //       controller
+                                                          //           .currentUser
+                                                          //           .value
+                                                          //           ?.name ?? '',
+                                                          //   bio:
+                                                          //       controller
+                                                          //           .currentUser
+                                                          //           .value
+                                                          //           ?.bio ?? '',
+                                                          //   avatarUrl:
+                                                          //       controller
+                                                          //           .currentUser
+                                                          //           .value
+                                                          //           ?.avatar_url ?? '',
+                                                          //   onUpdated: () async {
+                                                          //     await controller
+                                                          //         .reload();
+                                                          //   },
+                                                          // );
+                                                        },
+                                                        child: Text(
+                                                          'Edit your profile',
+                                                          style: TextStyle(
+                                                            fontSize: 16,
+                                                          ),
+                                                        ),
+                                                      )
+                                                      : const SizedBox.shrink(),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.only(top: 16),
+                                  child: Text(
+                                    controller.isCurrentUser.value
+                                        ? 'Your video'
+                                        : 'Newest video',
+                                    style: TextStyle(
                                       color:
-                                          Theme.of(context).colorScheme.outline,
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                      fontSize: 24,
                                     ),
                                   ),
                                 ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 60,
-                                  vertical: 40,
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Obx(
-                                      () => Container(
-                                        width: 160,
-                                        height: 160,
-                                        decoration: ShapeDecoration(
-                                          image: DecorationImage(
-                                            image:
-                                                controller.user.value != null &&
-                                                        controller
-                                                                .user
-                                                                .value!
-                                                                .avatar_url !=
-                                                            null
-                                                    ? NetworkImage(
-                                                      controller
-                                                          .user
-                                                          .value!
-                                                          .avatar_url!,
-                                                    )
-                                                    : const AssetImage(
-                                                          'assets/avatar.png',
-                                                        )
-                                                        as ImageProvider,
-                                            fit: BoxFit.contain,
+                                const SizedBox(height: 16),
+                                controller.post.value.isNotEmpty
+                                    ? GridView.builder(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      padding: const EdgeInsets.all(8),
+                                      gridDelegate:
+                                          const SliverGridDelegateWithFixedCrossAxisCount(
+                                            crossAxisCount: 3,
+                                            childAspectRatio: 1,
+                                            crossAxisSpacing: 10,
+                                            mainAxisSpacing: 10,
                                           ),
-                                          shape: const OvalBorder(),
+                                      itemCount: controller.post.value.length,
+                                      itemBuilder: (_, index) {
+                                        final post =
+                                            controller.post.value[index];
+                                        return PostProfileCard(post: post);
+                                      },
+                                    )
+                                    : Center(
+                                      child: Text(
+                                        'No videos found',
+                                        style: TextStyle(
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.onSurface,
+                                          fontSize: 18,
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 60),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Obx(
-                                          () => SizedBox(
-                                            height: 60,
-                                            child: Text(
-                                              controller.user.value != null
-                                                  ? controller.user.value!.name
-                                                  : '',
-                                              style: TextStyle(
-                                                color:
-                                                    Theme.of(
-                                                      context,
-                                                    ).colorScheme.onSurface,
-                                                fontSize: 32,
-                                                fontWeight: FontWeight.w500,
-                                                height: 1.25,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Obx(
-                                          () => SizedBox(
-                                            height: 43,
-                                            child: Text(
-                                              controller.user.value != null
-                                                  ? controller.user.value!.bio
-                                                  : '',
-                                              style: TextStyle(
-                                                color:
-                                                    Theme.of(
-                                                      context,
-                                                    ).colorScheme.onSurface,
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w400,
-                                                height: 1.50,
-                                                letterSpacing: 0.50,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          height: 56,
-                                          child: Obx(
-                                            () =>
-                                                controller.isCurrentUser.value
-                                                    ? TextButton(
-                                                      style: TextButton.styleFrom(
-                                                        backgroundColor:
-                                                            Theme.of(context)
-                                                                .colorScheme
-                                                                .primaryContainer,
-                                                        foregroundColor:
-                                                            Theme.of(context)
-                                                                .colorScheme
-                                                                .onPrimaryContainer,
-                                                      ),
-                                                      onPressed: () {
-                                                        // TODO: Open edit dialog
-                                                      },
-                                                      child: Text(
-                                                        'Edit your profile',
-                                                        style: TextStyle(
-                                                          fontSize: 16,
-                                                        ),
-                                                      ),
-                                                    )
-                                                    : const SizedBox.shrink(),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.only(top: 16),
-                                child: Text(
-                                  controller.isCurrentUser.value
-                                      ? 'Your video'
-                                      : 'Newest video',
-                                  style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                    fontSize: 24,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              controller.videos.value.isNotEmpty
-                              ? GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                padding: const EdgeInsets.all(8),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 3,
-                                      childAspectRatio: 1,
-                                      crossAxisSpacing: 10,
-                                      mainAxisSpacing: 10,
-                                    ),
-                                itemCount: controller.videos.value.length,
-                                itemBuilder: (_, index) {
-                                  return PostProfileCard(
-                                    imageUrl:
-                                        "assets/video_cover_example.png",
-                                    title:
-                                        'Project that i made by myself absolutely $index',
-                                    avatarUrl: "assets/avatar.png",
-                                    userName: 'Username',
-                                    createdAt: "2023-10-01",
-                                    views: "0",
-                                  );
-                                },
-                              )
-                              : Center(
-                                  child: Text(
-                                    'No videos found',
-                                    style: TextStyle(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface,
-                                      fontSize: 18,
-                                    ),
-                                  ),
-                                ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),

@@ -38,7 +38,10 @@ class LayoutView extends GetView<LayoutController> {
                   icon: Icons.person,
                   label: 'Profile',
                   isSelected: controller.currentIndex.value == 2,
-                  onTap: () => controller.onTabChange(2),
+                  onTap: () {
+                    controller.onTabChange(2);
+                    Get.offAllNamed('/profile'); // <-- loại bỏ id khỏi URL
+                  },
                 ),
               ],
             ),
@@ -49,7 +52,7 @@ class LayoutView extends GetView<LayoutController> {
           Expanded(
             child: TabBarView(
               controller: controller.tabController,
-              children: const [
+              children: [
                 HomeView(),
                 CommunityLayout(),
                 ProfileView(),

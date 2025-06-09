@@ -10,6 +10,8 @@ import '../modules/layout/bindings/layout_binding.dart';
 import '../modules/layout/views/layout_view.dart';
 import '../modules/profile/bindings/profile_binding.dart';
 import '../modules/profile/views/profile_view.dart';
+import '../modules/watch/bindings/watch_binding.dart';
+import '../modules/watch/views/watch_view.dart';
 
 part 'app_routes.dart';
 
@@ -21,14 +23,15 @@ class AppPages {
   static final routes = [
     GetPage(
       name: _Paths.HOME,
-      page: () => const HomeView(),
+      page: () => HomeView(),
       binding: HomeBinding(),
     ),
     GetPage(
-      name: _Paths.DRAW,
-      page: () =>  DrawView(),
-      binding: DrawBinding(),
-    ),
+    name: '/draw',
+  page: () => DrawView(), // ✅ Không truyền arguments ở đây
+  binding: DrawBinding(),
+  ),
+
     GetPage(
       name: _Paths.LAYOUT,
       page: () => const LayoutView(),
@@ -36,13 +39,18 @@ class AppPages {
     ),
     GetPage(
       name: _Paths.COMMUNITY,
-      page: () => const CommunityView(),
+      page: () => CommunityView(),
       binding: CommunityBinding(),
     ),
     GetPage(
-      name: _Paths.PROFILE,
-      page: () => const ProfileView(),
+      name: '/profile/:id',
+      page: () => ProfileView(),
       binding: ProfileBinding(),
+    ),
+    GetPage(
+      name: '/watch/:id',
+      page: () => WatchView(),
+      binding: WatchBinding(),
     ),
   ];
 }

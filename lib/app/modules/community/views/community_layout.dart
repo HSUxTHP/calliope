@@ -1,6 +1,7 @@
 import 'package:calliope/app/modules/community/views/community_view.dart';
 import 'package:calliope/app/modules/community/views/searching_view.dart';
 import 'package:calliope/app/modules/layout/controllers/layout_controller.dart';
+import 'package:calliope/app/modules/profile/controllers/profile_controller.dart';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
@@ -8,7 +9,8 @@ import 'package:get/get.dart';
 import '../controllers/community_controller.dart';
 
 class CommunityLayout extends GetView<CommunityController> {
-  const CommunityLayout({super.key});
+   CommunityLayout({super.key});
+  final profileController = Get.find<ProfileController>();
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -46,19 +48,18 @@ class CommunityLayout extends GetView<CommunityController> {
               // Search Bar
               SizedBox(
                 width: MediaQuery.sizeOf(context).width * 0.45,
-                child: Obx (()=> TextField(
+                child: Obx(() => TextField(
                   controller: controller.searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search your project here',
-                    prefixIcon: const Icon(
-                      Icons.search,
-                    ),
+                    hintText: 'Search post here...',
+                    prefixIcon: const Icon(Icons.search),
                     suffixIcon: controller.isSearching
                         ? IconButton(
                       icon: const Icon(Icons.clear),
                       onPressed: () {
                         controller.searchController.clear();
                         controller.updateSearch('');
+                        controller.reload();
                       },
                     )
                         : null,
@@ -66,17 +67,24 @@ class CommunityLayout extends GetView<CommunityController> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(100),
                       borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.primary, // Border color
+                        color: Theme.of(context).colorScheme.primary,
                         width: 2.0,
                       ),
                     ),
                   ),
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface, // Text color
-                    fontWeight: FontWeight.normal, // Font weight
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.normal,
                   ),
-                  onChanged: controller.updateSearch,
-                ),)
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (value) {
+                    controller.updateSearch(value);
+                    controller.searchPosts(value);
+                    if (value.trim().isEmpty) {
+                      controller.reload();
+                    }
+                  },
+                )),
               ),
 
               // Avatar
@@ -94,9 +102,11 @@ class CommunityLayout extends GetView<CommunityController> {
                       width: 2,
                     ),
                   ),
-                  child: const CircleAvatar(
+                  child: CircleAvatar(
                     radius: 18,
-                    backgroundImage: AssetImage('assets/avatar.png'), // hoặc NetworkImage(...)
+                    backgroundImage: profileController.isLogined.value
+                        ? NetworkImage(profileController.currentUser.value?.avatar_url ?? 'https://via.placeholder.com/150')
+                        : AssetImage('assets/avatar.png'),
                     backgroundColor: Colors.transparent,
                   ),
                 ),

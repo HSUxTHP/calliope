@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 
+import '../../../data/models/user_model.dart';
+import '../../profile/controllers/profile_controller.dart';
+
 class LayoutController extends GetxController with GetSingleTickerProviderStateMixin {
   //TODO: Implement LayoutController
 
@@ -10,6 +13,10 @@ class LayoutController extends GetxController with GetSingleTickerProviderStateM
 
   var selectedTheme = 'light'.obs;
   final isDark = false.obs;
+  final profileController = Get.find<ProfileController>();
+  late var user = Rxn<UserModel>();
+  RxBool isLoggedIn = false.obs;
+
   @override
 
   @override
@@ -29,9 +36,13 @@ class LayoutController extends GetxController with GetSingleTickerProviderStateM
     loadTheme();
   }
 
-  void onTabChange(int index) {
+  void onTabChange(int index) async {
     currentIndex.value = index;
     tabController.animateTo(index);
+    if (index == 2) {
+      await Future.delayed(const Duration(milliseconds: 1000));
+      await profileController.reload();
+    }
   }
 
   @override
@@ -116,20 +127,22 @@ class LayoutController extends GetxController with GetSingleTickerProviderStateM
           child: Row(
             children: [
               CircleAvatar(
-                backgroundImage: AssetImage('assets/avatar.png'),
+                backgroundImage: profileController.isLogined.value
+                    ? NetworkImage(profileController.currentUser.value?.avatar_url ?? 'https://via.placeholder.com/150')
+                    : AssetImage('assets/avatar.png'),
                 radius: 20,
               ),
               SizedBox(width: 12),
               Obx(() => Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Username1",
+                  Text(profileController.currentUser.value?.name ?? 'Guest',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: isDark.value ? Colors.white : Colors.black,
                       )
                   ),
-                  Text("user@example.com",
+                  Text(profileController.currentUser.value?.email ?? 'Not logged in',
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark.value ? Colors.white : Colors.black,
@@ -161,6 +174,48 @@ class LayoutController extends GetxController with GetSingleTickerProviderStateM
             ],
           )),
         ),
+        const PopupMenuDivider(),
+        profileController.isLogined.value ?
+        PopupMenuItem<void>(
+          onTap: () {
+            profileController.signOutGoogleAndClearHive();
+          },
+          child: Obx(() => Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                  "Logout",
+                  style: TextStyle(
+                    color: isDark.value ? Colors.white : Colors.black,
+                  )
+              ),
+              Icon(
+                Icons.logout,
+                color: isDark.value ? Colors.white : Colors.black,
+              ),
+            ],
+          )),
+        ) :
+        PopupMenuItem<void>(
+          onTap: () {
+            profileController.signInWithGoogleAndSaveToSupabase();
+          },
+          child: Obx(() => Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                  "Login with Google",
+                  style: TextStyle(
+                    color: isDark.value ? Colors.white : Colors.black,
+                  )
+              ),
+              Icon(
+                Icons.login,
+                color: isDark.value ? Colors.white : Colors.black,
+              ),
+            ],
+          )),
+        )
       ],
     );
   }

@@ -27,10 +27,13 @@ android {
         applicationId = "com.calliope.calliope"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+//        ndk {
+//            abiFilters += listOf("armeabi-v7a", "arm64-v8a")
+//        }
     }
 
     buildTypes {
@@ -40,6 +43,14 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+//    splits {
+//        abi {
+//            isEnable = true
+//            reset()
+//            include("armeabi-v7a", "arm64-v8a", "x86", "x86_64") // THÊM
+//            isUniversalApk = true
+//        }
+//    }
 }
 
 flutter {
