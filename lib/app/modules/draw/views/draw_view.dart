@@ -104,19 +104,20 @@ class _DrawViewState extends State<DrawView> {
                     controller.toggleOnionSkin,
                     tooltip: "Bật/tắt Onion Skin",
                   ),
-                  const SizedBox(width: 4),
-                  const Text("Frame trước:", style: TextStyle(fontSize: 12)),
-                  Slider(
-                    value: controller.onionSkinCount.value.toDouble(),
-                    min: 1,
-                    max: 5,
-                    divisions: 4,
-                    label: "${controller.onionSkinCount.value}",
-                    onChanged:
-                        (value) =>
-                            controller.onionSkinCount.value = value.toInt(),
-                  ),
+                  if (controller.showOnionSkin.value) ...[
+                    const SizedBox(width: 4),
+                    const Text("Frame trước:", style: TextStyle(fontSize: 12)),
+                    Slider(
+                      value: controller.onionSkinCount.value.toDouble(),
+                      min: 1,
+                      max: 5,
+                      divisions: 4,
+                      label: "${controller.onionSkinCount.value}",
+                      onChanged: (value) => controller.onionSkinCount.value = value.toInt(),
+                    ),
+                  ]
                 ]),
+
 
                 const SizedBox(width: 12),
 
@@ -150,42 +151,25 @@ class _DrawViewState extends State<DrawView> {
 
                 const SizedBox(width: 8),
 
-                Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.play_circle_fill,
-                      size: 30,
-                      color: Colors.black,
-                    ),
-                    onPressed: _showPreviewDialog, // 👈 Xem trước Animation
-                    tooltip: 'Xem trước Animation',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ),
-
                 const SizedBox(width: 12),
 
                 _toolbarGroup([
-                  _iconButton(Icons.save, controller.copyFrameCurrent, tooltip: 'Sao chép frame'),
-                  _iconButton(Icons.paste, controller.pasteCopiedFrame, tooltip: 'Dán frame'),
-                  _iconButton(Icons.delete, () {
-                    // Xác nhận xoá
-                    Get.defaultDialog(
-                      title: 'Xác nhận',
-                      middleText: 'Bạn có chắc muốn xoá frame này?',
-                      textCancel: 'Huỷ',
-                      textConfirm: 'Xoá',
-                      confirmTextColor: Colors.white,
-                      onConfirm: () {
-                        Get.back();
-                        controller.deleteCurrentFrame();
-                      },
-                    );
-                  }, tooltip: 'Xoá frame hiện tại'),
+                  _iconButton(
+                    Icons.copy,
+                    controller.copyFrameCurrent,
+                    tooltip: 'Sao chép frame',
+                  ),
+                  _iconButton(
+                    Icons.content_paste,
+                    controller.pasteCopiedFrame,
+                    tooltip: 'Dán frame',
+                  ),
+                  _iconButton(
+                    Icons.play_circle_fill,
+                    _showPreviewDialog,
+                    tooltip: 'Xem trước Animation',
+                  ),
                 ]),
-
               ],
             ),
           ),
@@ -301,18 +285,84 @@ class _DrawViewState extends State<DrawView> {
             () =>
                 controller.isShowingLayout.value
                     ? const SizedBox(height: 8)
-                    : _buildFrameToggle(),
+                    : _buildFrameToggle(), // ✅ Nút + vẫn ở trên
           ),
           const SizedBox(height: 8),
+
+          // ✅ Danh sách Frame hoặc Layout
           Expanded(
             child: Obx(
               () =>
                   controller.isShowingLayout.value
                       ? _buildLayoutList()
-                      : _buildFrameList(),
+                      : Column(
+                        children: [
+                          // 📄 Danh sách frame
+                          Expanded(child: _buildFrameList()),
+
+                          // ✅ Nút bật/tắt chế độ reorder ở CUỐI
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              _buildReorderToggleButton(),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
+                                tooltip: 'Xoá frame hiện tại',
+                                onPressed: () {
+                                  if (controller.frames.length <= 1) return;
+                                  Get.defaultDialog(
+                                    title: 'Xác nhận',
+                                    middleText:
+                                        'Bạn có chắc muốn xoá frame hiện tại?',
+                                    textCancel: 'Huỷ',
+                                    textConfirm: 'Xoá',
+                                    confirmTextColor: Colors.white,
+                                    onConfirm: () {
+                                      Get.back();
+                                      controller.deleteCurrentFrame();
+                                    },
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                      ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildReorderToggleButton() {
+    return Obx(
+      () => ElevatedButton.icon(
+        onPressed: controller.toggleReorderMode,
+        style: ElevatedButton.styleFrom(
+          backgroundColor:
+              controller.isReorderMode.value
+                  ? Colors.cyanAccent
+                  : Colors.grey.shade200,
+          foregroundColor: Colors.black,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
+        icon: Icon(
+          controller.isReorderMode.value ? Icons.lock_open : Icons.lock_outline,
+          size: 18,
+        ),
+        label: Text(
+          controller.isReorderMode.value ? 'Tắt Chỉnh Sửa' : ' Chỉnh Sửa',
+          style: const TextStyle(fontSize: 13),
+        ),
       ),
     );
   }
@@ -405,65 +455,49 @@ class _DrawViewState extends State<DrawView> {
       itemBuilder: (_, index) {
         final frame = controller.frames[index];
         final futureImage = controller.renderThumbnail(index);
-        final itemKey = controller.frameItemKeys[index] ?? GlobalKey();
-        controller.frameItemKeys[index] = itemKey;
+        final itemKey = ValueKey('frame_$index');
 
-        return Dismissible(
-          key: ValueKey('frame_$index'),
-          direction: DismissDirection.endToStart,
-          background: Container(
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 16),
-            color: Colors.red.withOpacity(0.1),
-            child: const Icon(Icons.delete, color: Colors.red),
-          ),
-          confirmDismiss: (_) async {
-            if (controller.frames.length <= 1) return false;
-            return await Get.dialog<bool>(
-                  AlertDialog(
-                    title: const Text('Xác nhận xoá'),
-                    content: const Text('Bạn có chắc muốn xoá frame này?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Get.back(result: false),
-                        child: const Text('Huỷ'),
-                      ),
-                      TextButton(
-                        onPressed: () => Get.back(result: true),
-                        child: const Text('Xoá'),
-                      ),
-                    ],
-                  ),
-                ) ??
-                false;
-          },
-          onDismissed: (_) {
-            Future.microtask(() {
-              controller.removeFrame(index);
-              if (controller.currentFrameIndex.value >=
-                  controller.frames.length) {
-                controller.selectFrame(controller.frames.length - 1);
-              }
-            });
-          },
-          child: ReorderableDragStartListener(
-            index: index,
-            child: KeyedSubtree(
-              key: itemKey,
-              child: Obx(
-                () => _thumbnailItem(
-                  isSelected: controller.currentFrameIndex.value == index,
-                  onTap: () => controller.selectFrame(index),
-                  futureImage: futureImage,
-                  borderColor: Colors.blue,
-                  isHidden: frame.isHidden,
-                  onToggleVisibility:
-                      () => controller.toggleFrameVisibility(index),
-                ),
-              ),
-            ),
+        final thumbnail = Obx(
+          () => _thumbnailItem(
+            isSelected: controller.currentFrameIndex.value == index,
+            onTap: () => controller.selectFrame(index),
+            futureImage: futureImage,
+            borderColor: Colors.blue,
+            isHidden: frame.isHidden,
+            onToggleVisibility: () => controller.toggleFrameVisibility(index),
           ),
         );
+
+        // 👉 Nếu bật chế độ reorder → hiển thị nút drag + xoá
+        if (controller.isReorderMode.value) {
+          return KeyedSubtree(
+            key: ValueKey('frame_$index'),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.drag_indicator,
+                    color: Colors.grey,
+                    size: 20,
+                  ),
+
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: ReorderableDragStartListener(
+                      index: index,
+                      child: thumbnail,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // 👉 Nếu không bật reorder → chỉ hiện thumbnail
+        return KeyedSubtree(key: itemKey, child: thumbnail);
       },
     );
   }
@@ -487,7 +521,6 @@ class _DrawViewState extends State<DrawView> {
   }
 
   Widget _thumbnailItem({
-
     required bool isSelected,
     required VoidCallback onTap,
     required Future<Uint8List> futureImage,
