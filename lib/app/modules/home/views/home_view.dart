@@ -83,6 +83,7 @@ class HomeView extends GetView<HomeController> {
                         onPressed: () async {
                           final result = await showDialog(
                             context: context,
+                            barrierDismissible: false,
                             builder: (context) => CreateProjectDialog(controller: controller),
                           );
                           if (result is DrawProjectModel) {

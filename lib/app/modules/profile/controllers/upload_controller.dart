@@ -5,6 +5,7 @@ import 'package:ffmpeg_kit_flutter_new/ffprobe_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/return_code.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -23,6 +24,16 @@ class UploadController extends GetxController {
   void onInit() {
     super.onInit();
   }
+
+  @override
+  void onClose() {
+    nameController.dispose();
+    descriptionController.dispose();
+    super.onClose();
+  }
+
+  final nameController = TextEditingController();
+  final descriptionController = TextEditingController();
   final Rx<File?> videoFile = Rx<File?>(null);
   final Rx<File?> backgroundFile = Rx<File?>(null);
 
@@ -117,8 +128,8 @@ class UploadController extends GetxController {
       final post = PostModel(
         created_at: DateTime.now(),
         edited_at: DateTime.now(),
-        name: p.basenameWithoutExtension(videoFile.value!.path), //TODO: Lấy tên video
-        description: 'Upload at ${DateTime.now()}', //TODO: Lấy mô tả từ project
+        name: nameController.text, //TODO: Lấy tên video
+        description: descriptionController.text, //TODO: Lấy mô tả từ project
         url: url,
         status: 1, //TODO: Trạng thái bài đăng (1: công khai, dùng để phát triển cho tương lai, chắc vậy :v )
         user_id: userId, //TODO: Lấy userId từ UserModel
