@@ -16,7 +16,6 @@ import '../views/sketcher.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
-import 'package:external_path/external_path.dart';
 import 'package:file_picker/file_picker.dart';
 
 
@@ -36,7 +35,7 @@ class DrawController extends GetxController {
   final onionSkinEnabled = true.obs;
   final onionSkinRangeBefore = 2;
   final onionSkinRangeAfter = 1;
-  final onionSkinCount = 2.obs; // số frame trước muốn hiển thị
+  final onionSkinCount = 2.obs;
 
   void toggleOnionSkin() => showOnionSkin.toggle();
 
@@ -50,7 +49,7 @@ class DrawController extends GetxController {
   final isFrameListExpanded = true.obs;
   final isShowingLayout = true.obs;
 
-  final playbackSpeed = 6.obs; // Mặc định 6 FPS
+  final playbackSpeed = 6.obs;
   final _box = Hive.box<DrawProjectModel>('draw_project');
 
   Future<void> saveProjectToHive(String projectId, String name) async {
@@ -58,7 +57,7 @@ class DrawController extends GetxController {
       id: projectId,
       name: name,
       updatedAt: DateTime.now(),
-      frames: frames.map((f) => f.copy()).toList(), // copy để tránh trùng tham chiếu
+      frames: frames.map((f) => f.copy()).toList(),
     );
     await _box.put(projectId, project);
   }
@@ -70,8 +69,8 @@ class DrawController extends GetxController {
       frames.assignAll(project.frames.map((f) => f.copy()).toList());
       currentFrameIndex.value = 0;
       currentLayerIndex.value = 0;
-      currentProjectId = id;                    // thêm dòng này
-      currentProjectName = project.name;        // thêm dòng này
+      currentProjectId = id;
+      currentProjectName = project.name;
     }
   }
 
@@ -108,7 +107,7 @@ class DrawController extends GetxController {
       final idx = index - i;
       if (idx >= 0 && idx < frames.length) {
         final lines = frames[idx].layers.expand((layer) => layer.lines).toList();
-        double alpha = (1.0 - i / (onionSkinRangeBefore + 1)) * 0.5; // max 0.5 opacity
+        double alpha = (1.0 - i / (onionSkinRangeBefore + 1)) * 0.5;
         onionLayers.add(MapEntry(lines, alpha));
       }
     }
@@ -259,7 +258,6 @@ class DrawController extends GetxController {
     currentLines = copied;
     _clearThumbnailCache();
 
-    // 🔥 Thêm vào để lưu lại sau mỗi lần chỉnh sửa
     if (currentProjectId != null && currentProjectName != null) {
       saveProjectToHive(currentProjectId!, currentProjectName!);
     }
@@ -410,8 +408,8 @@ class DrawController extends GetxController {
     final cacheKey = layerIndex == null ? '$frameIndex' : '$frameIndex-$layerIndex';
     if (thumbnailCache.containsKey(cacheKey)) return thumbnailCache[cacheKey]!;
 
-    const double thumbWidth = 640;
-    const double thumbHeight = 360;
+    const double thumbWidth = 160;
+    const double thumbHeight = 90;
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, thumbWidth, thumbHeight));

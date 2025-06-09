@@ -487,6 +487,7 @@ class _DrawViewState extends State<DrawView> {
   }
 
   Widget _thumbnailItem({
+
     required bool isSelected,
     required VoidCallback onTap,
     required Future<Uint8List> futureImage,
