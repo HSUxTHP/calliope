@@ -1,5 +1,6 @@
 import 'package:calliope/app/data/models/post_model.dart';
 import 'package:calliope/app/modules/community/controllers/community_controller.dart';
+import 'package:calliope/app/modules/profile/controllers/profile_controller.dart';
 import 'package:calliope/app/widget_share/post_search_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +10,14 @@ class SearchingView extends GetView<CommunityController> {
   final String searchText;
   const SearchingView({super.key, required this.searchText});
   Widget build(BuildContext context) {
+    final profileController = Get.find<ProfileController>();
     return Obx(() {
+      if (!profileController.hasNetwork.value) {
+        profileController.checkNetworkConnection();
+        return const Center(
+          child: Text('No internet connection'),
+        );
+      }
       if (controller.isLoading.value) {
         return const Center(
           child: CircularProgressIndicator(),
