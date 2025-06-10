@@ -34,6 +34,17 @@ class WatchController extends GetxController {
 
   void fetchVideo(int id) async {
     isLoading.value = true;
+    final hasConnection = await profileController.checkNetworkConnection();
+    if (!hasConnection) {
+      Get.snackbar(
+        'Lỗi mạng',
+        'Không có kết nối Internet',
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
+      isLoading.value = false;
+      return;
+    }
     final res = await Supabase.instance.client
         .from('posts')
         .select()

@@ -51,6 +51,7 @@ class LayoutView extends GetView<LayoutController> {
           // Main content
           Expanded(
             child: TabBarView(
+              physics: NeverScrollableScrollPhysics(),
               controller: controller.tabController,
               children: [
                 HomeView(),
