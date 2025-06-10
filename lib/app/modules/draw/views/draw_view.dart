@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../profile/controllers/profile_controller.dart';
@@ -107,16 +108,31 @@ class _DrawViewState extends State<DrawView> {
                   ),
                   if (controller.showOnionSkin.value) ...[
                     const SizedBox(width: 4),
-                    const Text("Frame trước:", style: TextStyle(fontSize: 12)),
-                    Slider(
-                      value: controller.onionSkinCount.value.toDouble(),
-                      min: 1,
-                      max: 5,
-                      divisions: 4,
-                      label: "${controller.onionSkinCount.value}",
-                      onChanged: (value) => controller.onionSkinCount.value = value.toInt(),
+                    const Text("OnionSkin:", style: TextStyle(fontSize: 12)),
+                    const SizedBox(width: 8),
+                    DropdownButton<int>(
+                      value: controller.onionSkinCount.value,
+                      items: List.generate(5, (index) {
+                        final value = index + 1;
+                        return DropdownMenuItem<int>(
+                          value: value,
+                          child: Text('$value'),
+                        );
+                      }),
+                      onChanged: (value) {
+                        if (value != null) {
+                          controller.onionSkinCount.value = value;
+                        }
+                      },
+                      style: const TextStyle(fontSize: 13, color: Colors.black),
+                      underline: Container(
+                        height: 1,
+                        color: Colors.grey,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ]
+
                 ]),
 
 
@@ -840,51 +856,90 @@ class _DrawViewState extends State<DrawView> {
       },
     ).then((_) => timer?.cancel());
   }
+  final List<Color> recentColors = [];
 
   void _showColorPicker(BuildContext context) {
+    Color selectedColor = controller.selectedColor.value;
+
     showDialog(
       context: context,
-      builder:
-          (_) => AlertDialog(
-        title: const Text('Chọn màu'),
-        content: SingleChildScrollView(
-          child: Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children:
-            [
-              Colors.black,
-              Colors.red,
-              Colors.green,
-              Colors.blue,
-              Colors.orange,
-              Colors.purple,
-              Colors.brown,
-              Colors.yellow,
-              Colors.pink,
-            ].map((color) {
-              return GestureDetector(
-                onTap: () {
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Chọn màu vẽ'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 🎨 Giao diện picker chuẩn như hình
+              ColorPicker(
+                color: selectedColor,
+                onColorChanged: (Color color) {
                   controller.changeColor(color);
-                  Navigator.of(context).pop();
+
+                  // 🕹️ Cập nhật danh sách màu đã dùng
+                  if (!recentColors.contains(color)) {
+                    recentColors.insert(0, color);
+                    if (recentColors.length > 10) {
+                      recentColors.removeLast();
+                    }
+                  }
                 },
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      width: 1.5,
-                      color: Colors.grey.shade300,
-                    ),
+                pickersEnabled: const {
+                  ColorPickerType.wheel: true,
+                },
+                enableShadesSelection: true,  // ✅ giữ dải màu gợi ý bên dưới như ảnh
+                enableOpacity: false,
+                showColorCode: false,
+                width: 36,
+                height: 36,
+                spacing: 8,
+                runSpacing: 8,
+                borderRadius: 8,
+              ),
+
+              const SizedBox(height: 16),
+
+              // ✅ Dòng màu đã dùng
+              if (recentColors.isNotEmpty) ...[
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: 8),
+                    child: Text('Màu đã dùng:',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                   ),
                 ),
-              );
-            }).toList(),
+                Wrap(
+                  spacing: 8,
+                  children: recentColors.map((color) {
+                    return GestureDetector(
+                      onTap: () {
+                        controller.changeColor(color);
+                        Navigator.of(context).pop();
+                      },
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.grey.shade400, width: 1),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ]
+            ],
           ),
-        ),
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Đóng'),
+            ),
+          ],
+        );
+      },
     );
   }
+
 }

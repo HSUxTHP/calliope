@@ -160,8 +160,8 @@ class DrawController extends GetxController {
   List<List<DrawnLine>>? copiedFrame;
   static const Size canvasSize = Size(1600, 900);
 
-  IconData get currentToolIcon => isEraser.value ? MdiIcons.eraser : Icons.brush;
-  String get currentToolTooltip => isEraser.value ? 'Tẩy' : 'Bút';
+  IconData get currentToolIcon => isEraser.value ?  Icons.brush : MdiIcons.eraser ;
+  String get currentToolTooltip => isEraser.value ? 'Bút' : 'Tẩy';
 
   @override
   void onInit() {

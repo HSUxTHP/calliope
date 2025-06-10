@@ -55,6 +55,8 @@ dependencies:
   uuid: ^4.0.0
   blur: ^3.0.0
   connectivity_plus: ^6.0.3
+  flex_color_picker: ^3.3.0
+
 
 
 
