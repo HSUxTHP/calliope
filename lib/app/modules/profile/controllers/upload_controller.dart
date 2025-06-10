@@ -29,6 +29,8 @@ class UploadController extends GetxController {
   void onClose() {
     nameController.dispose();
     descriptionController.dispose();
+    videoFile.value = null;
+    backgroundFile.value = null;
     super.onClose();
   }
 

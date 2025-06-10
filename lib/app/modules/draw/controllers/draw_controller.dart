@@ -12,6 +12,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../data/models/drawmodels/draw_project_model.dart';
 import '../../../data/models/drawmodels/drawn_line_model.dart';
 import '../../../data/models/drawmodels/frame_model.dart';
+import '../../profile/controllers/upload_controller.dart';
 import '../views/sketcher.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
@@ -603,6 +604,173 @@ class DrawController extends GetxController {
       print("❌ Xuất video thất bại với mã: $returnCode");
       Get.snackbar("Lỗi", "Xuất video thất bại với mã: $returnCode", snackPosition: SnackPosition.BOTTOM);
     }
+  }
+  Future<void> uploadVideoToProfile(int fps, int userId) async {
+    final tempDir = await getTemporaryDirectory();
+    final framesDir = Directory(p.join(tempDir.path, "upload_frames"));
+    if (!await framesDir.exists()) {
+      await framesDir.create(recursive: true);
+    }
+
+    // Bước 1: Render các frame thành ảnh
+    for (int i = frames.length - 1; i >= 0; i--) {
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, canvasSize.width, canvasSize.height));
+      canvas.drawColor(Colors.white, BlendMode.src);
+
+      for (int l = 0; l < 3; l++) {
+        if (!isLayerHidden(l)) {
+          Sketcher(lines: frames[i].layers[l].lines).paint(canvas, canvasSize);
+        }
+      }
+
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(canvasSize.width.toInt(), canvasSize.height.toInt());
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final bytes = byteData!.buffer.asUint8List();
+
+      final filePath = p.join(framesDir.path, 'frame_${(frames.length - 1 - i).toString().padLeft(3, '0')}.png');
+      await File(filePath).writeAsBytes(bytes);
+    }
+
+    // Bước 2: Tạo video từ ảnh
+    final outputPath = p.join(tempDir.path, 'upload_video.mp4');
+    final cmd =
+        "-y -framerate $fps -start_number 0 -i ${framesDir.path}/frame_%03d.png "
+        "-vf scale='trunc(iw/2)*2:trunc(ih/2)*2' "
+        "-c:v libx264 -pix_fmt yuv420p $outputPath";
+
+    final session = await FFmpegKit.execute(cmd);
+    final returnCode = await session.getReturnCode();
+
+    if (!ReturnCode.isSuccess(returnCode)) {
+      Get.snackbar("Lỗi", "Không tạo được video để đăng", snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
+    // Bước 3: Gọi UploadController để upload
+    final uploadController = Get.put(UploadController());
+    uploadController.videoFile.value = File(outputPath);
+
+    // Option: render thumbnail từ frame đầu
+    final thumbPath = p.join(tempDir.path, 'background.png');
+    final thumb = await renderThumbnailToFile(0, thumbPath);
+    if (thumb != null) uploadController.backgroundFile.value = thumb;
+
+    uploadController.nameController.text = currentProjectName ?? 'Video mới';
+    uploadController.descriptionController.text = 'Tạo từ ứng dụng vẽ';
+    await uploadController.uploadVideo(userId);
+  }
+  Future<File?> renderThumbnailToFile(int frameIndex, String path) async {
+    try {
+      final bytes = await renderThumbnail(frameIndex);
+      final file = File(path);
+      await file.writeAsBytes(bytes);
+      return file;
+    } catch (e) {
+      print("❌ Lỗi tạo thumbnail: $e");
+      return null;
+    }
+  }
+  Future<void> showUploadDialogWithInfo(int fps, int userId) async {
+    final nameController = TextEditingController(text: currentProjectName ?? "Video mới");
+    File? thumbnailFile;
+
+    int? selectedFrameIndex;
+
+    await Get.dialog(
+      AlertDialog(
+        title: const Text("Đăng video lên hồ sơ"),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: "Tên video"),
+              ),
+              const SizedBox(height: 12),
+              const Text("Chọn frame làm thumbnail (hoặc bỏ qua để chọn ảnh từ máy):"),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 100,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: frames.length,
+                  itemBuilder: (_, index) {
+                    return FutureBuilder<Uint8List>(
+                      future: renderThumbnail(index),
+                      builder: (_, snapshot) {
+                        if (snapshot.connectionState != ConnectionState.done || !snapshot.hasData) {
+                          return const SizedBox(width: 80, child: Center(child: CircularProgressIndicator()));
+                        }
+                        return GestureDetector(
+                          onTap: () => selectedFrameIndex = index,
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: selectedFrameIndex == index ? Colors.blue : Colors.grey,
+                                width: 2,
+                              ),
+                            ),
+                            child: Image.memory(snapshot.data!, width: 80),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  final result = await FilePicker.platform.pickFiles(type: FileType.image);
+                  if (result != null && result.files.single.path != null) {
+                    thumbnailFile = File(result.files.single.path!);
+                    Get.snackbar("Đã chọn ảnh", "Ảnh từ máy sẽ được dùng làm thumbnail");
+                  }
+                },
+                icon: const Icon(Icons.image),
+                label: const Text("Chọn ảnh từ máy"),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text("Huỷ")),
+          ElevatedButton(
+            onPressed: () async {
+              Get.back(); // đóng dialog
+
+              final tempDir = await getTemporaryDirectory();
+              final outputPath = p.join(tempDir.path, 'upload_video.mp4');
+              final thumbPath = p.join(tempDir.path, 'background.png');
+
+              // Tạo thumbnail từ frame nếu chọn
+              if (selectedFrameIndex != null) {
+                final bytes = await renderThumbnail(selectedFrameIndex!);
+                thumbnailFile = await File(thumbPath).writeAsBytes(bytes);
+              }
+
+              // Tạo video
+              await renderAllFramesToImages();
+              await exportToVideoWithFFmpeg(fps);
+
+              // Gọi UploadController
+              final uploadController = Get.put(UploadController());
+              uploadController.videoFile.value = File(outputPath);
+              uploadController.backgroundFile.value = thumbnailFile;
+              uploadController.nameController.text = nameController.text;
+              uploadController.descriptionController.text = "Tạo từ ứng dụng vẽ";
+
+              await uploadController.uploadVideo(userId);
+            },
+            child: const Text("Đăng video"),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<List<Uint8List>> getAllFrameThumbnails() async {
