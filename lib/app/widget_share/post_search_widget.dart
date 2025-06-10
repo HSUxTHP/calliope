@@ -1,5 +1,7 @@
 import 'package:calliope/app/data/models/post_model.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:intl/intl.dart';
 
 class PostSearchCard extends StatelessWidget {
@@ -24,7 +26,7 @@ class PostSearchCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () {
-            // Add your tap logic here
+            Get.toNamed('/watch/${post.id}');
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16 , vertical: 4),
