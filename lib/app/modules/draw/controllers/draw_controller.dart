@@ -180,22 +180,27 @@ class DrawController extends GetxController {
   void addPoint(Offset point) {
     if (currentLines.isNotEmpty) {
       currentLines.last.points.add(point);
-      _clearThumbnailCache();
-      frames.refresh();    }
+      _clearThumbnailCache(frameIndex: currentFrameIndex.value);
 
+      final index = currentFrameIndex.value;
+      frames[index] = frames[index]; // 👈 chỉ cập nhật frame hiện tại
+    }
   }
+
 
   void endStroke() {
     if (currentLines.isNotEmpty) {
-      frames.refresh();
+      final index = currentFrameIndex.value;
+      frames[index] = frames[index]; // 👈 chỉ update frame hiện tại
+
       saveCurrentFrame();
 
-      // Auto-save nếu có id
       if (currentProjectId != null && currentProjectName != null) {
         saveProjectToHive(currentProjectId!, currentProjectName!);
       }
     }
   }
+
 
 
 
@@ -238,7 +243,7 @@ class DrawController extends GetxController {
 
 
   void selectFrame(int index) {
-    if (index == currentFrameIndex.value) return; // 👉 tránh scroll nếu chọn lại
+    if (index == currentFrameIndex.value) return;
 
     saveCurrentFrame();
     currentFrameIndex.value = index;
@@ -249,10 +254,11 @@ class DrawController extends GetxController {
       Scrollable.ensureVisible(
         context,
         duration: const Duration(milliseconds: 300),
-        alignment: 0.5, // 👈 giữ frame giữa danh sách
+        alignment: 0.5,
       );
     }
   }
+
 
 
 
@@ -393,9 +399,6 @@ class DrawController extends GetxController {
         if (frames.isEmpty) return;
 
         currentFrameIndex.value = _currentIndex;
-        currentLayerIndex.value = 0;
-        frames.refresh(); // Cập nhật lại frame hiển thị
-
         _currentIndex = (_currentIndex - 1) % frames.length;
         if (_currentIndex < 0) _currentIndex = frames.length - 1; // 👉 reset về cuối nếu < 0
       });
@@ -429,6 +432,10 @@ class DrawController extends GetxController {
   }
 
   Future<Uint8List> renderThumbnail(int frameIndex, [int? layerIndex]) async {
+    if (frameIndex < 0 || frameIndex >= frames.length) {
+      throw ArgumentError('Invalid frameIndex: $frameIndex');
+    }
+
     final cacheKey = layerIndex == null ? '$frameIndex' : '$frameIndex-$layerIndex';
     if (thumbnailCache.containsKey(cacheKey)) return thumbnailCache[cacheKey]!;
 
@@ -437,27 +444,36 @@ class DrawController extends GetxController {
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, thumbWidth, thumbHeight));
-    final scale = thumbWidth / canvasSize.width;
-    canvas.scale(scale, scale);
 
-    // ✅ THÊM dòng này để vẽ nền trắng thay vì bị đen
+    // ✅ Tính scale theo cả chiều rộng và chiều cao
+    final scaleX = thumbWidth / canvasSize.width;
+    final scaleY = thumbHeight / canvasSize.height;
+    canvas.scale(scaleX, scaleY);
+
+    // ✅ Vẽ nền trắng
     canvas.drawColor(Colors.white, BlendMode.src);
 
-    if (layerIndex == null) {
-      for (int i = 0; i < 3; i++) {
-        Sketcher(lines: frames[frameIndex].layers[i].lines).paint(canvas, canvasSize);
+    try {
+      if (layerIndex == null) {
+        for (int i = 0; i < 3; i++) {
+          Sketcher(lines: frames[frameIndex].layers[i].lines).paint(canvas, canvasSize);
+        }
+      } else {
+        Sketcher(lines: frames[frameIndex].layers[layerIndex].lines).paint(canvas, canvasSize);
       }
-    } else {
-      Sketcher(lines: frames[frameIndex].layers[layerIndex].lines).paint(canvas, canvasSize);
+
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(thumbWidth.toInt(), thumbHeight.toInt());
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) throw Exception("Failed to encode image to byteData");
+
+      final bytes = byteData.buffer.asUint8List();
+      thumbnailCache[cacheKey] = bytes;
+      return bytes;
+    } catch (e) {
+      print("❌ Lỗi khi render thumbnail frame $frameIndex: $e");
+      return Uint8List(0);
     }
-
-    final picture = recorder.endRecording();
-    final image = await picture.toImage(thumbWidth.toInt(), thumbHeight.toInt());
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    final bytes = byteData!.buffer.asUint8List();
-
-    thumbnailCache[cacheKey] = bytes;
-    return bytes;
   }
 
 
@@ -603,9 +619,15 @@ class DrawController extends GetxController {
 
 
 
-  void _clearThumbnailCache() {
-    thumbnailCache.clear();
+  void _clearThumbnailCache({int? frameIndex, int? layerIndex}) {
+    if (frameIndex == null) {
+      thumbnailCache.clear();
+    } else {
+      final key = layerIndex == null ? '$frameIndex' : '$frameIndex-$layerIndex';
+      thumbnailCache.remove(key);
+    }
   }
+
 
   void scrollToTop() {
     Future.delayed(const Duration(milliseconds: 50), () {
