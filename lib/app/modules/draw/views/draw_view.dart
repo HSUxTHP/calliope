@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../profile/controllers/profile_controller.dart';
 import '../controllers/draw_controller.dart';
 import 'canvas_area.dart';
 import 'package:blur/blur.dart';
@@ -35,10 +36,10 @@ class _DrawViewState extends State<DrawView> {
             child: Row(
               children: [
                 Obx(
-                  () =>
-                      controller.isFrameListExpanded.value
-                          ? _buildSidebar()
-                          : _buildCollapsedSidebar(),
+                      () =>
+                  controller.isFrameListExpanded.value
+                      ? _buildSidebar()
+                      : _buildCollapsedSidebar(),
                 ),
                 const VerticalDivider(width: 1, thickness: 1),
                 const Expanded(child: CanvasArea()),
@@ -66,7 +67,7 @@ class _DrawViewState extends State<DrawView> {
         ),
       ),
       child: Obx(
-        () => SingleChildScrollView(
+            () => SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: ConstrainedBox(
             constraints: const BoxConstraints(
@@ -77,7 +78,7 @@ class _DrawViewState extends State<DrawView> {
                 _toolbarGroup([
                   _iconButton(
                     Icons.arrow_back,
-                    () => Get.back(),
+                        () => Get.back(),
                     tooltip: 'Quay lại',
                   ),
                 ]),
@@ -129,7 +130,7 @@ class _DrawViewState extends State<DrawView> {
                   ),
                   _iconButton(
                     Icons.color_lens,
-                    () => _showColorPicker(Get.context!),
+                        () => _showColorPicker(Get.context!),
                     tooltip: 'Chọn màu',
                     color: controller.selectedColor.value,
                   ),
@@ -141,12 +142,12 @@ class _DrawViewState extends State<DrawView> {
                   label: '${controller.selectedWidth.value.toInt()} px',
                   onMinus:
                       () => controller.changeWidth(
-                        controller.selectedWidth.value - 1,
-                      ),
+                    controller.selectedWidth.value - 1,
+                  ),
                   onPlus:
                       () => controller.changeWidth(
-                        controller.selectedWidth.value + 1,
-                      ),
+                    controller.selectedWidth.value + 1,
+                  ),
                 ),
 
                 const SizedBox(width: 8),
@@ -179,11 +180,11 @@ class _DrawViewState extends State<DrawView> {
   }
 
   Widget _iconButton(
-    IconData icon,
-    VoidCallback onPressed, {
-    String? tooltip,
-    Color? color,
-  }) {
+      IconData icon,
+      VoidCallback onPressed, {
+        String? tooltip,
+        Color? color,
+      }) {
     return IconButton(
       icon: Icon(icon, size: 20, color: color ?? Colors.black),
       tooltip: tooltip,
@@ -194,14 +195,14 @@ class _DrawViewState extends State<DrawView> {
   Widget _toolbarGroup(List<Widget> children) {
     return Row(
       children:
-          children
-              .map(
-                (w) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: w,
-                ),
-              )
-              .toList(),
+      children
+          .map(
+            (w) => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: w,
+        ),
+      )
+          .toList(),
     );
   }
 
@@ -282,57 +283,57 @@ class _DrawViewState extends State<DrawView> {
         children: [
           _buildSidebarHeader(),
           Obx(
-            () =>
-                controller.isShowingLayout.value
-                    ? const SizedBox(height: 8)
-                    : _buildFrameToggle(), // ✅ Nút + vẫn ở trên
+                () =>
+            controller.isShowingLayout.value
+                ? const SizedBox(height: 8)
+                : _buildFrameToggle(), // ✅ Nút + vẫn ở trên
           ),
           const SizedBox(height: 8),
 
           // ✅ Danh sách Frame hoặc Layout
           Expanded(
             child: Obx(
-              () =>
-                  controller.isShowingLayout.value
-                      ? _buildLayoutList()
-                      : Column(
-                        children: [
-                          // 📄 Danh sách frame
-                          Expanded(child: _buildFrameList()),
+                  () =>
+              controller.isShowingLayout.value
+                  ? _buildLayoutList()
+                  : Column(
+                children: [
+                  // 📄 Danh sách frame
+                  Expanded(child: _buildFrameList()),
 
-                          // ✅ Nút bật/tắt chế độ reorder ở CUỐI
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _buildReorderToggleButton(),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
-                                ),
-                                tooltip: 'Xoá frame hiện tại',
-                                onPressed: () {
-                                  if (controller.frames.length <= 1) return;
-                                  Get.defaultDialog(
-                                    title: 'Xác nhận',
-                                    middleText:
-                                        'Bạn có chắc muốn xoá frame hiện tại?',
-                                    textCancel: 'Huỷ',
-                                    textConfirm: 'Xoá',
-                                    confirmTextColor: Colors.white,
-                                    onConfirm: () {
-                                      Get.back();
-                                      controller.deleteCurrentFrame();
-                                    },
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                        ],
+                  // ✅ Nút bật/tắt chế độ reorder ở CUỐI
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildReorderToggleButton(),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.delete,
+                          color: Colors.red,
+                        ),
+                        tooltip: 'Xoá frame hiện tại',
+                        onPressed: () {
+                          if (controller.frames.length <= 1) return;
+                          Get.defaultDialog(
+                            title: 'Xác nhận',
+                            middleText:
+                            'Bạn có chắc muốn xoá frame hiện tại?',
+                            textCancel: 'Huỷ',
+                            textConfirm: 'Xoá',
+                            confirmTextColor: Colors.white,
+                            onConfirm: () {
+                              Get.back();
+                              controller.deleteCurrentFrame();
+                            },
+                          );
+                        },
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
             ),
           ),
         ],
@@ -342,13 +343,13 @@ class _DrawViewState extends State<DrawView> {
 
   Widget _buildReorderToggleButton() {
     return Obx(
-      () => ElevatedButton.icon(
+          () => ElevatedButton.icon(
         onPressed: controller.toggleReorderMode,
         style: ElevatedButton.styleFrom(
           backgroundColor:
-              controller.isReorderMode.value
-                  ? Colors.cyanAccent
-                  : Colors.grey.shade200,
+          controller.isReorderMode.value
+              ? Colors.cyanAccent
+              : Colors.grey.shade200,
           foregroundColor: Colors.black,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           shape: RoundedRectangleBorder(
@@ -399,7 +400,7 @@ class _DrawViewState extends State<DrawView> {
   Widget _sidebarTab(String label, bool layoutTab) {
     return Expanded(
       child: Obx(
-        () => GestureDetector(
+            () => GestureDetector(
           onTap: () {
             controller.isShowingLayout.value = layoutTab;
             controller.scrollToTop();
@@ -409,9 +410,9 @@ class _DrawViewState extends State<DrawView> {
             margin: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color:
-                  controller.isShowingLayout.value == layoutTab
-                      ? Colors.white
-                      : Colors.transparent,
+              controller.isShowingLayout.value == layoutTab
+                  ? Colors.white
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(20),
             ),
             alignment: Alignment.center,
@@ -420,9 +421,9 @@ class _DrawViewState extends State<DrawView> {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color:
-                    controller.isShowingLayout.value == layoutTab
-                        ? Colors.black
-                        : Colors.grey,
+                controller.isShowingLayout.value == layoutTab
+                    ? Colors.black
+                    : Colors.grey,
               ),
             ),
           ),
@@ -458,7 +459,7 @@ class _DrawViewState extends State<DrawView> {
         final itemKey = ValueKey('frame_$index');
 
         final thumbnail = Obx(
-          () => _thumbnailItem(
+              () => _thumbnailItem(
             isSelected: controller.currentFrameIndex.value == index,
             onTap: () => controller.selectFrame(index),
             futureImage: futureImage,
@@ -603,7 +604,7 @@ class _DrawViewState extends State<DrawView> {
               timer?.cancel();
               timer = Timer.periodic(
                 Duration(milliseconds: 1000 ~/ localFps),
-                (_) => setState(() => current = (current + 1) % frames.length),
+                    (_) => setState(() => current = (current + 1) % frames.length),
               );
               setState(() => isPlaying = true);
             }
@@ -742,9 +743,9 @@ class _DrawViewState extends State<DrawView> {
                                     : Icons.play_circle,
                                 size: 36,
                                 color:
-                                    isPlaying
-                                        ? Colors.redAccent
-                                        : Colors.greenAccent,
+                                isPlaying
+                                    ? Colors.redAccent
+                                    : Colors.greenAccent,
                               ),
                               onPressed:
                                   () => isPlaying ? stopTimer() : startTimer(),
@@ -759,12 +760,59 @@ class _DrawViewState extends State<DrawView> {
                               ),
                               onPressed: () async {
                                 timer?.cancel();
-                                Navigator.of(context).pop();
-                                await controller.renderAllFramesToImages();
-                                await controller.exportToVideoWithFFmpeg(
-                                  localFps,
+
+                                final result = await showDialog<String>(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: const Text("Chọn nơi lưu video"),
+                                      content: const Text("Bạn muốn lưu video về máy hay đăng lên hồ sơ cá nhân?"),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.of(context).pop("local"),
+                                          child: const Text("💾 Lưu về máy"),
+                                        ),
+                                        TextButton(
+                                          onPressed: () => Navigator.of(context).pop("upload"),
+                                          child: const Text("📤 Đăng lên profile"),
+                                        ),
+                                        TextButton(
+                                          onPressed: () => Navigator.of(context).pop(),
+                                          child: const Text("Huỷ"),
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 );
+
+                                if (result == null) return;
+
+                                Navigator.of(context).pop(); // đóng dialog preview
+
+                                await controller.renderAllFramesToImages();
+
+                                if (result == "local") {
+                                  await controller.exportToVideoWithFFmpeg(localFps);
+                                } else if (result == "upload") {
+                                  final profileCtrl = Get.find<ProfileController>();
+                                  final userIdStr = profileCtrl.currentUser.value?.id;
+
+                                  if (userIdStr == null) {
+                                    Get.snackbar("Lỗi", "Không tìm thấy userId hiện tại");
+                                    return;
+                                  }
+
+                                  final userId = int.tryParse(userIdStr);
+                                  if (userId == null) {
+                                    Get.snackbar("Lỗi", "ID người dùng không hợp lệ: $userIdStr");
+                                    return;
+                                  }
+
+                                  await controller.uploadVideoToProfile(localFps, userId);
+                                }
                               },
+
+
                             ),
                             const SizedBox(width: 8),
                             ElevatedButton.icon(
@@ -798,45 +846,45 @@ class _DrawViewState extends State<DrawView> {
       context: context,
       builder:
           (_) => AlertDialog(
-            title: const Text('Chọn màu'),
-            content: SingleChildScrollView(
-              child: Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children:
-                    [
-                      Colors.black,
-                      Colors.red,
-                      Colors.green,
-                      Colors.blue,
-                      Colors.orange,
-                      Colors.purple,
-                      Colors.brown,
-                      Colors.yellow,
-                      Colors.pink,
-                    ].map((color) {
-                      return GestureDetector(
-                        onTap: () {
-                          controller.changeColor(color);
-                          Navigator.of(context).pop();
-                        },
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              width: 1.5,
-                              color: Colors.grey.shade300,
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-              ),
-            ),
+        title: const Text('Chọn màu'),
+        content: SingleChildScrollView(
+          child: Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children:
+            [
+              Colors.black,
+              Colors.red,
+              Colors.green,
+              Colors.blue,
+              Colors.orange,
+              Colors.purple,
+              Colors.brown,
+              Colors.yellow,
+              Colors.pink,
+            ].map((color) {
+              return GestureDetector(
+                onTap: () {
+                  controller.changeColor(color);
+                  Navigator.of(context).pop();
+                },
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      width: 1.5,
+                      color: Colors.grey.shade300,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
           ),
+        ),
+      ),
     );
   }
 }

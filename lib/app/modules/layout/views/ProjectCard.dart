@@ -5,6 +5,7 @@ class ProjectCard extends StatelessWidget {
   final String title;
   final String createdAt;
   final VoidCallback? onTap; // ✅ THÊM DÒNG NÀY
+  final VoidCallback? onDelete; // 👈 THÊM DÒNG NÀY
 
   const ProjectCard({
     super.key,
@@ -12,6 +13,8 @@ class ProjectCard extends StatelessWidget {
     required this.title,
     required this.createdAt,
     this.onTap, // ✅ THÊM VÀO CONSTRUCTOR
+    this.onDelete, // 👈 THÊM DÒNG NÀY
+
   });
 
   @override
