@@ -660,6 +660,11 @@ class DrawController extends GetxController {
     uploadController.nameController.text = currentProjectName ?? 'Video mới';
     uploadController.descriptionController.text = 'Tạo từ ứng dụng vẽ';
     await uploadController.uploadVideo(userId);
+    // Xoá tạm thời các file đã tạo
+    if(await framesDir.exists()) {
+      await framesDir.delete(recursive: true);
+      await File(outputPath).delete();
+    }
   }
   Future<File?> renderThumbnailToFile(int frameIndex, String path) async {
     try {
