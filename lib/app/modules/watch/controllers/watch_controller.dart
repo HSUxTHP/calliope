@@ -1,6 +1,7 @@
 import 'package:better_player_plus/better_player_plus.dart';
 import 'package:calliope/app/data/models/post_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -75,11 +76,20 @@ class WatchController extends GetxController {
         aspectRatio: 16 / 9,
         autoPlay: true,
         looping: true,
+
+        fullScreenByDefault: false,
+
         fit: BoxFit.contain,
+        deviceOrientationsOnFullScreen: [
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ],
+        autoDetectFullscreenDeviceOrientation: false,
         controlsConfiguration: BetterPlayerControlsConfiguration(
           enableSubtitles: false,
           enableQualities: false,
           enableAudioTracks: false,
+          enableFullscreen: false,
         ),
       ),
       betterPlayerDataSource: dataSource,
