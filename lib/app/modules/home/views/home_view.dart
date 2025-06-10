@@ -183,7 +183,36 @@ class HomeView extends GetView<HomeController> {
                           title: project.name,
                           createdAt: project.updatedAt.toIso8601String(),
                           onTap: () => Get.toNamed('/draw', arguments: project.id),
+
+                          // ✅ Chức năng xoá
+                          onDelete: () async {
+                            final confirmed = await Get.dialog<bool>(
+                              AlertDialog(
+                                title: const Text('Xoá project'),
+                                content: Text('Bạn có chắc muốn xoá project "${project.name}" không?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Get.back(result: false),
+                                    child: const Text('Huỷ'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Get.back(result: true),
+                                    child: const Text('Xoá', style: TextStyle(color: Colors.red)),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirmed == true) {
+                              final box = Hive.box<DrawProjectModel>('draw_project');
+                              await box.delete(project.id);              // ✅ xoá khỏi Hive
+                              controller.loadProjects();                 // ✅ reload lại danh sách
+                              Get.snackbar('Đã xoá', 'Project "${project.name}" đã bị xoá');
+                            }
+                          },
                         );
+
+
 
 
                       },
