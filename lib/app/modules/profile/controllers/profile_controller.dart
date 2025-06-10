@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -14,6 +15,7 @@ import '../../../data/models/user_model.dart';
 class ProfileController extends GetxController with GetSingleTickerProviderStateMixin {
   final isLoading = false.obs;
   final isCurrentUser = false.obs;
+  RxBool hasNetwork = true.obs;
 
   var currentUser = Rxn<UserModel>();
   var viewedUser = Rxn<UserModel>();
@@ -38,6 +40,29 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
     print('viewedUser: ${viewedUser.value}');
   }
 
+  Future<bool> checkNetworkConnection() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      hasNetwork.value = false;
+      return false;
+    }
+
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+        hasNetwork.value = true;
+        return true;
+      } else {
+        hasNetwork.value = false;
+        return false;
+      }
+    } on SocketException {
+      hasNetwork.value = false;
+      return false;
+    }
+  }
+
+
   Future<void> reload() async {
     isLoading.value = true;
 
@@ -47,6 +72,12 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
     await loadCurrentUserFromHive();
 
     final self = currentUser.value;
+
+    if (!await checkNetworkConnection()) {
+      Get.snackbar("No Internet", "Vui lòng kiểm tra kết nối mạng");
+      isLoading.value = false;
+      return;
+    }
 
     if (routeUserId != null) {
       // Xem người khác (hoặc bản thân thông qua ID)
@@ -80,6 +111,11 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
   Future<void> initProfile(int? userId) async {
     if (userId == null || userId <= 0) {
       print('Không có ID hợp lệ để tải profile');
+      return;
+    }
+
+    if (!await checkNetworkConnection()) {
+      Get.snackbar("No Internet", "Không thể tải dữ liệu người dùng");
       return;
     }
 
@@ -121,6 +157,9 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
   }
 
   Future<UserModel> getUser(int userId) async {
+    if (!await checkNetworkConnection()) {
+      throw Exception("Không có kết nối mạng");
+    }
     isLoading.value = true;
     try {
       final response = await Supabase.instance.client
@@ -145,6 +184,11 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
 
 
   Future<void> getAllPostsByCurrentUser(int userId) async {
+    if (!await checkNetworkConnection()) {
+      Get.snackbar("No Internet", "Không thể tải bài viết");
+      return;
+    }
+
     try {
 
       final response = await Supabase.instance.client
@@ -177,6 +221,10 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
 
 
   Future<void> signInWithGoogleAndSaveToSupabase() async {
+    if (!await checkNetworkConnection()) {
+      Get.snackbar("No Internet", "Không thể đăng nhập khi offline");
+      return;
+    }
     try {
       final googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) throw Exception("Người dùng đã huỷ đăng nhập");
@@ -323,6 +371,10 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
           TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () async {
+              if (!await checkNetworkConnection()) {
+                Get.snackbar("No Internet", "Không thể cập nhật khi offline");
+                return;
+              }
               final editedAt = DateTime.now().toIso8601String();
               String? newAvatarUrl = avatarUrl;
 

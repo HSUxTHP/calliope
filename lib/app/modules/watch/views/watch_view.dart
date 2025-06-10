@@ -16,6 +16,44 @@ class WatchView extends GetView<WatchController> {
   @override
   Widget build(BuildContext context) {
     final profileController = Get.find<ProfileController>();
+    profileController.checkNetworkConnection();
+    if (!profileController.hasNetwork.value) {
+      // profileController.checkNetworkConnection();
+      return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          body: Center(
+            child: Column(
+              // mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.signal_wifi_off, size: 48, color: Colors.red),
+                const SizedBox(height: 8),
+                Text(
+                  'No Internet Connection',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (await profileController.checkNetworkConnection()) {
+                      controller.onInit();
+                    } else {
+                      Get.snackbar(
+                        'Error',
+                        'Unable to connect to the internet.',
+                        snackPosition: SnackPosition.BOTTOM,
+                      );
+                    }
+                  },
+                  child: Text('Retry'),
+                ),
+              ],
+            ),
+          )
+      );
+    }
     return Scaffold(
       body: SafeArea(
         child: Obx(() {

@@ -18,6 +18,7 @@ class CommunityController extends GetxController
   final post = <PostModel>[].obs;
 
   UserModel? user;
+  final profileController = Get.find<ProfileController>();
 
 
   void changeTab(int index) async {
@@ -56,6 +57,11 @@ class CommunityController extends GetxController
   void increment() => count.value++;
 
   Future<void> reload() async {
+    if (!await profileController.checkNetworkConnection()) {
+      Get.snackbar("No Internet", "Vui lòng kiểm tra kết nối mạng");
+      isLoading.value = false;
+      return;
+    }
     isLoading.value = true;
     print(selectedTabIndex.value);
     if (selectedTabIndex.value == 0) {
@@ -127,6 +133,10 @@ class CommunityController extends GetxController
     if (query.isEmpty) {
       post.value = [];
       return;
+    }
+    if (!await profileController.checkNetworkConnection()) {
+      post.value = [];
+      throw Exception("Không có kết nối mạng");
     }
     try {
       isLoading.value = true;

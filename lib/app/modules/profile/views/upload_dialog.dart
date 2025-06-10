@@ -51,6 +51,23 @@ class UploadDialog extends StatelessWidget {
               } else {
                 return ElevatedButton(
                   onPressed: () async {
+                    if (!await profileController.checkNetworkConnection()) {
+                      Get.snackbar("No Internet", "Không có kết nối mạng");
+                      return;
+                    }
+                    if (controller.videoFile.value == null) {
+                      Get.snackbar('Lỗi', 'Vui lòng chọn video trước khi tải lên');
+                      return;
+                    } else if (controller.backgroundFile.value == null) {
+                      Get.snackbar('Lỗi', 'Vui lòng chọn ảnh nền trước khi tải lên');
+                      return;
+                    } else if (controller.nameController.text.isEmpty) {
+                      Get.snackbar('Lỗi', 'Vui lòng nhập tên video');
+                      return;
+                    } else if (controller.descriptionController.text.isEmpty) {
+                      Get.snackbar('Lỗi', 'Vui lòng nhập mô tả');
+                      return;
+                    }
                     await controller.uploadVideo(int.parse(profileController.currentUser.value!.id!));
                     if (!controller.isUploading.value) Get.back();
                   },
