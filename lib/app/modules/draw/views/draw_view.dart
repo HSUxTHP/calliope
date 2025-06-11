@@ -29,7 +29,7 @@ class _DrawViewState extends State<DrawView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F7),
+      backgroundColor: Color(Theme.of(context).colorScheme.surface.value),
       body: Column(
         children: [
           _buildTopToolbar(),
@@ -58,7 +58,7 @@ class _DrawViewState extends State<DrawView> {
       width: double.infinity, // 👈 đảm bảo full width
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Color(Theme.of(context).colorScheme.surfaceContainer.value),
         boxShadow: const [
           BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
         ],
@@ -116,7 +116,10 @@ class _DrawViewState extends State<DrawView> {
                         final value = index + 1;
                         return DropdownMenuItem<int>(
                           value: value,
-                          child: Text('$value'),
+                          child: Text(
+                              '$value',
+                              style: TextStyle(fontSize: 13, color: Color(Theme.of(context).colorScheme.onSurface.value))
+                          ),
                         );
                       }),
                       onChanged: (value) {
@@ -202,7 +205,7 @@ class _DrawViewState extends State<DrawView> {
         Color? color,
       }) {
     return IconButton(
-      icon: Icon(icon, size: 20, color: color ?? Colors.black),
+      icon: Icon(icon, size: 20, color: color ?? Color(Theme.of(context).colorScheme.onSurface.value)),
       tooltip: tooltip,
       onPressed: onPressed,
     );
@@ -232,37 +235,37 @@ class _DrawViewState extends State<DrawView> {
       height: 34,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.grey,
+        color: Color(Theme.of(context).colorScheme.surfaceContainer.value),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black),
+        border: Border.all(color: Color(Theme.of(context).colorScheme.onSurface.value)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           GestureDetector(
             onTap: onMinus,
-            child: const CircleAvatar(
+            child: CircleAvatar(
               radius: 9,
-              backgroundColor: Color(0xFFFFFFFF),
-              child: Icon(Icons.remove, size: 12, color: Colors.black),
+              backgroundColor: Color(Theme.of(context).colorScheme.surfaceContainer.value),
+              child: Icon(Icons.remove, size: 12, color: Color(Theme.of(context).colorScheme.onSurface.value)),
             ),
           ),
           const SizedBox(width: 6),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: Colors.black,
+              color: Color(Theme.of(context).colorScheme.onSurface.value),
             ),
           ),
           const SizedBox(width: 6),
           GestureDetector(
             onTap: onPlus,
-            child: const CircleAvatar(
+            child: CircleAvatar(
               radius: 9,
-              backgroundColor: Color(0xFFFFFFFF),
-              child: Icon(Icons.add, size: 12, color: Colors.black),
+              backgroundColor: Color(Theme.of(context).colorScheme.surfaceContainer.value),
+              child: Icon(Icons.add, size: 12, color: Color(Theme.of(context).colorScheme.onSurface.value)),
             ),
           ),
           if (trailing != null) trailing,
@@ -279,7 +282,7 @@ class _DrawViewState extends State<DrawView> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         elevation: 1,
         child: IconButton(
-          icon: const Icon(Icons.chevron_right, color: Colors.black),
+          icon: Icon(Icons.chevron_right, color: Color(Theme.of(context).colorScheme.onSurface.value)),
           onPressed: controller.toggleFrameList,
         ),
       ),
@@ -291,9 +294,9 @@ class _DrawViewState extends State<DrawView> {
       width: 200,
       margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Color(Theme.of(context).colorScheme.surfaceContainer.value),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: Color(Theme.of(context).colorScheme.onSurface.value), width: 1.2),
       ),
       child: Column(
         children: [
@@ -387,8 +390,8 @@ class _DrawViewState extends State<DrawView> {
   Widget _buildSidebarHeader() {
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
-      decoration: const BoxDecoration(
-        color: Color(0xFFE2E8F0),
+      decoration: BoxDecoration(
+        color: Color(Theme.of(context).colorScheme.surface.value),
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -406,7 +409,7 @@ class _DrawViewState extends State<DrawView> {
             onTap: () {
               controller.scrollToTop();
             },
-            child: const Icon(Icons.menu, size: 18, color: Colors.black),
+            child: Icon(Icons.menu, size: 18, color: Color(Theme.of(context).colorScheme.onSurface.value)),
           ),
         ],
       ),
