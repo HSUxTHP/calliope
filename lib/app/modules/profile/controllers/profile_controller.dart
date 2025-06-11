@@ -332,6 +332,8 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
     File? avatarFile;
 
     Get.dialog(
+      barrierDismissible:
+      false,
       AlertDialog(
         title: const Text('Edit your profile'),
         content: SingleChildScrollView(
