@@ -36,16 +36,16 @@ class _DrawViewState extends State<DrawView> {
           Expanded(
             child: Row(
               children: [
-                Obx(
-                      () =>
-                  controller.isFrameListExpanded.value
-                      ? _buildSidebar()
-                      : _buildCollapsedSidebar(),
+                Obx(() =>
+                controller.isFrameListExpanded.value
+                    ? _buildSidebar()
+                    : _buildCollapsedSidebar(),
                 ),
-                const VerticalDivider(width: 1, thickness: 1),
+                // const VerticalDivider(width: 1, thickness: 1), // xóa dòng này để không hiện đường chia
                 const Expanded(child: CanvasArea()),
               ],
             ),
+
           ),
         ],
       ),
@@ -275,19 +275,35 @@ class _DrawViewState extends State<DrawView> {
   }
 
   Widget _buildCollapsedSidebar() {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Material(
-        color: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        elevation: 1,
-        child: IconButton(
-          icon: Icon(Icons.chevron_right, color: Color(Theme.of(context).colorScheme.onSurface.value)),
-          onPressed: controller.toggleFrameList,
+    return Align(
+      alignment: Alignment.topLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 12, top: 24),
+        child: Material(
+          color: Color(Theme.of(context).colorScheme.surfaceContainer.value),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          elevation: 1,
+          child: SizedBox(
+            width: 30,  // Tăng chiều rộng vùng chứa
+            height: 30, // Tăng chiều cao vùng chứa
+            child: IconButton(
+              padding: EdgeInsets.zero, // bỏ padding mặc định để icon không bị co lại
+              icon: Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: Color(Theme.of(context).colorScheme.onSurface.value),
+              ),
+              onPressed: controller.toggleFrameList,
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
         ),
       ),
     );
   }
+
+
+
 
   Widget _buildSidebar() {
     return Container(
@@ -389,7 +405,7 @@ class _DrawViewState extends State<DrawView> {
 
   Widget _buildSidebarHeader() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 4),
+      margin: const EdgeInsets.only(bottom: 2  ),
       decoration: BoxDecoration(
         color: Color(Theme.of(context).colorScheme.surface.value),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -405,14 +421,14 @@ class _DrawViewState extends State<DrawView> {
               ],
             ),
           ),
-          GestureDetector(
-            onTap: () {
-              controller.isFrameListExpanded.value = false; // 👈 thu gọn
-            },
-            child: Icon(
-              Icons.menu,
-              size: 18,
-              color: Color(Theme.of(context).colorScheme.onSurface.value),
+          Padding(
+            padding: const EdgeInsets.only(right: 4), // 👈 hoặc EdgeInsets.zero nếu muốn sát mép
+            child: IconButton(
+              icon: const Icon(Icons.menu, size: 20),
+              tooltip: 'Thu gọn sidebar',
+              onPressed: () => controller.isFrameListExpanded.value = false,
+              color: Theme.of(context).colorScheme.onSurface,
+              visualDensity: VisualDensity.compact, // 👈 gọn hơn
             ),
           ),
         ],
