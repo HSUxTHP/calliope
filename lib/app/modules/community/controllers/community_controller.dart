@@ -86,16 +86,19 @@ class CommunityController extends GetxController
         response = await Supabase.instance.client
             .from('posts')
             .select()
+            .eq('status', 1)
             .order('views', ascending: false);
       } else if (index == 1) {
         response = await Supabase.instance.client
             .from('posts')
             .select()
+            .eq('status', 1)
             .order('created_at', ascending: false);
       } else {
         response = await Supabase.instance.client
             .from('posts')
             .select()
+            .eq('status', 1)
             .order('create_at', ascending: false);
       }
 

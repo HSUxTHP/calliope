@@ -1,4 +1,5 @@
 import 'package:better_player_plus/better_player_plus.dart';
+import 'package:calliope/app/data/models/comment_model.dart';
 import 'package:calliope/app/data/models/post_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,15 +16,17 @@ class WatchController extends GetxController {
   final isLoading = true.obs;
   final user = Rxn<UserModel>();
   final profileController = Get.find<ProfileController>();
+  final comments = <CommentModel>[].obs;
 
   BetterPlayerController? playerController;
 
   @override
-  void onInit() {
+  void onInit() async {
     super.onInit();
     final id = int.tryParse(Get.parameters['id'] ?? '');
     if (id != null) {
-      fetchVideo(id);
+      await fetchVideo(id);
+      await getComments(id);
     }
   }
 
@@ -33,7 +36,7 @@ class WatchController extends GetxController {
     super.onClose();
   }
 
-  void fetchVideo(int id) async {
+  Future<void> fetchVideo(int id) async {
     isLoading.value = true;
     final hasConnection = await profileController.checkNetworkConnection();
     if (!hasConnection) {
@@ -96,5 +99,51 @@ class WatchController extends GetxController {
     );
 
     isLoading.value = false;
+  }
+
+  final commentController = TextEditingController();
+  void postComment() async {
+    final data = commentController.text.trim();
+    if (data.isEmpty) {
+      Get.snackbar('Lỗi', 'Nội dung bình luận không được để trống',
+          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      return;
+    }
+
+    final userId = user.value?.id;
+    if (userId == null) {
+      Get.snackbar('Lỗi', 'Bạn cần đăng nhập để bình luận',
+          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      return;
+    }
+
+    final newComment = {
+      'id_post': post.value?.id,
+      'id_user': userId,
+      'data': data,
+    };
+
+    await Supabase.instance.client.from('comments').insert(newComment);
+
+    commentController.clear();
+    Get.snackbar('Thành công', 'Bình luận đã được đăng',
+        backgroundColor: Colors.green, colorText: Colors.white);
+  }
+
+  Future<void> getComments(int id) async {
+    if (post.value == null) return;
+
+    final comments = await Supabase.instance.client
+        .from('comments')
+        .select()
+        .eq('id_post', id)
+        .order('created_at', ascending: false);
+    if (comments.isNotEmpty) {
+      this.comments.value = comments
+          .map((comment) => CommentModel.fromJson(comment))
+          .toList();
+    } else {
+      this.comments.value = [];
+    }
   }
 }
