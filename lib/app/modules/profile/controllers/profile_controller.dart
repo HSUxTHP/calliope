@@ -25,6 +25,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
   var post = <PostModel>[].obs;
 
   late Box<UserModel> userBox;
+  final SupabaseClient client = Supabase.instance.client;
 
   @override
   void onInit() async {
@@ -74,7 +75,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
     final self = currentUser.value;
 
     if (!await checkNetworkConnection()) {
-      Get.snackbar("No Internet", "Vui lòng kiểm tra kết nối mạng");
+      Get.snackbar("No Internet", "Please check your network connection");
       isLoading.value = false;
       return;
     }
@@ -115,7 +116,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
     }
 
     if (!await checkNetworkConnection()) {
-      Get.snackbar("No Internet", "Không thể tải dữ liệu người dùng");
+      Get.snackbar("No Internet", "Unable to load user data");
       return;
     }
 
@@ -185,7 +186,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
 
   Future<void> getAllPostsByCurrentUser(int userId) async {
     if (!await checkNetworkConnection()) {
-      Get.snackbar("No Internet", "Không thể tải bài viết");
+      Get.snackbar("No Internet", "Unable to load article");
       return;
     }
 
@@ -222,7 +223,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
 
   Future<void> signInWithGoogleAndSaveToSupabase() async {
     if (!await checkNetworkConnection()) {
-      Get.snackbar("No Internet", "Không thể đăng nhập khi offline");
+      Get.snackbar("No Internet", "Cannot login while offline");
       return;
     }
     try {
@@ -374,7 +375,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
           ElevatedButton(
             onPressed: () async {
               if (!await checkNetworkConnection()) {
-                Get.snackbar("No Internet", "Không thể cập nhật khi offline");
+                Get.snackbar("No Internet", "Cannot update while offline");
                 return;
               }
               final editedAt = DateTime.now().toIso8601String();
@@ -402,6 +403,94 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
             },
             child: const Text('Save'),
           ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> updateStatus({
+    required int id,
+    required int status,
+  }) async {
+    if (!await checkNetworkConnection()) {
+      Get.snackbar("No Internet", "Cannot delete posts when offline");
+      return;
+    }
+    final editedAt = DateTime.now().toIso8601String();
+    await client
+        .from('posts')
+        .update({
+      'status': status,
+      'edited_at': editedAt,
+    })
+        .eq('id', id);
+    await reload();
+  }
+
+  Future<void> deletePost({
+    required int id,
+  }) async {
+    if (!await checkNetworkConnection()) {
+      Get.snackbar("No Internet", "Cannot delete posts when offline");
+      return;
+    }
+
+    try {
+      // Xóa record trong table
+      await client.from('posts').delete().eq('id', id);
+      Get.snackbar("Success", "The post has been deleted.");
+      await reload();
+    } catch (e) {
+      Get.snackbar("Error", "Unable to delete post: $e");
+      print("Lỗi khi xóa bài viết: $e");
+    }
+  }
+
+  void confirmDeletePost(int id) {
+    Get.defaultDialog(
+      title: 'Confirm',
+      middleText: 'Are you sure you want to delete this post?',
+      textConfirm: 'Delete',
+      textCancel: 'Cancel',
+      confirmTextColor: Colors.white,
+      onConfirm: () async {
+        Get.back();
+        await deletePost(id: id);
+      },
+    );
+  }
+
+
+
+  void showStatusOptionsDialog(post) {
+    Get.defaultDialog(
+      title: 'Choose action',
+      content: Column(
+        children: [
+          ListTile(
+            leading: Icon(Icons.delete, color: Get.theme.colorScheme.error),
+            title: Text('Delete posts'),
+            onTap: () async {
+              confirmDeletePost(post.id);
+            },
+          ),
+          post.status == 1
+              ? ListTile(
+            leading: Icon(Icons.lock),
+            title: Text('Switch to private'),
+            onTap: () async {
+              await updateStatus(id: post.id, status: 0);
+              Get.back();
+            },
+          )
+              : ListTile(
+            leading: Icon(Icons.visibility),
+            title: Text('Switch to public'),
+            onTap: () async {
+              await updateStatus(id: post.id, status: 1);
+              Get.back();
+            },
+          )
         ],
       ),
     );
