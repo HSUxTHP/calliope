@@ -69,6 +69,7 @@ class WatchView extends GetView<WatchController> {
 
           return SingleChildScrollView(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AspectRatio(
                   aspectRatio: 16 / 9,
@@ -150,7 +151,96 @@ class WatchView extends GetView<WatchController> {
                       ),
                     ],
                   ),
-                )
+                ),
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: const Text(
+                    "Comments",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                /// Input field
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      CircleAvatar(
+                        backgroundImage: NetworkImage(
+                          'https://t3.ftcdn.net/jpg/02/99/04/20/360_F_299042079_vGBD7wIlSeNl7vOevWHiL93G4koMM967.jpg',
+                        ),
+                        radius: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: controller.commentController,
+                          maxLines: null,
+                          decoration: InputDecoration(
+                            hintText: "Write a comment...",
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.send),
+                        onPressed: () {
+                          controller.postComment();
+                          controller.commentController.clear();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                /// Comment list
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ListView.separated(
+                itemCount: controller.comments.length,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                separatorBuilder: (_, __) => const Divider(),
+                itemBuilder: (context, index) {
+                  final comment = "Hello";
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        backgroundImage: NetworkImage(
+                          'https://t3.ftcdn.net/jpg/02/99/04/20/360_F_299042079_vGBD7wIlSeNl7vOevWHiL93G4koMM967.jpg',
+                        ),
+                        radius: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "${controller.comments[index].id_user}",
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              "${DateFormat('dd/MM/yyyy HH:mm').format(controller.comments[index].created_at)}",
+                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(controller.comments[index].data),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
               ],
             ),
           );
