@@ -1,4 +1,5 @@
 import 'package:calliope/app/data/models/post_model.dart';
+import 'package:calliope/app/modules/profile/views/upload_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
@@ -28,6 +29,9 @@ class PostProfileCard extends StatelessWidget {
         child: InkWell(
           onTap: () {
             Get.toNamed('/watch/${post.id}');
+          },
+          onLongPress: () {
+            profileController.showStatusOptionsDialog(post);
           },
           child: ClipRRect(
             child: Column(
