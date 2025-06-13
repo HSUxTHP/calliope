@@ -20,6 +20,8 @@ class DrawingCanvas extends StatelessWidget {
         controller.addPoint(point);
       },
       onPanEnd: (_) => controller.endStroke(),
+    child: ClipRRect(
+    borderRadius: BorderRadius.circular(24),
       child: RepaintBoundary(
         key: controller.repaintKey,
         child: Container(
@@ -68,6 +70,7 @@ class DrawingCanvas extends StatelessWidget {
           }),
         ),
       ),
+    ),
     );
   }
 }

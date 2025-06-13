@@ -392,7 +392,7 @@ class _DrawViewState extends State<DrawView> {
       margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
         color: Color(Theme.of(context).colorScheme.surface.value),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Row(
@@ -407,14 +407,19 @@ class _DrawViewState extends State<DrawView> {
           ),
           GestureDetector(
             onTap: () {
-              controller.scrollToTop();
+              controller.isFrameListExpanded.value = false; // 👈 thu gọn
             },
-            child: Icon(Icons.menu, size: 18, color: Color(Theme.of(context).colorScheme.onSurface.value)),
+            child: Icon(
+              Icons.menu,
+              size: 18,
+              color: Color(Theme.of(context).colorScheme.onSurface.value),
+            ),
           ),
         ],
       ),
     );
   }
+
 
   Widget _sidebarTab(String label, bool layoutTab) {
     return Expanded(
@@ -583,19 +588,7 @@ class _DrawViewState extends State<DrawView> {
               },
             ),
           ),
-          if (onToggleVisibility != null)
-            Positioned(
-              bottom: 4,
-              right: 4,
-              child: GestureDetector(
-                onTap: onToggleVisibility,
-                child: Icon(
-                  isHidden == true ? Icons.visibility_off : Icons.visibility,
-                  size: 18,
-                  color: Colors.black54,
-                ),
-              ),
-            ),
+
         ],
       ),
     );
