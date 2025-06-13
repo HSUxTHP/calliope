@@ -31,7 +31,9 @@ class PostProfileCard extends StatelessWidget {
             Get.toNamed('/watch/${post.id}');
           },
           onLongPress: () {
-            profileController.showStatusOptionsDialog(post);
+            if (profileController.isCurrentUser.value) {
+              profileController.showStatusOptionsDialog(post);
+            }
           },
           child: ClipRRect(
             child: Column(

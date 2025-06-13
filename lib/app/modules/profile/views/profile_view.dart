@@ -254,38 +254,38 @@ class ProfileView extends GetView<ProfileController> {
                                                               .onPrimaryContainer,
                                                     ),
                                                     onPressed: () {
-                                                      Get.dialog(
-                                                        UploadDialog(),
-                                                        barrierDismissible:
-                                                            false,
-                                                      );
-                                                      //TODO: TEST ONLY
-                                                      // controller.showEditProfileDialog(
-                                                      //   id:
-                                                      //       controller
-                                                      //           .currentUser
-                                                      //           .value
-                                                      //           ?.id ?? '',
-                                                      //   name:
-                                                      //       controller
-                                                      //           .currentUser
-                                                      //           .value
-                                                      //           ?.name ?? '',
-                                                      //   bio:
-                                                      //       controller
-                                                      //           .currentUser
-                                                      //           .value
-                                                      //           ?.bio ?? '',
-                                                      //   avatarUrl:
-                                                      //       controller
-                                                      //           .currentUser
-                                                      //           .value
-                                                      //           ?.avatar_url ?? '',
-                                                      //   onUpdated: () async {
-                                                      //     await controller
-                                                      //         .reload();
-                                                      //   },
+                                                      // Get.dialog(
+                                                      //   UploadDialog(),
+                                                      //   barrierDismissible:
+                                                      //       false,
                                                       // );
+                                                      //TODO: TEST ONLY
+                                                      controller.showEditProfileDialog(
+                                                        id:
+                                                            controller
+                                                                .currentUser
+                                                                .value
+                                                                ?.id ?? '',
+                                                        name:
+                                                            controller
+                                                                .currentUser
+                                                                .value
+                                                                ?.name ?? '',
+                                                        bio:
+                                                            controller
+                                                                .currentUser
+                                                                .value
+                                                                ?.bio ?? '',
+                                                        avatarUrl:
+                                                            controller
+                                                                .currentUser
+                                                                .value
+                                                                ?.avatar_url ?? '',
+                                                        onUpdated: () async {
+                                                          await controller
+                                                              .reload();
+                                                        },
+                                                      );
                                                     },
                                                     child: Text(
                                                       'Edit your profile',
