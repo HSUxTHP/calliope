@@ -158,7 +158,7 @@ class DrawController extends GetxController {
 
 
   List<List<DrawnLine>>? copiedFrame;
-  static const Size canvasSize = Size(1600, 900);
+  static const Size canvasSize = Size(1050, 590.625);
 
   IconData get currentToolIcon => isEraser.value ?  Icons.brush : MdiIcons.eraser ;
   String get currentToolTooltip => isEraser.value ? 'Bút' : 'Tẩy';
@@ -422,7 +422,7 @@ class DrawController extends GetxController {
     try {
       final boundary = repaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary != null) {
-        final image = await boundary.toImage(pixelRatio: 2.0);
+        final image = await boundary.toImage(pixelRatio: 1.0);
         final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
         return byteData?.buffer.asUint8List();
       }
@@ -440,18 +440,19 @@ class DrawController extends GetxController {
     final cacheKey = layerIndex == null ? '$frameIndex' : '$frameIndex-$layerIndex';
     if (thumbnailCache.containsKey(cacheKey)) return thumbnailCache[cacheKey]!;
 
-    const double thumbWidth = 640;
-    const double thumbHeight = 360;
+    // 👉 Đồng bộ thumbnail theo đúng tỉ lệ canvas: 16:9 (vd: 320x180 hoặc 640x360)
+    const double thumbWidth = 320;
+    const double thumbHeight = 180;
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, thumbWidth, thumbHeight));
 
-    // ✅ Tính scale theo cả chiều rộng và chiều cao
+    // ✅ Scale chính xác theo canvasSize thực tế
     final scaleX = thumbWidth / canvasSize.width;
     final scaleY = thumbHeight / canvasSize.height;
     canvas.scale(scaleX, scaleY);
 
-    // ✅ Vẽ nền trắng
+
     canvas.drawColor(Colors.white, BlendMode.src);
 
     try {
@@ -479,6 +480,7 @@ class DrawController extends GetxController {
 
 
 
+
   bool isInsideCanvas(Offset point) {
     final box = repaintKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null) return false;
@@ -494,6 +496,7 @@ class DrawController extends GetxController {
     if (!await outputDir.exists()) {
       await outputDir.create(recursive: true);
     }
+
 
     for (int i = 0; i < frames.length; i++) {
       final recorder = ui.PictureRecorder();
