@@ -1,9 +1,12 @@
+import 'package:calliope/app/data/models/user_model.dart';
+
 class CommentModel {
   final int id;
   final String data;
   final int id_user;
   final DateTime created_at;
   final int id_post;
+  UserModel? user;
 
   CommentModel({
     required this.id,
@@ -11,7 +14,7 @@ class CommentModel {
     required this.id_user,
     required this.created_at,
     required this.id_post,
-
+    this.user,
   });
 
   factory CommentModel.fromJson(Map<String, dynamic> json) {

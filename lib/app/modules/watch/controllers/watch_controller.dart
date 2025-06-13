@@ -109,8 +109,7 @@ class WatchController extends GetxController {
           backgroundColor: Colors.redAccent, colorText: Colors.white);
       return;
     }
-
-    final userId = user.value?.id;
+    final userId = profileController.currentUser.value?.id;
     if (userId == null) {
       Get.snackbar('Lỗi', 'Bạn cần đăng nhập để bình luận',
           backgroundColor: Colors.redAccent, colorText: Colors.white);
@@ -142,6 +141,16 @@ class WatchController extends GetxController {
       this.comments.value = comments
           .map((comment) => CommentModel.fromJson(comment))
           .toList();
+      // Tải thông tin người dùng cho từng bình luận
+      final updatedComments = await Future.wait(
+        this.comments.map((comment) async {
+          final user = await profileController.getUser(comment.id_user);
+          comment.user = user;
+          return comment;
+        }),
+      );
+      this.comments.value = updatedComments;
+      print("All comment user ids: ${this.comments.map((e) => e.id_user).toList()}");
     } else {
       this.comments.value = [];
     }

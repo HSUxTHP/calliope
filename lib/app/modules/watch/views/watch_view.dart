@@ -170,7 +170,7 @@ class WatchView extends GetView<WatchController> {
                     children: [
                       CircleAvatar(
                         backgroundImage: NetworkImage(
-                          'https://t3.ftcdn.net/jpg/02/99/04/20/360_F_299042079_vGBD7wIlSeNl7vOevWHiL93G4koMM967.jpg',
+                          profileController.currentUser.value?.avatar_url ?? 'https://t3.ftcdn.net/jpg/02/99/04/20/360_F_299042079_vGBD7wIlSeNl7vOevWHiL93G4koMM967.jpg',
                         ),
                         radius: 20,
                       ),
@@ -208,35 +208,39 @@ class WatchView extends GetView<WatchController> {
                 physics: const NeverScrollableScrollPhysics(),
                 separatorBuilder: (_, __) => const Divider(),
                 itemBuilder: (context, index) {
-                  final comment = "Hello";
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CircleAvatar(
-                        backgroundImage: NetworkImage(
-                          'https://t3.ftcdn.net/jpg/02/99/04/20/360_F_299042079_vGBD7wIlSeNl7vOevWHiL93G4koMM967.jpg',
+                  return InkWell(
+                    onTap: () {
+                      Get.toNamed('/profile/${controller.comments[index].user?.id}');
+                    },
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          backgroundImage: NetworkImage(
+                            controller.comments[index].user?.avatar_url ?? 'https://t3.ftcdn.net/jpg/02/99/04/20/360_F_299042079_vGBD7wIlSeNl7vOevWHiL93G4koMM967.jpg',
+                          ),
+                          radius: 20,
                         ),
-                        radius: 20,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "${controller.comments[index].id_user}",
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              "${DateFormat('dd/MM/yyyy HH:mm').format(controller.comments[index].created_at)}",
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(controller.comments[index].data),
-                          ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "${controller.comments[index].user?.name ?? 'Unknown User'}",
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                "${DateFormat('dd/MM/yyyy HH:mm').format(controller.comments[index].created_at)}",
+                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(controller.comments[index].data),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   );
                 },
               ),
