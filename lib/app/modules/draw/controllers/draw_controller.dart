@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/return_code.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
@@ -473,7 +474,9 @@ class DrawController extends GetxController {
       thumbnailCache[cacheKey] = bytes;
       return bytes;
     } catch (e) {
-      print("❌ Lỗi khi render thumbnail frame $frameIndex: $e");
+      if (kDebugMode) {
+        print("Error Render thumbnail frame $frameIndex: $e");
+      }
       return Uint8List(0);
     }
   }
@@ -541,81 +544,34 @@ class DrawController extends GetxController {
   Future<void> exportToVideoWithFFmpeg(int fps) async {
     bool granted = await ensureStoragePermission();
     if (!granted) {
-      print("Chưa cấp quyền lưu trữ");
-      Get.snackbar("Lỗi", "Chưa cấp quyền lưu trữ", snackPosition: SnackPosition.BOTTOM);
+      if (kDebugMode) {
+        print("Storage permission not granted.");
+      }
+      Get.snackbar("Error", "Storage permission not granted.", snackPosition: SnackPosition.BOTTOM);
       return;
     }
 
-    // 🔹 Chọn thư mục lưu
+    // 🔹 Let user pick output directory
     String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
     if (selectedDirectory == null) {
-      Get.snackbar("Hủy", "Bạn chưa chọn thư mục", snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar("Cancelled", "No folder was selected.", snackPosition: SnackPosition.BOTTOM);
       return;
     }
 
-    final framesDir = Directory(p.join(selectedDirectory, "frames"));
+    // 🔹 Ask user for project name
+    String? projectName = await _getProjectNameFromUser();
+    if (projectName == null || projectName.trim().isEmpty) {
+      Get.snackbar("Cancelled", "No project name was provided.", snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
+    // 🔹 Create frames folder
+    final framesDir = Directory(p.join(selectedDirectory, "${projectName}_frames"));
     if (!await framesDir.exists()) {
       await framesDir.create(recursive: true);
     }
 
-    // 🔹 Render các frame theo thứ tự NGƯỢC LẠI (frame mới nhất → cũ nhất)
-    for (int i = frames.length - 1; i >= 0; i--) {
-      final recorder = ui.PictureRecorder();
-      final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, canvasSize.width, canvasSize.height));
-
-      canvas.drawColor(Colors.white, BlendMode.src); // nền trắng
-
-      for (int l = 0; l < 3; l++) {
-        if (!isLayerHidden(l)) {
-          Sketcher(lines: frames[i].layers[l].lines).paint(canvas, canvasSize);
-        }
-      }
-
-      final picture = recorder.endRecording();
-      final image = await picture.toImage(canvasSize.width.toInt(), canvasSize.height.toInt());
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      final bytes = byteData!.buffer.asUint8List();
-
-      // Sắp tên ngược: frame_000.png, frame_001.png,... để FFmpeg nhận đúng thứ tự
-      final index = frames.length - 1 - i; // đổi ngược index
-      final filePath = p.join(framesDir.path, 'frame_${index.toString().padLeft(3, '0')}.png');
-      await File(filePath).writeAsBytes(bytes);
-    }
-
-    final outputPath = p.join(selectedDirectory, 'output_video.mp4');
-
-    // 🛠 FFmpeg command
-    final cmd =
-        "-y -framerate $fps -start_number 0 -i ${framesDir.path}/frame_%03d.png "
-        "-vf scale='trunc(iw/2)*2:trunc(ih/2)*2' "
-        "-c:v libx264 -pix_fmt yuv420p $outputPath";
-
-    print("Running FFmpeg command: $cmd");
-    final session = await FFmpegKit.execute(cmd);
-
-    final logs = await session.getAllLogs();
-    for (final log in logs) {
-      print(log.getMessage());
-    }
-
-    final returnCode = await session.getReturnCode();
-    if (ReturnCode.isSuccess(returnCode)) {
-      print("✅ Xuất video thành công: $outputPath");
-      await framesDir.delete(recursive: true);
-      Get.snackbar("Thành công", "Xuất video thành công:\n$outputPath", snackPosition: SnackPosition.BOTTOM);
-    } else {
-      print("❌ Xuất video thất bại với mã: $returnCode");
-      Get.snackbar("Lỗi", "Xuất video thất bại với mã: $returnCode", snackPosition: SnackPosition.BOTTOM);
-    }
-  }
-  Future<void> uploadVideoToProfile(int fps, int userId) async {
-    final tempDir = await getTemporaryDirectory();
-    final framesDir = Directory(p.join(tempDir.path, "upload_frames"));
-    if (!await framesDir.exists()) {
-      await framesDir.create(recursive: true);
-    }
-
-    // Bước 1: Render các frame thành ảnh
+    // 🔹 Render frames in reverse order (latest to earliest)
     for (int i = frames.length - 1; i >= 0; i--) {
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, canvasSize.width, canvasSize.height));
@@ -632,43 +588,122 @@ class DrawController extends GetxController {
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       final bytes = byteData!.buffer.asUint8List();
 
-      final filePath = p.join(framesDir.path, 'frame_${(frames.length - 1 - i).toString().padLeft(3, '0')}.png');
+      final index = frames.length - 1 - i;
+      final filePath = p.join(framesDir.path, 'frame_${index.toString().padLeft(3, '0')}.png');
       await File(filePath).writeAsBytes(bytes);
     }
 
-    // Bước 2: Tạo video từ ảnh
-    final outputPath = p.join(tempDir.path, 'upload_video.mp4');
+    final outputPath = p.join(selectedDirectory, '${projectName}.mp4');
+
+    // 🔹 FFmpeg command
     final cmd =
         "-y -framerate $fps -start_number 0 -i ${framesDir.path}/frame_%03d.png "
         "-vf scale='trunc(iw/2)*2:trunc(ih/2)*2' "
         "-c:v libx264 -pix_fmt yuv420p $outputPath";
 
+    if (kDebugMode) {
+      print("Running FFmpeg command: $cmd");
+    }
     final session = await FFmpegKit.execute(cmd);
+
+    final logs = await session.getAllLogs();
+    for (final log in logs) {
+      if (kDebugMode) {
+        print(log.getMessage());
+      }
+    }
+
+    final returnCode = await session.getReturnCode();
+    if (ReturnCode.isSuccess(returnCode)) {
+      if (kDebugMode) {
+        print("Video exported successfully: $outputPath");
+      }
+      await framesDir.delete(recursive: true);
+      Get.snackbar("Success", "Video exported successfully:\n$outputPath", snackPosition: SnackPosition.BOTTOM);
+    } else {
+      if (kDebugMode) {
+        print("Export failed: $returnCode");
+      }
+      Get.snackbar("Error", "Video export failed with code: $returnCode", snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
+
+
+  Future<void> uploadVideoToProfile(int fps, int userId) async {
+    final tempDir = await getTemporaryDirectory();
+    final framesDir = Directory(p.join(tempDir.path, "upload_frames"));
+
+    if (!await framesDir.exists()) {
+      await framesDir.create(recursive: true);
+    }
+
+    // Step 1: Render frames into images
+    for (int i = frames.length - 1; i >= 0; i--) {
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, canvasSize.width, canvasSize.height));
+      canvas.drawColor(Colors.white, BlendMode.src);
+
+      for (int l = 0; l < 3; l++) {
+        if (!isLayerHidden(l)) {
+          Sketcher(lines: frames[i].layers[l].lines).paint(canvas, canvasSize);
+        }
+      }
+
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(canvasSize.width.toInt(), canvasSize.height.toInt());
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final bytes = byteData!.buffer.asUint8List();
+
+      final framePath = p.join(framesDir.path, 'frame_${(frames.length - 1 - i).toString().padLeft(3, '0')}.png');
+      await File(framePath).writeAsBytes(bytes);
+    }
+
+    // Step 2: Generate video from images
+    final outputVideoPath = p.join(tempDir.path, 'upload_video.mp4');
+    final ffmpegCommand =
+        "-y -framerate $fps -start_number 0 -i ${framesDir.path}/frame_%03d.png "
+        "-vf scale='trunc(iw/2)*2:trunc(ih/2)*2' "
+        "-c:v libx264 -pix_fmt yuv420p $outputVideoPath";
+
+    final session = await FFmpegKit.execute(ffmpegCommand);
     final returnCode = await session.getReturnCode();
 
     if (!ReturnCode.isSuccess(returnCode)) {
-      Get.snackbar("Lỗi", "Không tạo được video để đăng", snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar("Error", "Failed to generate video for upload.", snackPosition: SnackPosition.BOTTOM);
       return;
     }
 
-    // Bước 3: Gọi UploadController để upload
+    // Step 3: Prepare Upload
     final uploadController = Get.put(UploadController());
-    uploadController.videoFile.value = File(outputPath);
+    uploadController.videoFile.value = File(outputVideoPath);
 
-    // Option: render thumbnail từ frame đầu
-    final thumbPath = p.join(tempDir.path, 'background.png');
+    // Optional: Generate thumbnail from first frame
+    final thumbPath = p.join(tempDir.path, 'thumbnail.png');
     final thumb = await renderThumbnailToFile(0, thumbPath);
     if (thumb != null) uploadController.backgroundFile.value = thumb;
 
-    uploadController.nameController.text = currentProjectName ?? 'Video mới';
-    uploadController.descriptionController.text = 'Tạo từ ứng dụng vẽ';
+    // Default values
+    uploadController.nameController.text = currentProjectName ?? 'New Video';
+    uploadController.descriptionController.text = 'Created using Calliope drawing app';
+
+    // Step 4: Let user customize post info
+    final confirmed = await _showPostCustomizationDialog(uploadController);
+    if (!confirmed) {
+      Get.snackbar("Cancelled", "Upload cancelled by user.", snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
+    // Step 5: Upload
     await uploadController.uploadVideo(userId);
-    // Xoá tạm thời các file đã tạo
-    if(await framesDir.exists()) {
+
+    // Step 6: Clean up
+    if (await framesDir.exists()) {
       await framesDir.delete(recursive: true);
-      await File(outputPath).delete();
+      await File(outputVideoPath).delete();
     }
   }
+
   Future<File?> renderThumbnailToFile(int frameIndex, String path) async {
     try {
       final bytes = await renderThumbnail(frameIndex);
@@ -817,3 +852,104 @@ class DrawController extends GetxController {
     });
   }
 }
+
+Future<String?> _getProjectNameFromUser() async {
+  TextEditingController controller = TextEditingController();
+
+  return await Get.dialog<String>(
+    AlertDialog(
+      title: const Text("Enter Project Name"),
+      content: TextField(
+        controller: controller,
+        decoration: const InputDecoration(
+          hintText: "e.g., my_animation",
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Get.back(result: null),
+          child: const Text("Cancel"),
+        ),
+        TextButton(
+          onPressed: () => Get.back(result: controller.text.trim()),
+          child: const Text("Confirm"),
+        ),
+      ],
+    ),
+  );
+}
+
+Future<bool> _showPostCustomizationDialog(UploadController controller) async {
+  return await Get.dialog<bool>(
+    Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Customize Your Post",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 20),
+
+              // Title input
+              TextField(
+                controller: controller.nameController,
+                decoration: InputDecoration(
+                  labelText: "Video Title",
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.title),
+                ),
+              ),
+              SizedBox(height: 15),
+
+              // Description input
+              TextField(
+                controller: controller.descriptionController,
+                decoration: InputDecoration(
+                  labelText: "Description",
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.description),
+                ),
+                maxLines: 3,
+              ),
+              SizedBox(height: 25),
+
+              // Action buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Get.back(result: false),
+                    child: Text("Cancel"),
+                  ),
+                  SizedBox(width: 10),
+                  ElevatedButton.icon(
+                    onPressed: () => Get.back(result: true),
+                    icon: Icon(Icons.upload),
+                    label: Text("Upload"),
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  ) ?? false;
+}
+
+
+
