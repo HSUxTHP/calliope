@@ -25,70 +25,70 @@ class ProfileView extends GetView<ProfileController> {
         }
         return Column(
           children: [
-            Container(
-              height: 60,
-              padding: const EdgeInsets.only(left: 4, right: 20),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainer,
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Logo
-                  Row(
-                    spacing: 8,
-                    children: [
-                      Image.asset(
-                        'assets/logo.png',
-                        height: 48, // Adjust size as needed
-                      ),
-                      Text(
-                        'Calliope',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Avatar
-                  InkWell(
-                    onTap: () {
-                      final layoutController = Get.find<LayoutController>();
-                      layoutController.showProfileMenu(context);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.black, width: 2),
-                      ),
-                      child: CircleAvatar(
-                        radius: 18,
-                        backgroundImage:
-                            controller.isLogined.value
-                                ? (controller.currentUser.value?.avatar_url !=
-                                        null
-                                    ? NetworkImage(
-                                      controller
-                                              .currentUser
-                                              .value
-                                              ?.avatar_url ??
-                                          '',
-                                    )
-                                    : const AssetImage('assets/avatar.png')
-                                        as ImageProvider)
-                                : const AssetImage('assets/avatar.png'),
-                        backgroundColor: Colors.transparent,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // Container(
+            //   height: 60,
+            //   padding: const EdgeInsets.only(left: 4, right: 20),
+            //   decoration: BoxDecoration(
+            //     color: Theme.of(context).colorScheme.surfaceContainer,
+            //     boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+            //   ),
+            //   child: Row(
+            //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //     children: [
+            //       // Logo
+            //       Row(
+            //         spacing: 8,
+            //         children: [
+            //           Image.asset(
+            //             'assets/logo.png',
+            //             height: 48, // Adjust size as needed
+            //           ),
+            //           Text(
+            //             'Calliope',
+            //             style: TextStyle(
+            //               color: Theme.of(context).colorScheme.onSurface,
+            //               fontSize: 32,
+            //               fontWeight: FontWeight.bold,
+            //             ),
+            //           ),
+            //         ],
+            //       ),
+            //
+            //       // Avatar
+            //       InkWell(
+            //         onTap: () {
+            //           final layoutController = Get.find<LayoutController>();
+            //           layoutController.showProfileMenu(context);
+            //         },
+            //         child: Container(
+            //           padding: const EdgeInsets.all(2),
+            //           decoration: BoxDecoration(
+            //             shape: BoxShape.circle,
+            //             border: Border.all(color: Colors.black, width: 2),
+            //           ),
+            //           child: CircleAvatar(
+            //             radius: 18,
+            //             backgroundImage:
+            //                 controller.isLogined.value
+            //                     ? (controller.currentUser.value?.avatar_url !=
+            //                             null
+            //                         ? NetworkImage(
+            //                           controller
+            //                                   .currentUser
+            //                                   .value
+            //                                   ?.avatar_url ??
+            //                               '',
+            //                         )
+            //                         : const AssetImage('assets/avatar.png')
+            //                             as ImageProvider)
+            //                     : const AssetImage('assets/avatar.png'),
+            //             backgroundColor: Colors.transparent,
+            //           ),
+            //         ),
+            //       ),
+            //     ],
+            //   ),
+            // ),
             Obx(() {
               if (!controller.hasNetwork.value) {
                 controller.checkNetworkConnection();
@@ -133,7 +133,6 @@ class ProfileView extends GetView<ProfileController> {
                         await controller.reload();
                       },
                       child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -320,11 +319,10 @@ class ProfileView extends GetView<ProfileController> {
                                 ? GridView.builder(
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
-                                  padding: const EdgeInsets.all(8),
                                   gridDelegate:
                                       const SliverGridDelegateWithFixedCrossAxisCount(
                                         crossAxisCount: 3,
-                                        childAspectRatio: 1,
+                                        childAspectRatio: 1.2,
                                         crossAxisSpacing: 10,
                                         mainAxisSpacing: 10,
                                       ),
