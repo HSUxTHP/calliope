@@ -58,17 +58,14 @@ class CommunityView extends GetView<CommunityController> {
         children: [
           SizedBox(height: 32),
           // Tab Bar
-          Obx(() => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 80),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              spacing: 24,
-              children: [
-                _buildTabItem(controller, 'Trending', 0),
-                _buildTabItem(controller, 'Newest', 1),
-                // _buildTabItem(controller, 'Most Liked', 2),
-              ],
-            ),
+          Obx(() => Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            spacing: 24,
+            children: [
+              _buildTabItem(controller, 'Trending', 0),
+              _buildTabItem(controller, 'Newest', 1),
+              // _buildTabItem(controller, 'Most Liked', 2),
+            ],
           )),
 
           const SizedBox(height: 16),

@@ -20,30 +20,29 @@ class CommunityLayout extends GetView<CommunityController> {
           height: 60,
           padding: const EdgeInsets.only( left: 4, right: 20),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainer,
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+            color: Theme.of(context).colorScheme.surface,
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Logo
-              Row(
-                spacing: 8,
-                children: [
-                  Image.asset(
-                    'assets/logo.png',
-                    height: 48, // Adjust size as needed
-                  ),
-                  Text(
-                    'Calliope',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
+              // Row(
+              //   spacing: 8,
+              //   children: [
+              //     Image.asset(
+              //       'assets/logo.png',
+              //       height: 48, // Adjust size as needed
+              //     ),
+              //     Text(
+              //       'Calliope',
+              //       style: TextStyle(
+              //         color: Theme.of(context).colorScheme.onSurface,
+              //         fontSize: 32,
+              //         fontWeight: FontWeight.bold,
+              //       ),
+              //     ),
+              //   ],
+              // ),
 
               // Search Bar
               SizedBox(
@@ -88,29 +87,29 @@ class CommunityLayout extends GetView<CommunityController> {
               ),
 
               // Avatar
-              InkWell(
-                onTap: () {
-                  final layoutController = Get.find<LayoutController>();
-                  layoutController.showProfileMenu(context);
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.black,
-                      width: 2,
-                    ),
-                  ),
-                  child: CircleAvatar(
-                    radius: 18,
-                    backgroundImage: profileController.isLogined.value
-                        ? NetworkImage(profileController.currentUser.value?.avatar_url ?? 'https://via.placeholder.com/150')
-                        : AssetImage('assets/avatar.png'),
-                    backgroundColor: Colors.transparent,
-                  ),
-                ),
-              ),
+              // InkWell(
+              //   onTap: () {
+              //     final layoutController = Get.find<LayoutController>();
+              //     layoutController.showProfileMenu(context);
+              //   },
+              //   child: Container(
+              //     padding: const EdgeInsets.all(2),
+              //     decoration: BoxDecoration(
+              //       shape: BoxShape.circle,
+              //       border: Border.all(
+              //         color: Colors.black,
+              //         width: 2,
+              //       ),
+              //     ),
+              //     child: CircleAvatar(
+              //       radius: 18,
+              //       backgroundImage: profileController.isLogined.value
+              //           ? NetworkImage(profileController.currentUser.value?.avatar_url ?? 'https://via.placeholder.com/150')
+              //           : AssetImage('assets/avatar.png'),
+              //       backgroundColor: Colors.transparent,
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),

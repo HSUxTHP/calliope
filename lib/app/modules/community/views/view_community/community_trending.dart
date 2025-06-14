@@ -23,7 +23,7 @@ class TrendingCommunity extends GetView<CommunityController> {
         child: GridView.builder(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
-            childAspectRatio: 1,
+            childAspectRatio: 1.1,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
           ),

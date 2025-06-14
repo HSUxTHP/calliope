@@ -19,56 +19,59 @@ class HomeView extends GetView<HomeController> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        spacing: 40,
         children: [
-          Container(
-            height: 60,
-            padding: const EdgeInsets.only(left: 4, right: 20),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainer,
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Image.asset('assets/logo.png', height: 48),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Calliope',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                InkWell(
-                  onTap: () => Get.find<LayoutController>().showProfileMenu(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.black, width: 2),
-                    ),
-                    child: CircleAvatar(
-                      radius: 18,
-                      backgroundImage: profileController.isLogined.value
-                          ? NetworkImage(profileController.currentUser.value?.avatar_url ?? 'https://via.placeholder.com/150')
-                          : const AssetImage('assets/avatar.png') as ImageProvider,
-                      backgroundColor: Colors.transparent,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // Container(
+          //   height: 60,
+          //   padding: const EdgeInsets.only(left: 4, right: 20),
+          //   decoration: BoxDecoration(
+          //     color: Theme.of(context).colorScheme.surfaceContainer,
+          //     boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+          //   ),
+          //   child: Row(
+          //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          //     children: [
+          //       Row(
+          //         children: [
+          //           Image.asset('assets/logo.png', height: 48),
+          //           const SizedBox(width: 8),
+          //           Text(
+          //             'Calliope',
+          //             style: TextStyle(
+          //               color: Theme.of(context).colorScheme.onSurface,
+          //               fontSize: 32,
+          //               fontWeight: FontWeight.bold,
+          //             ),
+          //           ),
+          //         ],
+          //       ),
+          //       InkWell(
+          //         onTap: () => Get.find<LayoutController>().showProfileMenu(context),
+          //         child: Container(
+          //           padding: const EdgeInsets.all(2),
+          //           decoration: BoxDecoration(
+          //             shape: BoxShape.circle,
+          //             border: Border.all(color: Colors.black, width: 2),
+          //           ),
+          //           child: CircleAvatar(
+          //             radius: 18,
+          //             backgroundImage: profileController.isLogined.value
+          //                 ? NetworkImage(profileController.currentUser.value?.avatar_url ?? 'https://via.placeholder.com/150')
+          //                 : const AssetImage('assets/avatar.png') as ImageProvider,
+          //             backgroundColor: Colors.transparent,
+          //           ),
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ),
           Expanded(
             child: SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.only(top: 24),
                 child: Column(
+                  spacing: 24,
                   children: [
                     SizedBox(
                       width: double.infinity,
@@ -110,12 +113,12 @@ class HomeView extends GetView<HomeController> {
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            width: 1.0,
-                          ),
-                        ),
+                        // border: Border(
+                        //   bottom: BorderSide(
+                        //     color: Theme.of(context).colorScheme.onSurface,
+                        //     width: 1.0,
+                        //   ),
+                        // ),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
