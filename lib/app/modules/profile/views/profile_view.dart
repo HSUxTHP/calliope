@@ -128,59 +128,21 @@ class ProfileView extends GetView<ProfileController> {
                   controller.isCurrentUser.value
                   ? Expanded(child: LoginPage())
                   : Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () async {
-                    await controller.reload();
-                  },
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                width: 1,
-                                color:
-                                Theme.of(context).colorScheme.outline,
-                              ),
-                            ),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 60,
-                            vertical: 40,
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Obx(
-                                    () => Container(
-                                  width: 160,
-                                  height: 160,
-                                  decoration: ShapeDecoration(
-                                    image: DecorationImage(
-                                      image:
-                                      controller.viewedUser.value !=
-                                          null &&
-                                          controller
-                                              .viewedUser
-                                              .value
-                                              ?.avatar_url !=
-                                              null
-                                          ? NetworkImage(
-                                        controller
-                                            .viewedUser
-                                            .value
-                                            ?.avatar_url ??
-                                            '',
-                                      )
-                                          : const AssetImage(
-                                        'assets/avatar.png',
-                                      )
-                                      as ImageProvider,
-                                      fit: BoxFit.contain,
-                                    ),
-                                    shape: const OvalBorder(),
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        await controller.reload();
+                      },
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    width: 1,
+                                    color:
+                                        Theme.of(context).colorScheme.outline,
                                   ),
                                 ),
                               ),
@@ -342,7 +304,37 @@ class ProfileView extends GetView<ProfileController> {
                               ).colorScheme.onSurface,
                               fontSize: 18,
                             ),
-                          ),
+                            const SizedBox(height: 16),
+                            controller.post.value.isNotEmpty
+                                ? GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        childAspectRatio: 1.2,
+                                        crossAxisSpacing: 10,
+                                        mainAxisSpacing: 10,
+                                      ),
+                                  itemCount: controller.post.value.length,
+                                  itemBuilder: (_, index) {
+                                    final post = controller.post.value[index];
+                                    return PostProfileCard(post: post);
+                                  },
+                                )
+                                : Center(
+                                  child: Text(
+                                    'No videos found',
+                                    style: TextStyle(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                ),
+                          ],
                         ),
                       ],
                     ),

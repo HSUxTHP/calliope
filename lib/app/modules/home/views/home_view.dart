@@ -20,7 +20,7 @@ class HomeView extends GetView<HomeController> {
       backgroundColor: theme.colorScheme.surface,
       body: Column(
         mainAxisAlignment: MainAxisAlignment.start,
-        spacing: 24,
+        spacing: 40,
         children: [
           // Nút New Project cố định và cách lề rõ ràng
           Padding(
@@ -37,6 +37,7 @@ class HomeView extends GetView<HomeController> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                 child: Column(
+                  spacing: 24,
                   children: [
                     _buildHeaderAndSearch(theme, context),
                     const SizedBox(height: 16),
