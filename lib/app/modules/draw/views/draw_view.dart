@@ -598,16 +598,19 @@ class _DrawViewState extends State<DrawView> {
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
       itemCount: 3,
       itemBuilder: (_, layerIndex) {
-        final isSelected = controller.currentLayerIndex.value == layerIndex;
-        return _thumbnailItem(
-          isSelected: isSelected,
-          onTap: () => controller.switchLayer(layerIndex),
-          futureImage: controller.renderThumbnail(index, layerIndex),
-          borderColor: Colors.indigo,
-        );
+        return Obx(() {
+          final isSelected = controller.currentLayerIndex.value == layerIndex;
+          return _thumbnailItem(
+            isSelected: isSelected,
+            onTap: () => controller.switchLayer(layerIndex),
+            futureImage: controller.renderThumbnail(index, layerIndex),
+            borderColor: Colors.indigo,
+          );
+        });
       },
     );
   }
+
 
   Widget _thumbnailItem({
     required bool isSelected,

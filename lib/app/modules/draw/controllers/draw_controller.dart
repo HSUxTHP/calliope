@@ -27,8 +27,9 @@ class DrawController extends GetxController {
   final repaintKey = GlobalKey();
   final scrollController = ScrollController();
 
-  final undoStack = <List<DrawnLine>>[];
-  final redoStack = <List<DrawnLine>>[];
+  final undoStack = <List<List<DrawnLine>>>[].obs;
+  final redoStack = <List<List<DrawnLine>>>[].obs;
+
 
 
 
@@ -242,11 +243,20 @@ class DrawController extends GetxController {
   }
 
   void startStroke(Offset point) {
-    undoStack.add(List.from(currentLines.map((l) => l.copy())));
+    // ✅ Lưu cả 3 layer của frame hiện tại vào undoStack
+    undoStack.add(
+      frames[currentFrameIndex.value]
+          .layers
+          .map((layer) => layer.lines.map((line) => line.copy()).toList())
+          .toList(),
+    );
+
     redoStack.clear();
+
     final color = selectedTool.value == ToolType.eraser ? Colors.white : selectedColor.value;
     currentLines.add(DrawnLine(points: [point], colorValue: color.value, width: selectedWidth.value));
   }
+
 
 
   void addPoint(Offset point) {
@@ -279,24 +289,61 @@ class DrawController extends GetxController {
 
   void undo() {
     if (undoStack.isNotEmpty) {
-      redoStack.add(List.from(currentLines.map((l) => l.copy())));
-      currentLines = undoStack.removeLast();
+      // ✅ Lưu lại trạng thái hiện tại trước khi undo
+      redoStack.add(
+        frames[currentFrameIndex.value]
+            .layers
+            .map((layer) => layer.lines.map((line) => line.copy()).toList())
+            .toList(),
+      );
+
+      final previous = undoStack.removeLast();
+
+      // ✅ Gán lại cho 3 layer
+      for (int i = 0; i < 3; i++) {
+        frames[currentFrameIndex.value].layers[i].lines = previous[i];
+      }
+
       frames.refresh();
     }
   }
+
   void redo() {
     if (redoStack.isNotEmpty) {
-      undoStack.add(List.from(currentLines.map((l) => l.copy())));
-      currentLines = redoStack.removeLast();
+      // ✅ Lưu trạng thái hiện tại trước khi redo
+      undoStack.add(
+        frames[currentFrameIndex.value]
+            .layers
+            .map((layer) => layer.lines.map((line) => line.copy()).toList())
+            .toList(),
+      );
+
+      final next = redoStack.removeLast();
+
+      // ✅ Gán lại cho 3 layer
+      for (int i = 0; i < 3; i++) {
+        frames[currentFrameIndex.value].layers[i].lines = next[i];
+      }
+
       frames.refresh();
     }
   }
 
   void clearCanvas() {
-    undoStack.add(List.from(currentLines.map((l) => l.copy())));
-    currentLines.clear();
+    undoStack.add(
+      frames[currentFrameIndex.value]
+          .layers
+          .map((layer) => layer.lines.map((line) => line.copy()).toList())
+          .toList(),
+    );
+
+    for (int i = 0; i < 3; i++) {
+      frames[currentFrameIndex.value].layers[i].lines.clear();
+    }
+
     frames.refresh();
   }
+
 
 
   void toggleEraser() => isEraser.toggle();
@@ -312,14 +359,19 @@ class DrawController extends GetxController {
     _clearThumbnailCache();
     frames.refresh();
   }
-
+  void resetLayerIndex() {
+    if (currentLayerIndex.value == 0) {
+      currentLayerIndex.value = -1;
+    }
+    currentLayerIndex.value = 0;
+  }
 
   void selectFrame(int index) {
     if (index == currentFrameIndex.value) return;
 
     saveCurrentFrame();
     currentFrameIndex.value = index;
-    currentLayerIndex.value = 0;
+    resetLayerIndex(); // ✅ GỌI LẠI ở đây
 
     final context = frameItemKeys[index]?.currentContext;
     if (context != null) {
