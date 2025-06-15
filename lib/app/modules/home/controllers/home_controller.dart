@@ -4,6 +4,7 @@ import '../../../data/models/drawmodels/draw_project_model.dart';
 
 class HomeController extends GetxController {
   final projects = <DrawProjectModel>[].obs;
+  final filteredProjects = <DrawProjectModel>[].obs;
 
   final fps = 12.obs;
   final fpsOptions = [6, 12, 24];
@@ -11,25 +12,50 @@ class HomeController extends GetxController {
   final onionSkin = 1.obs;
   final onionSkinOptions = [0, 1, 2, 3];
 
+  final searchQuery = ''.obs;
+
   late Box<DrawProjectModel> _projectBox;
 
   @override
   void onInit() {
     super.onInit();
-    _projectBox = Hive.box<DrawProjectModel>('draw_project');    loadProjects();
+    _projectBox = Hive.box<DrawProjectModel>('draw_project');
+    loadProjects();
+    ever(searchQuery, (_) => applyFilter()); // ✅ Tự động lọc khi thay đổi search
   }
 
   void loadProjects() {
-    projects.assignAll(_projectBox.values.toList());
+    final loaded = _projectBox.values.toList();
+    projects.assignAll(loaded);
+    applyFilter(); // ✅ Áp dụng filter ngay sau khi load
+  }
+
+  void applyFilter() {
+    final query = searchQuery.value.toLowerCase();
+
+    if (query.isEmpty) {
+      filteredProjects.assignAll(projects);
+    } else {
+      filteredProjects.assignAll(
+        projects.where((p) {
+          final nameMatch = p.name.toLowerCase().contains(query);
+          final visibleFrames = p.frames.where((f) => !f.isHidden).length;
+          final frameCountMatch = visibleFrames.toString().contains(query);
+          return nameMatch || frameCountMatch;
+        }).toList(),
+      );
+    }
   }
 
   void addProject(DrawProjectModel project) {
     _projectBox.put(project.id, project);
     projects.add(project);
+    applyFilter(); // ✅ Cập nhật lọc sau khi thêm
   }
 
   void deleteProject(String id) {
     _projectBox.delete(id);
     projects.removeWhere((p) => p.id == id);
+    applyFilter(); // ✅ Cập nhật lọc sau khi xoá
   }
 }

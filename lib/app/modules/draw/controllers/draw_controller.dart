@@ -541,8 +541,11 @@ class DrawController extends GetxController {
     }
   }
 
-  Future<Uint8List?> captureImage() async {
+  Future<Uint8List?> captureImageSmooth() async {
     try {
+      await Future.delayed(Duration(milliseconds: 50)); // chờ layout ổn định
+      await WidgetsBinding.instance.endOfFrame;
+
       final boundary = repaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary != null) {
         final image = await boundary.toImage(pixelRatio: 1.0);
@@ -550,10 +553,11 @@ class DrawController extends GetxController {
         return byteData?.buffer.asUint8List();
       }
     } catch (e) {
-      print('Lỗi capture: $e');
+      print('Lỗi capture smooth: $e');
     }
     return null;
   }
+
 
   Future<Uint8List> renderThumbnail(int frameIndex, [int? layerIndex]) async {
     if (frameIndex < 0 || frameIndex >= frames.length) {

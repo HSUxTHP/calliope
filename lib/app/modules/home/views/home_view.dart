@@ -160,9 +160,8 @@ class HomeView extends GetView<HomeController> {
                                     ),
                                   ),
                                 ),
-                                onSubmitted: (value) {
-                                  print('Search submitted: \$value');
-                                },
+                                onChanged: (value) => controller.searchQuery.value = value,
+
                               ),
                             ),
                           ),
@@ -178,42 +177,37 @@ class HomeView extends GetView<HomeController> {
                         mainAxisSpacing: 12,
                         childAspectRatio: 1,
                       ),
-                      itemCount: controller.projects.length,
+                      itemCount: controller.filteredProjects.length,
                       itemBuilder: (context, index) {
-                        final project = controller.projects[index];
+                        final project = controller.filteredProjects[index];
+
                         return ProjectCard(
                           imageUrl: "assets/video_cover_example.png",
                           title: project.name,
                           createdAt: project.updatedAt.toIso8601String(),
+                          frameCount: project.frames?.where((f) => !f.isHidden).length ?? 0,
                           onTap: () => Get.toNamed('/draw', arguments: project.id),
-
-                          // ✅ Chức năng xoá
                           onDelete: () async {
                             final confirmed = await Get.dialog<bool>(
                               AlertDialog(
                                 title: const Text('Xoá project'),
                                 content: Text('Bạn có chắc muốn xoá project "${project.name}" không?'),
                                 actions: [
-                                  TextButton(
-                                    onPressed: () => Get.back(result: false),
-                                    child: const Text('Huỷ'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => Get.back(result: true),
-                                    child: const Text('Xoá', style: TextStyle(color: Colors.red)),
-                                  ),
+                                  TextButton(onPressed: () => Get.back(result: false), child: const Text('Huỷ')),
+                                  TextButton(onPressed: () => Get.back(result: true), child: const Text('Xoá', style: TextStyle(color: Colors.red))),
                                 ],
                               ),
                             );
 
                             if (confirmed == true) {
                               final box = Hive.box<DrawProjectModel>('draw_project');
-                              await box.delete(project.id);              // ✅ xoá khỏi Hive
-                              controller.loadProjects();                 // ✅ reload lại danh sách
+                              await box.delete(project.id);
+                              controller.loadProjects();
                               Get.snackbar('Đã xoá', 'Project "${project.name}" đã bị xoá');
                             }
                           },
                         );
+
 
 
 
