@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../profile/controllers/profile_controller.dart';
 import '../controllers/draw_controller.dart';
 import 'canvas_area.dart';
@@ -137,36 +138,48 @@ class _DrawViewState extends State<DrawView> {
                   ]
 
                 ]),
-
-
                 const SizedBox(width: 12),
 
                 _toolbarGroup([
-                  _iconButton(
-                    controller.currentToolIcon,
-                    controller.toggleEraser,
-                    tooltip: controller.currentToolTooltip,
-                  ),
-                  _iconButton(
+                  Obx(() => _iconButton(
+                    Icons.brush,
+                    controller.selectBrush,
+                    isActive: controller.selectedTool.value == ToolType.brush,
+                    tooltip: 'Bút',
+                  )),
+                  Obx(() => _iconButton(
+                    MdiIcons.eraser,
+                    controller.selectEraser,
+                    isActive: controller.selectedTool.value == ToolType.eraser,
+                    tooltip: 'Tẩy',
+                  )),
+                  Obx(() => _iconButton(
                     Icons.color_lens,
-                        () => _showColorPicker(Get.context!),
+                        () => _showColorPicker(context),
                     tooltip: 'Chọn màu',
+                    isActive: false,
                     color: controller.selectedColor.value,
-                  ),
+                  )),
                 ]),
+
+
+
 
                 const SizedBox(width: 12),
 
-                _roundedControl(
-                  label: '${controller.selectedWidth.value.toInt()} px',
-                  onMinus:
-                      () => controller.changeWidth(
-                    controller.selectedWidth.value - 1,
-                  ),
-                  onPlus:
-                      () => controller.changeWidth(
-                    controller.selectedWidth.value + 1,
-                  ),
+                DropdownButton<int>(
+                  value: controller.selectedWidth.value.toInt(),
+                  onChanged: (value) {
+                    if (value != null) controller.changeWidth(value.toDouble());
+                  },
+                  items: List.generate(30, (i) => i + 1)
+                      .map((val) => DropdownMenuItem<int>(
+                    value: val,
+                    child: Text('$val px'),
+                  ))
+                      .toList(),
+                  underline: Container(height: 1, color: Color(Theme.of(context).colorScheme.surfaceContainer.value)),
+                  style: TextStyle(fontSize: 16, color: Color(Theme.of(context).colorScheme.onSurface.value)),
                 ),
 
                 const SizedBox(width: 8),
@@ -202,14 +215,20 @@ class _DrawViewState extends State<DrawView> {
       IconData icon,
       VoidCallback onPressed, {
         String? tooltip,
+        bool isActive = false, // ✅ Thêm dòng này
         Color? color,
       }) {
     return IconButton(
-      icon: Icon(icon, size: 20, color: color ?? Color(Theme.of(context).colorScheme.onSurface.value)),
+      icon: Icon(
+        icon,
+        size: 20,
+        color: color ?? (isActive ? Colors.blue : Color(Theme.of(context).colorScheme.onSurface.value)),
+      ),
       tooltip: tooltip,
       onPressed: onPressed,
     );
   }
+
 
   Widget _toolbarGroup(List<Widget> children) {
     return Row(

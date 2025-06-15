@@ -1,17 +1,32 @@
 import 'package:flutter/material.dart';
 import '../../../data/models/drawmodels/drawn_line_model.dart';
 
-class Sketcher extends CustomPainter {
-  final List<DrawnLine> lines;
-  final double opacity; // 👈 opacity tuỳ chỉnh cho onion skin
+class SketcherFull extends CustomPainter {
+  final List<DrawnLine> mainLines;
+  final List<MapEntry<List<DrawnLine>, double>>? onionSkinLines;
 
-  const Sketcher({
-    required this.lines,
-    this.opacity = 1.0, // mặc định là không mờ
+  const SketcherFull({
+    required this.mainLines,
+    this.onionSkinLines,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
+    // 1. Nền trắng
+    canvas.drawColor(Colors.white, BlendMode.src);
+
+    // 2. Vẽ nét chính (hiện tại)
+    _drawLines(canvas, size, mainLines, 1.0);
+
+    // 3. Vẽ onion skin sau cùng (mờ)
+    if (onionSkinLines != null) {
+      for (final entry in onionSkinLines!) {
+        _drawLines(canvas, size, entry.key, entry.value);
+      }
+    }
+  }
+
+  void _drawLines(Canvas canvas, Size size, List<DrawnLine> lines, double opacity) {
     for (final line in lines) {
       if (line.points.length < 2) continue;
 
@@ -33,7 +48,7 @@ class Sketcher extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant Sketcher oldDelegate) {
-    return oldDelegate.lines != lines || oldDelegate.opacity != opacity;
+  bool shouldRepaint(covariant SketcherFull oldDelegate) {
+    return oldDelegate.mainLines != mainLines || oldDelegate.onionSkinLines != onionSkinLines;
   }
 }

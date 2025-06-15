@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+
 import 'dart:ui' as ui;
 import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/return_code.dart';
@@ -19,6 +20,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:file_picker/file_picker.dart';
+enum ToolType { brush, eraser }
 
 
 class DrawController extends GetxController {
@@ -27,6 +29,8 @@ class DrawController extends GetxController {
 
   final undoStack = <List<DrawnLine>>[];
   final redoStack = <List<DrawnLine>>[];
+
+
 
   final selectedColor = Colors.black.obs;
   final selectedWidth = 4.0.obs;
@@ -161,8 +165,25 @@ class DrawController extends GetxController {
   List<List<DrawnLine>>? copiedFrame;
   static const Size canvasSize = Size(1050, 590.625);
 
-  IconData get currentToolIcon => isEraser.value ?  Icons.brush : MdiIcons.eraser ;
-  String get currentToolTooltip => isEraser.value ? 'Bút' : 'Tẩy';
+  final IconData brushIcon = Icons.brush;
+  final IconData eraserIcon = MdiIcons.eraser;
+
+  final String brushTooltip = 'Bút';
+  final String eraserTooltip = 'Tẩy';
+
+
+  final Rx<ToolType> selectedTool = ToolType.brush.obs;
+
+  IconData get currentToolIcon =>
+  selectedTool.value == ToolType.brush ? brushIcon : eraserIcon;
+
+  String get currentToolTooltip =>
+  selectedTool.value == ToolType.brush ? brushTooltip : eraserTooltip;
+
+
+  void selectBrush() => selectedTool.value = ToolType.brush;
+  void selectEraser() => selectedTool.value = ToolType.eraser;
+
 
   @override
   void onInit() {
@@ -174,7 +195,7 @@ class DrawController extends GetxController {
   void startStroke(Offset point) {
     undoStack.add(List.from(currentLines.map((l) => l.copy())));
     redoStack.clear();
-    final color = isEraser.value ? Colors.white : selectedColor.value;
+    final color = selectedTool.value == ToolType.eraser ? Colors.white : selectedColor.value;
     currentLines.add(DrawnLine(points: [point], colorValue: color.value, width: selectedWidth.value));
   }
 
@@ -441,28 +462,36 @@ class DrawController extends GetxController {
     final cacheKey = layerIndex == null ? '$frameIndex' : '$frameIndex-$layerIndex';
     if (thumbnailCache.containsKey(cacheKey)) return thumbnailCache[cacheKey]!;
 
-    // 👉 Đồng bộ thumbnail theo đúng tỉ lệ canvas: 16:9 (vd: 320x180 hoặc 640x360)
-    const double thumbWidth = 320;
-    const double thumbHeight = 180;
+    const double thumbWidth = 1050;
+    const double thumbHeight = 590.625;
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, thumbWidth, thumbHeight));
 
-    // ✅ Scale chính xác theo canvasSize thực tế
     final scaleX = thumbWidth / canvasSize.width;
     final scaleY = thumbHeight / canvasSize.height;
     canvas.scale(scaleX, scaleY);
-
 
     canvas.drawColor(Colors.white, BlendMode.src);
 
     try {
       if (layerIndex == null) {
+        final allLines = <DrawnLine>[];
         for (int i = 0; i < 3; i++) {
-          Sketcher(lines: frames[frameIndex].layers[i].lines).paint(canvas, canvasSize);
+          if (!isLayerHidden(i)) {
+            allLines.addAll(frames[frameIndex].layers[i].lines);
+          }
         }
+
+        SketcherFull(
+          mainLines: allLines,
+          onionSkinLines: null, // ❌ KHÔNG render onionSkin trong thumbnail
+        ).paint(canvas, canvasSize);
       } else {
-        Sketcher(lines: frames[frameIndex].layers[layerIndex].lines).paint(canvas, canvasSize);
+        SketcherFull(
+          mainLines: frames[frameIndex].layers[layerIndex].lines,
+          onionSkinLines: null,
+        ).paint(canvas, canvasSize);
       }
 
       final picture = recorder.endRecording();
@@ -480,6 +509,7 @@ class DrawController extends GetxController {
       return Uint8List(0);
     }
   }
+
 
 
 
@@ -507,7 +537,16 @@ class DrawController extends GetxController {
 
       for (int l = 0; l < 3; l++) {
         if (!isLayerHidden(l)) {
-          Sketcher(lines: frames[i].layers[l].lines).paint(canvas, canvasSize);
+          final allLines = <DrawnLine>[];
+          for (int l = 0; l < 3; l++) {
+            if (!isLayerHidden(l)) {
+              allLines.addAll(frames[i].layers[l].lines);
+            }
+          }
+
+          SketcherFull(
+            mainLines: allLines,
+          ).paint(canvas, canvasSize);
         }
       }
 
@@ -577,11 +616,18 @@ class DrawController extends GetxController {
       final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, canvasSize.width, canvasSize.height));
       canvas.drawColor(Colors.white, BlendMode.src);
 
+      final allLines = <DrawnLine>[];
       for (int l = 0; l < 3; l++) {
         if (!isLayerHidden(l)) {
-          Sketcher(lines: frames[i].layers[l].lines).paint(canvas, canvasSize);
+          allLines.addAll(frames[i].layers[l].lines);
         }
       }
+
+      SketcherFull(
+        mainLines: allLines,
+        onionSkinLines: null,
+      ).paint(canvas, canvasSize);
+
 
       final picture = recorder.endRecording();
       final image = await picture.toImage(canvasSize.width.toInt(), canvasSize.height.toInt());
@@ -644,11 +690,18 @@ class DrawController extends GetxController {
       final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, canvasSize.width, canvasSize.height));
       canvas.drawColor(Colors.white, BlendMode.src);
 
+      final allLines = <DrawnLine>[];
       for (int l = 0; l < 3; l++) {
         if (!isLayerHidden(l)) {
-          Sketcher(lines: frames[i].layers[l].lines).paint(canvas, canvasSize);
+          allLines.addAll(frames[i].layers[l].lines);
         }
       }
+
+      SketcherFull(
+        mainLines: allLines,
+        onionSkinLines: null,
+      ).paint(canvas, canvasSize);
+
 
       final picture = recorder.endRecording();
       final image = await picture.toImage(canvasSize.width.toInt(), canvasSize.height.toInt());
