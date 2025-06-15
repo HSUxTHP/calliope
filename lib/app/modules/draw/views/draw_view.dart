@@ -43,7 +43,7 @@ class _DrawViewState extends State<DrawView> {
                     : _buildCollapsedSidebar(),
                 ),
                 // const VerticalDivider(width: 1, thickness: 1), // xóa dòng này để không hiện đường chia
-                const Expanded(child: CanvasArea()),
+                Expanded(child: CanvasArea()),
               ],
             ),
 
@@ -153,14 +153,38 @@ class _DrawViewState extends State<DrawView> {
                     isActive: controller.selectedTool.value == ToolType.eraser,
                     tooltip: 'Tẩy',
                   )),
-                  Obx(() => _iconButton(
-                    Icons.color_lens,
-                        () => _showColorPicker(context),
-                    tooltip: 'Chọn màu',
-                    isActive: false,
-                    color: controller.selectedColor.value,
-                  )),
-                ]),
+        Obx(() {
+          final selectedColor = controller.selectedColor.value;
+
+          final isBright = selectedColor.computeLuminance() > 0.5;
+          final bgColor = isBright ? Colors.black : Colors.white;
+          final iconColor = selectedColor; // icon mang đúng màu đã chọn
+
+          return GestureDetector(
+            onTap: () => _showColorPicker(context),
+            child: Container(
+              width: 32,
+              height: 32,
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: bgColor, // 👈 Nền ngược với màu đang chọn
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.color_lens,
+                  size: 20,
+                  color: iconColor, // 👈 icon luôn mang màu đã chọn
+                ),
+              ),
+            ),
+          );
+        })
+
+
+
+
+        ]),
 
 
 
@@ -368,7 +392,10 @@ class _DrawViewState extends State<DrawView> {
                         ),
                         tooltip: 'Xoá frame hiện tại',
                         onPressed: () {
-                          if (controller.frames.length <= 1) return;
+                          if (controller.frames.length <= 1) {
+                            Get.snackbar("Thông báo", "Bạn cần ít nhất 1 frame");
+                            return;
+                          }
                           Get.defaultDialog(
                             title: 'Xác nhận',
                             middleText:
@@ -397,30 +424,37 @@ class _DrawViewState extends State<DrawView> {
 
   Widget _buildReorderToggleButton() {
     return Obx(
-          () => ElevatedButton.icon(
-        onPressed: controller.toggleReorderMode,
-        style: ElevatedButton.styleFrom(
-          backgroundColor:
-          controller.isReorderMode.value
-              ? Colors.cyanAccent
-              : Colors.grey.shade200,
-          foregroundColor: Colors.black,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+          () {
+        final isEditing = controller.isReorderMode.value;
+        final colorScheme = Theme.of(Get.context!).colorScheme;
+
+        return ElevatedButton.icon(
+          onPressed: controller.toggleReorderMode,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isEditing
+                ? colorScheme.primaryContainer
+                : colorScheme.surfaceVariant,
+            foregroundColor: isEditing
+                ? colorScheme.onPrimaryContainer
+                : colorScheme.onSurface,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
           ),
-        ),
-        icon: Icon(
-          controller.isReorderMode.value ? Icons.lock_open : Icons.lock_outline,
-          size: 18,
-        ),
-        label: Text(
-          controller.isReorderMode.value ? 'Tắt Chỉnh Sửa' : ' Chỉnh Sửa',
-          style: const TextStyle(fontSize: 13),
-        ),
-      ),
+          icon: Icon(
+            isEditing ? Icons.lock_open : Icons.lock_outline,
+            size: 18,
+          ),
+          label: Text(
+            isEditing ? 'Tắt Chỉnh Sửa' : 'Chỉnh Sửa',
+            style: const TextStyle(fontSize: 13),
+          ),
+        );
+      },
     );
   }
+
 
   Widget _buildSidebarHeader() {
     return Container(
@@ -505,8 +539,8 @@ class _DrawViewState extends State<DrawView> {
   }
 
   Widget _buildFrameList() {
-    return ReorderableListView.builder(
-      key: const PageStorageKey('frame_list_key'),
+    return Obx(() => ReorderableListView.builder(
+      key: ValueKey(controller.isReorderMode.value), // 👈 force rebuild khi toggle
       onReorder: controller.reorderFrame,
       buildDefaultDragHandles: false,
       scrollController: controller.scrollController,
@@ -515,20 +549,17 @@ class _DrawViewState extends State<DrawView> {
       itemBuilder: (_, index) {
         final frame = controller.frames[index];
         final futureImage = controller.renderThumbnail(index);
-        final itemKey = ValueKey('frame_$index');
+        final isSelected = controller.currentFrameIndex.value == index;
 
-        final thumbnail = Obx(
-              () => _thumbnailItem(
-            isSelected: controller.currentFrameIndex.value == index,
-            onTap: () => controller.selectFrame(index),
-            futureImage: futureImage,
-            borderColor: Colors.blue,
-            isHidden: frame.isHidden,
-            onToggleVisibility: () => controller.toggleFrameVisibility(index),
-          ),
+        final thumbnail = _thumbnailItem(
+          isSelected: isSelected,
+          onTap: () => controller.selectFrame(index),
+          futureImage: futureImage,
+          borderColor: Colors.blue,
+          isHidden: frame.isHidden,
+          onToggleVisibility: () => controller.toggleFrameVisibility(index),
         );
 
-        // 👉 Nếu bật chế độ reorder → hiển thị nút drag + xoá
         if (controller.isReorderMode.value) {
           return KeyedSubtree(
             key: ValueKey('frame_$index'),
@@ -537,12 +568,7 @@ class _DrawViewState extends State<DrawView> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.drag_indicator,
-                    color: Colors.grey,
-                    size: 20,
-                  ),
-
+                  const Icon(Icons.drag_indicator, color: Colors.grey, size: 20),
                   const SizedBox(width: 4),
                   Expanded(
                     child: ReorderableDragStartListener(
@@ -556,11 +582,14 @@ class _DrawViewState extends State<DrawView> {
           );
         }
 
-        // 👉 Nếu không bật reorder → chỉ hiện thumbnail
-        return KeyedSubtree(key: itemKey, child: thumbnail);
+        return KeyedSubtree(
+          key: ValueKey('frame_$index'),
+          child: thumbnail,
+        );
       },
-    );
+    ));
   }
+
 
   Widget _buildLayoutList() {
     final index = controller.currentFrameIndex.value;
@@ -712,7 +741,7 @@ class _DrawViewState extends State<DrawView> {
                         ),
                         LayoutBuilder(
                           builder: (context, constraints) {
-                            double progress = current / (frames.length - 1);
+                            double progress = frames.length <= 1 ? 0 : current / (frames.length - 1);
                             return AnimatedContainer(
                               duration: const Duration(milliseconds: 100),
                               width: constraints.maxWidth * progress,
