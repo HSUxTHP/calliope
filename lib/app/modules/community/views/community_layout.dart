@@ -9,7 +9,7 @@ import 'package:get/get.dart';
 import '../controllers/community_controller.dart';
 
 class CommunityLayout extends GetView<CommunityController> {
-   CommunityLayout({super.key});
+  CommunityLayout({super.key});
   final profileController = Get.find<ProfileController>();
   @override
   Widget build(BuildContext context) {
