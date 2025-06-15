@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
@@ -51,8 +50,7 @@ class CreateProjectDialog extends StatelessWidget {
                       _buildDropdownTile(
                         context: context,
                         title: "Frames Per Second (FPS)",
-                        subtitle:
-                        "Customize number of frames per second for playback speed.",
+                        subtitle: "Customize number of frames per second for playback speed.",
                         valueRx: controller.fps,
                         items: controller.fpsOptions,
                       ),
@@ -60,8 +58,7 @@ class CreateProjectDialog extends StatelessWidget {
                       _buildDropdownTile(
                         context: context,
                         title: "Onion Skin",
-                        subtitle:
-                        "Show previous and next frames to draw smoother animations.",
+                        subtitle: "Show previous and next frames to draw smoother animations.",
                         valueRx: controller.onionSkin,
                         items: controller.onionSkinOptions,
                       ),
@@ -83,14 +80,15 @@ class CreateProjectDialog extends StatelessWidget {
                       if (name.isEmpty) return;
 
                       final newProject = DrawProjectModel(
-                        id: const Uuid().v4(), // tạo id duy nhất
+                        id: const Uuid().v4(),
                         name: name,
                         updatedAt: DateTime.now(),
-                        frames: [FrameModel()], // frame đầu tiên mặc định
+                        frames: [FrameModel()],
                       );
 
-                      controller.addProject(newProject); // cập nhật Hive
-                      Navigator.of(context).pop();
+                      controller.addProject(newProject); // ✅ lưu Hive
+                      Navigator.of(context).pop(); // ✅ đóng dialog
+                      Get.toNamed('/draw', arguments: newProject.id); // ✅ chuyển trang
                     },
                     child: const Text("Create"),
                   ),
@@ -142,6 +140,7 @@ class CreateProjectDialog extends StatelessWidget {
             child: DropdownButton<int>(
               value: valueRx.value,
               isExpanded: false,
+              underline: const SizedBox(),
               onChanged: (value) => valueRx.value = value!,
               items: items.map((val) {
                 return DropdownMenuItem<int>(

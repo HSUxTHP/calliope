@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import '../../../data/models/drawmodels/draw_project_model.dart';
+import '../../../data/models/drawmodels/frame_model.dart';
 
 class HomeController extends GetxController {
   final projects = <DrawProjectModel>[].obs;
@@ -26,6 +27,15 @@ class HomeController extends GetxController {
 
   void loadProjects() {
     final loaded = _projectBox.values.toList();
+
+    for (final project in loaded) {
+      // ✅ Nếu project chưa có frame nào thì thêm 1 frame mặc định
+      if (project.frames.isEmpty) {
+        project.frames.add(FrameModel());
+        _projectBox.put(project.id, project); // ✅ Cập nhật lại Hive
+      }
+    }
+
     projects.assignAll(loaded);
     applyFilter(); // ✅ Áp dụng filter ngay sau khi load
   }
