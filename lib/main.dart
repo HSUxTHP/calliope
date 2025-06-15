@@ -86,6 +86,14 @@ Future<void> main() async {
       themeMode: savedTheme == 'light' ? ThemeMode.light : ThemeMode.dark,
       initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            viewInsets: EdgeInsets.zero, // ngăn layout co khi bàn phím hiện
+          ),
+          child: child!,
+        );
+      },
     ),
   );
 }

@@ -315,7 +315,6 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       isLogined.value = false;
       print('Đã xoá current_user khỏi Hive');
       // Get.toNamed('/layout');
-      Get.snackbar("Sign out", "You have successfully logged out.");
     } catch (e) {
       Get.snackbar("Logout error", e.toString());
       print("Lỗi đăng xuất: $e");
@@ -496,6 +495,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
             onTap: () async {
               await updateStatus(id: post.id, status: 0);
               Get.back();
+              Get.snackbar("Sign out", "You have successfully logged out.");
             },
           )
               : ListTile(
@@ -506,6 +506,42 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
               Get.back();
             },
           )
+        ],
+      ),
+    );
+  }
+
+  ////dropdown to show logout options
+  void showSettingsOptions() {
+    Get.defaultDialog(
+      title: 'Settings',
+      content: Column(
+        children: [
+          ListTile(
+            leading: Icon(Icons.logout, color: Get.theme.colorScheme.error),
+            title: Text('Sign out'),
+            onTap: () async {
+              Get.back();
+              Get.defaultDialog(
+                title: 'Confirm',
+                middleText: 'Are you sure you want to sign out?',
+                textConfirm: 'Sign out',
+                textCancel: 'Cancel',
+                confirmTextColor: Get.theme.colorScheme.error,
+                onConfirm: () async {
+                  await signOutGoogleAndClearHive();
+                  Get.back();
+                  Get.snackbar("Sign out", "You have successfully logged out.");
+                },
+              );
+            },
+          ),
+          // ListTile(
+          //   leading: Icon(Icons.edit),
+          //   title: Text('?'),
+          //   onTap: () {
+          //   },
+          // ),
         ],
       ),
     );
