@@ -221,6 +221,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
   }
 
 
+
   Future<void> signInWithGoogleAndSaveToSupabase() async {
     if (!await checkNetworkConnection()) {
       Get.snackbar("No Internet", "Cannot login while offline");
@@ -399,7 +400,21 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
               }).eq('id', id);
 
               onUpdated();
+
+              // Cập nhật lại thông tin người dùng trong Hive từ Supabase
+              final updatedUser = await Supabase.instance.client
+                  .from('users')
+                  .select()
+                  .eq('id', id)
+                  .single();
+              final box = await Hive.openBox<UserModel>('users');
+              await box.put('current_user', UserModel.fromJson(updatedUser));
+              currentUser.value = UserModel.fromJson(updatedUser);
+              viewedUser.value = currentUser.value;
               Get.back();
+              Get.snackbar("Profile updated", "Your profile has been updated successfully.");
+              print("Đã cập nhật thông tin người dùng: ${currentUser.value?.toJson()}");
+
             },
             child: const Text('Save'),
           ),
