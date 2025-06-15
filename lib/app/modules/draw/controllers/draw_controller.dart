@@ -113,32 +113,81 @@ class DrawController extends GetxController {
     final index = currentFrameIndex.value;
     final List<MapEntry<List<DrawnLine>, double>> onionLayers = [];
 
-    final int newestFirstIndex = index;
-
-    // 👉 Frame cũ hơn (quá khứ) – nằm **sau** trong danh sách
+    // 👉 Chỉ lấy các frame trước (quá khứ)
     for (int i = 1; i <= onionSkinRangeBefore; i++) {
-      final idx = newestFirstIndex + i;
-      if (idx >= 0 && idx < frames.length) {
-        final lines = frames[idx].layers.expand((layer) => layer.lines).toList();
-        double alpha = (1.0 - i / (onionSkinRangeBefore + 1)) * 0.5;
-        onionLayers.add(MapEntry(lines, alpha));
-      }
-    }
+      final prevIndex = index - i;
+      if (prevIndex < 0) break;
 
-    // 👉 Frame mới hơn (tương lai) – nằm **trước** trong danh sách
-    for (int i = 1; i <= onionSkinRangeAfter; i++) {
-      final idx = newestFirstIndex - i;
-      if (idx >= 0 && idx < frames.length) {
-        final lines = frames[idx].layers.expand((layer) => layer.lines).toList();
-        double alpha = (1.0 - i / (onionSkinRangeAfter + 1)) * 0.3;
-        onionLayers.add(MapEntry(lines, alpha));
-      }
+      final lines = frames[prevIndex].layers.expand((layer) => layer.lines).toList();
+      double alpha = (1.0 - i / (onionSkinRangeBefore + 1)) * 0.5; // giảm dần opacity
+      onionLayers.add(MapEntry(lines, alpha));
     }
 
     return onionLayers;
   }
 
 
+  List<MapEntry<List<DrawnLine>, double>> getOnionSkinLines() {
+    final index = currentFrameIndex.value;
+    final List<MapEntry<List<DrawnLine>, double>> onionLayers = [];
+
+    for (int i = 1; i <= onionSkinCount.value; i++) {
+      final nextIndex = index + i;
+      if (nextIndex >= frames.length) break;
+
+      final lines = frames[nextIndex].layers.expand((layer) => layer.lines).toList();
+      final opacity = (1.0 - i / (onionSkinCount.value + 1)) * 0.4; // mờ dần
+      onionLayers.add(MapEntry(lines, opacity));
+    }
+
+    return onionLayers;
+  }
+
+  Widget buildLayoutSelector() {
+    final controller = Get.find<DrawController>();
+
+    Widget layoutItem(int index, String label, IconData icon) {
+      return Obx(() {
+        final isSelected = controller.currentLayerIndex.value == index;
+        return GestureDetector(
+          onTap: () => controller.switchLayer(index),
+          child: AnimatedContainer(
+            duration: Duration(milliseconds: 200),
+            margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.blue.shade50 : Colors.grey.shade200,
+              border: Border.all(
+                color: isSelected ? Colors.blue : Colors.transparent,
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, color: isSelected ? Colors.blue : Colors.black54),
+                SizedBox(width: 8),
+                Text(label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    )),
+              ],
+            ),
+          ),
+        );
+      });
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        layoutItem(0, 'Layout 1', Icons.layers),
+        layoutItem(1, 'Layout 2', Icons.layers_outlined),
+        layoutItem(2, 'Layout 3', Icons.layers_clear),
+      ],
+    );
+  }
 
 
   Future<void> loadProjectFromHive(String projectId) async {
@@ -530,25 +579,21 @@ class DrawController extends GetxController {
       await outputDir.create(recursive: true);
     }
 
-
     for (int i = 0; i < frames.length; i++) {
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, canvasSize.width, canvasSize.height));
+      canvas.drawColor(Colors.white, BlendMode.src);
 
+      final allLines = <DrawnLine>[];
       for (int l = 0; l < 3; l++) {
         if (!isLayerHidden(l)) {
-          final allLines = <DrawnLine>[];
-          for (int l = 0; l < 3; l++) {
-            if (!isLayerHidden(l)) {
-              allLines.addAll(frames[i].layers[l].lines);
-            }
-          }
-
-          SketcherFull(
-            mainLines: allLines,
-          ).paint(canvas, canvasSize);
+          allLines.addAll(frames[i].layers[l].lines);
         }
       }
+
+      SketcherFull(
+        mainLines: allLines,
+      ).paint(canvas, canvasSize);
 
       final picture = recorder.endRecording();
       final image = await picture.toImage(canvasSize.width.toInt(), canvasSize.height.toInt());
@@ -559,6 +604,7 @@ class DrawController extends GetxController {
       await File(filePath).writeAsBytes(bytes);
     }
   }
+
 
   Future<bool> ensureStoragePermission() async {
     if (Platform.isAndroid) {

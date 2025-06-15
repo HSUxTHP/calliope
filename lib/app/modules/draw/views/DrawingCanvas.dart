@@ -35,7 +35,6 @@ class DrawingCanvas extends StatelessWidget {
               final frame = controller.frames[frameIndex];
 
               if (controller.isShowingLayout.value) {
-                // 🎯 Layout mode: chỉ vẽ 1 layer
                 final currentLines = [
                   ...frame.layers[layerIndex].lines,
                   ...controller.currentLines,
@@ -45,7 +44,6 @@ class DrawingCanvas extends StatelessWidget {
                 );
               }
 
-              // 🎯 Frame mode: vẽ cả 3 layer + onion skin (sau cùng)
               final allLines = <DrawnLine>[];
               for (int i = 0; i < 3; i++) {
                 allLines.addAll(frame.layers[i].lines);
@@ -55,7 +53,7 @@ class DrawingCanvas extends StatelessWidget {
               }
 
               final onionSkinLines = controller.showOnionSkin.value
-                  ? controller.getMultiOnionLines()
+                  ? controller.getOnionSkinLines() // ✅ chỉ lấy frame sau
                   : null;
 
               return CustomPaint(
