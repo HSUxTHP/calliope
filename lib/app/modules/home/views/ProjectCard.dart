@@ -4,6 +4,7 @@ class ProjectCard extends StatelessWidget {
   final String imageUrl;
   final String title;
   final String createdAt;
+  final int frameCount;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
 
@@ -12,6 +13,7 @@ class ProjectCard extends StatelessWidget {
     required this.imageUrl,
     required this.title,
     required this.createdAt,
+    required this.frameCount, // ✅ Đảm bảo dòng này có mặt
     this.onTap,
     this.onDelete,
   });
@@ -30,14 +32,11 @@ class ProjectCard extends StatelessWidget {
               aspectRatio: 16 / 9,
               child: Image.asset(imageUrl, fit: BoxFit.cover),
             ),
-
-            // ✅ Tên + menu 3 chấm
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Tên project
                   Expanded(
                     child: Text(
                       title,
@@ -45,7 +44,6 @@ class ProjectCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  // Nút 3 chấm
                   PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert),
                     onSelected: (value) {
@@ -69,14 +67,13 @@ class ProjectCard extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Created date
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text(
-                "Created: $createdAt",
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
+              child: Text("Created: $createdAt", style: Theme.of(context).textTheme.bodySmall),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text("Frames: $frameCount", style: Theme.of(context).textTheme.bodySmall),
             ),
           ],
         ),
