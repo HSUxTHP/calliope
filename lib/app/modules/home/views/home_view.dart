@@ -19,6 +19,8 @@ class HomeView extends GetView<HomeController> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        spacing: 40,
         children: [
           _buildAppBar(theme, context),
 
@@ -37,6 +39,7 @@ class HomeView extends GetView<HomeController> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                 child: Column(
+                  spacing: 24,
                   children: [
                     _buildHeaderAndSearch(theme, context),
                     const SizedBox(height: 16),
