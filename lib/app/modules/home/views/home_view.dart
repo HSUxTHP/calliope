@@ -1,4 +1,3 @@
-import 'package:calliope/app/modules/draw/views/draw_view.dart';
 import 'package:calliope/app/modules/home/views/create_project_dialog.dart';
 import 'package:calliope/app/modules/layout/controllers/layout_controller.dart';
 import 'package:calliope/app/modules/layout/views/ProjectCard.dart';
@@ -11,209 +10,40 @@ import '../controllers/home_controller.dart';
 
 class HomeView extends GetView<HomeController> {
   HomeView({super.key});
-
   final profileController = Get.find<ProfileController>();
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: theme.colorScheme.surface,
       body: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         spacing: 40,
         children: [
-          // Container(
-          //   height: 60,
-          //   padding: const EdgeInsets.only(left: 4, right: 20),
-          //   decoration: BoxDecoration(
-          //     color: Theme.of(context).colorScheme.surfaceContainer,
-          //     boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-          //   ),
-          //   child: Row(
-          //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //     children: [
-          //       Row(
-          //         children: [
-          //           Image.asset('assets/logo.png', height: 48),
-          //           const SizedBox(width: 8),
-          //           Text(
-          //             'Calliope',
-          //             style: TextStyle(
-          //               color: Theme.of(context).colorScheme.onSurface,
-          //               fontSize: 32,
-          //               fontWeight: FontWeight.bold,
-          //             ),
-          //           ),
-          //         ],
-          //       ),
-          //       InkWell(
-          //         onTap: () => Get.find<LayoutController>().showProfileMenu(context),
-          //         child: Container(
-          //           padding: const EdgeInsets.all(2),
-          //           decoration: BoxDecoration(
-          //             shape: BoxShape.circle,
-          //             border: Border.all(color: Colors.black, width: 2),
-          //           ),
-          //           child: CircleAvatar(
-          //             radius: 18,
-          //             backgroundImage: profileController.isLogined.value
-          //                 ? NetworkImage(profileController.currentUser.value?.avatar_url ?? 'https://via.placeholder.com/150')
-          //                 : const AssetImage('assets/avatar.png') as ImageProvider,
-          //             backgroundColor: Colors.transparent,
-          //           ),
-          //         ),
-          //       ),
-          //     ],
-          //   ),
-          // ),
+          _buildAppBar(theme, context),
+
+          // Nút New Project cố định và cách lề rõ ràng
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: _buildNewProjectButton(theme, context),
+          ),
+          const SizedBox(height: 8),
+
+          // Danh sách project cuộn được + RefreshIndicator
           Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 24),
+            child: RefreshIndicator(
+              onRefresh: () async => controller.loadProjects(),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                 child: Column(
                   spacing: 24,
                   children: [
-                    SizedBox(
-                      width: double.infinity,
-                      height: 120,
-                      child: FilledButton(
-                        style: FilledButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                        ),
-                        onPressed: () async {
-                          final result = await showDialog(
-                            context: context,
-                            barrierDismissible: false,
-                            builder: (context) => CreateProjectDialog(controller: controller),
-                          );
-                          if (result is DrawProjectModel) {
-                            final box = Hive.box('draw_project');
-                            await box.put(result.id, result);
-                            controller.loadProjects();
-                          }
-                        },
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.add, size: 32, color: Theme.of(context).colorScheme.onSurface),
-                            const SizedBox(height: 4),
-                            Text(
-                              "New Project",
-                              style: TextStyle(
-                                fontSize: 24,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        // border: Border(
-                        //   bottom: BorderSide(
-                        //     color: Theme.of(context).colorScheme.onSurface,
-                        //     width: 1.0,
-                        //   ),
-                        // ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Row(
-                              children: [
-                                Icon(Icons.brush, size: 44, color: Theme.of(context).colorScheme.onSurface),
-                                const SizedBox(width: 16),
-                                Text(
-                                  "Your Project",
-                                  style: TextStyle(
-                                    fontSize: 36,
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                )
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: SizedBox(
-                              width: MediaQuery.sizeOf(context).width * 0.3,
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  hintStyle: const TextStyle(fontSize: 16),
-                                  hintText: 'Search your project here',
-                                  prefixIcon: const Icon(Icons.search),
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                                  filled: true,
-                                  fillColor: Theme.of(context).colorScheme.surface,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide(
-                                      color: Theme.of(context).colorScheme.onSurface,
-                                      width: 1.0,
-                                    ),
-                                  ),
-                                ),
-                                onChanged: (value) => controller.searchQuery.value = value,
-
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Obx(() => GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: MediaQuery.of(context).size.width >= 1300 ? 5 : 4,
-                        crossAxisSpacing: 24,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 1,
-                      ),
-                      itemCount: controller.filteredProjects.length,
-                      itemBuilder: (context, index) {
-                        final project = controller.filteredProjects[index];
-
-                        return ProjectCard(
-                          imageUrl: "assets/video_cover_example.png",
-                          title: project.name,
-                          createdAt: project.updatedAt.toIso8601String(),
-                          frameCount: project.frames?.where((f) => !f.isHidden).length ?? 0,
-                          onTap: () => Get.toNamed('/draw', arguments: project.id),
-                          onDelete: () async {
-                            final confirmed = await Get.dialog<bool>(
-                              AlertDialog(
-                                title: const Text('Xoá project'),
-                                content: Text('Bạn có chắc muốn xoá project "${project.name}" không?'),
-                                actions: [
-                                  TextButton(onPressed: () => Get.back(result: false), child: const Text('Huỷ')),
-                                  TextButton(onPressed: () => Get.back(result: true), child: const Text('Xoá', style: TextStyle(color: Colors.red))),
-                                ],
-                              ),
-                            );
-
-                            if (confirmed == true) {
-                              final box = Hive.box<DrawProjectModel>('draw_project');
-                              await box.delete(project.id);
-                              controller.loadProjects();
-                              Get.snackbar('Đã xoá', 'Project "${project.name}" đã bị xoá');
-                            }
-                          },
-                        );
-
-
-
-
-
-                      },
-                    )),
+                    _buildHeaderAndSearch(theme, context),
+                    const SizedBox(height: 16),
+                    _buildProjectGrid(context),
                   ],
                 ),
               ),
@@ -222,5 +52,152 @@ class HomeView extends GetView<HomeController> {
         ],
       ),
     );
+  }
+
+  Widget _buildAppBar(ThemeData theme, BuildContext context) {
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainer,
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Image.asset('assets/logo.png', height: 44),
+              const SizedBox(width: 8),
+              Text('Calliope', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+            ],
+          ),
+          InkWell(
+            onTap: () => Get.find<LayoutController>().showProfileMenu(context),
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.black, width: 2)),
+              child: CircleAvatar(
+                radius: 18,
+                backgroundImage: profileController.isLogined.value
+                    ? NetworkImage(profileController.currentUser.value?.avatar_url ?? '')
+                    : const AssetImage('assets/avatar.png') as ImageProvider,
+                backgroundColor: Colors.transparent,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNewProjectButton(ThemeData theme, BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 120,
+      child: FilledButton(
+        style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: theme.colorScheme.primaryContainer,
+        ),
+        onPressed: () async {
+          final result = await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => CreateProjectDialog(controller: controller),
+          );
+          if (result is DrawProjectModel) {
+            final box = Hive.box('draw_project');
+            await box.put(result.id, result);
+            controller.loadProjects();
+            Get.toNamed('/draw', arguments: result.id);
+          }
+        },
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add, size: 32, color: theme.colorScheme.onSurface),
+            const SizedBox(height: 4),
+            Text("New Project", style: TextStyle(fontSize: 24, color: theme.colorScheme.onSurface)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderAndSearch(ThemeData theme, BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.brush, size: 40, color: theme.colorScheme.onSurface),
+            const SizedBox(width: 12),
+            Text("Your Projects", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+          ],
+        ),
+        SizedBox(
+          width: MediaQuery.sizeOf(context).width * 0.3,
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: 'Search your project here',
+              prefixIcon: const Icon(Icons.search),
+              contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+              filled: true,
+              fillColor: theme.colorScheme.surface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: theme.colorScheme.onSurface, width: 1),
+              ),
+            ),
+            onChanged: (value) => controller.searchQuery.value = value,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProjectGrid(BuildContext context) {
+    return Obx(() => GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: MediaQuery.of(context).size.width >= 1300 ? 5 : 4,
+        crossAxisSpacing: 24,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1,
+      ),
+      itemCount: controller.filteredProjects.length,
+      itemBuilder: (context, index) {
+        final project = controller.filteredProjects[index];
+        final visibleFrames = project.frames?.where((f) => !f.isHidden).length ?? 0;
+
+        return ProjectCard(
+          imageUrl: "assets/video_cover_example.png",
+          title: project.name,
+          createdAt: project.updatedAt.toIso8601String(),
+          frameCount: visibleFrames,
+          onTap: () => Get.toNamed('/draw', arguments: project.id),
+          onDelete: () async {
+            final confirmed = await Get.dialog<bool>(
+              AlertDialog(
+                title: const Text('Xoá project'),
+                content: Text('Bạn có chắc muốn xoá project "${project.name}" không?'),
+                actions: [
+                  TextButton(onPressed: () => Get.back(result: false), child: const Text('Huỷ')),
+                  TextButton(onPressed: () => Get.back(result: true), child: const Text('Xoá', style: TextStyle(color: Colors.red))),
+                ],
+              ),
+            );
+            if (confirmed == true) {
+              final box = Hive.box<DrawProjectModel>('draw_project');
+              await box.delete(project.id);
+              controller.loadProjects();
+              Get.snackbar('Đã xoá', 'Project "${project.name}" đã bị xoá');
+            }
+          },
+        );
+      },
+    ));
   }
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_rx/src/rx_types/rx_types.dart';
+import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
 
 class ProjectCard extends StatelessWidget {
   final String imageUrl;
   final String title;
   final String createdAt;
-  final int frameCount;
+  final RxInt frameCountRx;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
 
@@ -13,7 +15,7 @@ class ProjectCard extends StatelessWidget {
     required this.imageUrl,
     required this.title,
     required this.createdAt,
-    required this.frameCount, // ✅ Đảm bảo dòng này có mặt
+    required this.frameCountRx,
     this.onTap,
     this.onDelete,
   });
@@ -71,10 +73,10 @@ class ProjectCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Text("Created: $createdAt", style: Theme.of(context).textTheme.bodySmall),
             ),
-            Padding(
+            Obx(() => Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text("Frames: $frameCount", style: Theme.of(context).textTheme.bodySmall),
-            ),
+              child: Text("Frames: ${frameCountRx.value}", style: Theme.of(context).textTheme.bodySmall),
+            )),
           ],
         ),
       ),

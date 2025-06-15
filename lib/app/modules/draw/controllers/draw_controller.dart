@@ -357,6 +357,7 @@ class DrawController extends GetxController {
     currentFrameIndex.value = 0;
     currentLayerIndex.value = 0;
     _clearThumbnailCache();
+
     frames.refresh();
   }
   void resetLayerIndex() {
