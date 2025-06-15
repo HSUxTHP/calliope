@@ -19,9 +19,9 @@ class HomeView extends GetView<HomeController> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        spacing: 24,
         children: [
-          _buildAppBar(theme, context),
-
           // Nút New Project cố định và cách lề rõ ràng
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -51,42 +51,7 @@ class HomeView extends GetView<HomeController> {
     );
   }
 
-  Widget _buildAppBar(ThemeData theme, BuildContext context) {
-    return Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainer,
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Image.asset('assets/logo.png', height: 44),
-              const SizedBox(width: 8),
-              Text('Calliope', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
-            ],
-          ),
-          InkWell(
-            onTap: () => Get.find<LayoutController>().showProfileMenu(context),
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.black, width: 2)),
-              child: CircleAvatar(
-                radius: 18,
-                backgroundImage: profileController.isLogined.value
-                    ? NetworkImage(profileController.currentUser.value?.avatar_url ?? '')
-                    : const AssetImage('assets/avatar.png') as ImageProvider,
-                backgroundColor: Colors.transparent,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildNewProjectButton(ThemeData theme, BuildContext context) {
     return SizedBox(
@@ -170,7 +135,7 @@ class HomeView extends GetView<HomeController> {
         final visibleFrames = project.frames?.where((f) => !f.isHidden).length ?? 0;
 
         return ProjectCard(
-          imageUrl: "assets/video_cover_example.png",
+          imageUrl: "assets/img.png",
           title: project.name,
           createdAt: project.updatedAt.toIso8601String(),
           frameCount: visibleFrames,
