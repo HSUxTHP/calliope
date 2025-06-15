@@ -112,14 +112,14 @@ class UploadController extends GetxController {
       }
 
       // Upload thumbnail nếu có
-      final thumbnailFile = File('${videoFile.value!.parent.path}/background.png');
-      if (await thumbnailFile.exists()) {
+      if (backgroundFile.value != null && await backgroundFile.value!.exists()) {
         await client.storage.from('videos').upload(
           '$storagePath/background.png',
-          thumbnailFile,
+          backgroundFile.value!,
           fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
         );
       }
+
 
       progress.value = 0.95;
 

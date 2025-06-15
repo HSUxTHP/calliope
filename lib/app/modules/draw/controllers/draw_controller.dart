@@ -774,7 +774,7 @@ class DrawController extends GetxController {
 
 
 
-  Future<void> uploadVideoToProfile(int fps, int userId) async {
+  Future<void> uploadVideoToProfile(int fps, int userId, {int? selectedFrameIndex}) async {
     final tempDir = await getTemporaryDirectory();
     final framesDir = Directory(p.join(tempDir.path, "upload_frames"));
 
@@ -799,7 +799,6 @@ class DrawController extends GetxController {
         mainLines: allLines,
         onionSkinLines: null,
       ).paint(canvas, canvasSize);
-
 
       final picture = recorder.endRecording();
       final image = await picture.toImage(canvasSize.width.toInt(), canvasSize.height.toInt());
@@ -829,10 +828,13 @@ class DrawController extends GetxController {
     final uploadController = Get.put(UploadController());
     uploadController.videoFile.value = File(outputVideoPath);
 
-    // Optional: Generate thumbnail from first frame
+    // ✅ Use selected frame as thumbnail (default = frame 0)
+    final frameIndex = selectedFrameIndex ?? 0;
     final thumbPath = p.join(tempDir.path, 'thumbnail.png');
-    final thumb = await renderThumbnailToFile(0, thumbPath);
-    if (thumb != null) uploadController.backgroundFile.value = thumb;
+    final thumb = await renderThumbnailToFile(frameIndex, thumbPath);
+    if (thumb != null) {
+      uploadController.backgroundFile.value = thumb;
+    }
 
     // Default values
     uploadController.nameController.text = currentProjectName ?? 'New Video';
@@ -854,6 +856,7 @@ class DrawController extends GetxController {
       await File(outputVideoPath).delete();
     }
   }
+
 
   Future<File?> renderThumbnailToFile(int frameIndex, String path) async {
     try {

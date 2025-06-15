@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -887,7 +889,12 @@ class _DrawViewState extends State<DrawView> {
                                     return;
                                   }
 
-                                  await controller.uploadVideoToProfile(localFps, userId);
+                                  final selectedIndex = await _selectThumbnailFrame();
+
+                                  if (selectedIndex == null) return; // người dùng huỷ
+
+                                  await controller.uploadVideoToProfile(localFps, userId, selectedFrameIndex: selectedIndex);
+
                                 }
                               },
 
@@ -920,6 +927,188 @@ class _DrawViewState extends State<DrawView> {
     ).then((_) => timer?.cancel());
   }
   final List<Color> recentColors = [];
+  Future<int?> _selectThumbnailFrame() async {
+    int? selectedIndex;
+
+    return await Get.dialog<int>(
+      StatefulBuilder(builder: (context, setState) {
+        return AlertDialog(
+          title: const Text("Chọn frame làm thumbnail"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 100,
+                width: 800,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: controller.frames.length,
+                  itemBuilder: (_, index) {
+                    return FutureBuilder<Uint8List>(
+                      future: controller.renderThumbnail(index),
+                      builder: (_, snapshot) {
+                        if (!snapshot.hasData) {
+                          return const SizedBox(
+                            width: 100,
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                        return GestureDetector(
+                          onTap: () => setState(() => selectedIndex = index),
+                          child: Container(
+                            margin: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: selectedIndex == index ? Colors.blue : Colors.grey,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Image.memory(snapshot.data!, width: 80),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              if (selectedIndex != null)
+                FutureBuilder<Uint8List>(
+                  future: controller.renderThumbnail(selectedIndex!),
+                  builder: (_, snapshot) {
+                    if (snapshot.hasData) {
+                      return Container(
+                        width: 640,  // 📏 16:9 tỷ lệ với 360
+                        height: 360,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.memory(
+                            snapshot.data!,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      );
+                    } else {
+                      return const SizedBox(
+                        height: 360,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                  },
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(result: null),
+              child: const Text("Huỷ"),
+            ),
+            ElevatedButton(
+              onPressed: selectedIndex != null ? () => Get.back(result: selectedIndex) : null,
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+
+  Future<int?> _selectThumbnailFrameWithPreview() async {
+    int? selectedIndex;
+
+    return await Get.dialog<int>(
+      StatefulBuilder(builder: (context, setState) {
+        return AlertDialog(
+          title: const Text("Chọn frame làm thumbnail"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 🔹 Danh sách frame dạng thumbnail
+              SizedBox(
+                height: 100,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: controller.frames.length,
+                  itemBuilder: (_, index) {
+                    return FutureBuilder<Uint8List>(
+                      future: controller.renderThumbnail(index),
+                      builder: (_, snapshot) {
+                        if (!snapshot.hasData) {
+                          return const SizedBox(
+                            width: 80,
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                        return GestureDetector(
+                          onTap: () => setState(() => selectedIndex = index),
+                          child: Container(
+                            margin: const EdgeInsets.all(4),
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: selectedIndex == index ? Colors.blue : Colors.grey,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Image.memory(snapshot.data!, width: 80),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // 🔹 Hiển thị ảnh lớn của frame đang chọn
+              if (selectedIndex != null)
+                FutureBuilder<Uint8List>(
+                  future: controller.renderThumbnail(selectedIndex!),
+                  builder: (_, snapshot) {
+                    if (snapshot.hasData) {
+                      return Container(
+                        width: 512,
+                        height: 288,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.white24),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.memory(snapshot.data!, fit: BoxFit.contain),
+                        ),
+                      );
+                    } else {
+                      return const SizedBox(
+                        height: 150,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                  },
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(result: null),
+              child: const Text("Huỷ"),
+            ),
+            ElevatedButton(
+              onPressed: selectedIndex != null ? () => Get.back(result: selectedIndex) : null,
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      }),
+    );
+  }
 
   void _showColorPicker(BuildContext context) {
     Color selectedColor = controller.selectedColor.value;
