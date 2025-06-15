@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+
 import 'dart:ui' as ui;
 import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/return_code.dart';
@@ -19,14 +20,18 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:file_picker/file_picker.dart';
+enum ToolType { brush, eraser }
 
 
 class DrawController extends GetxController {
   final repaintKey = GlobalKey();
   final scrollController = ScrollController();
 
-  final undoStack = <List<DrawnLine>>[];
-  final redoStack = <List<DrawnLine>>[];
+  final undoStack = <List<List<DrawnLine>>>[].obs;
+  final redoStack = <List<List<DrawnLine>>>[].obs;
+
+
+
 
   final selectedColor = Colors.black.obs;
   final selectedWidth = 4.0.obs;
@@ -109,32 +114,81 @@ class DrawController extends GetxController {
     final index = currentFrameIndex.value;
     final List<MapEntry<List<DrawnLine>, double>> onionLayers = [];
 
-    final int newestFirstIndex = index;
-
-    // 👉 Frame cũ hơn (quá khứ) – nằm **sau** trong danh sách
+    // 👉 Chỉ lấy các frame trước (quá khứ)
     for (int i = 1; i <= onionSkinRangeBefore; i++) {
-      final idx = newestFirstIndex + i;
-      if (idx >= 0 && idx < frames.length) {
-        final lines = frames[idx].layers.expand((layer) => layer.lines).toList();
-        double alpha = (1.0 - i / (onionSkinRangeBefore + 1)) * 0.5;
-        onionLayers.add(MapEntry(lines, alpha));
-      }
-    }
+      final prevIndex = index - i;
+      if (prevIndex < 0) break;
 
-    // 👉 Frame mới hơn (tương lai) – nằm **trước** trong danh sách
-    for (int i = 1; i <= onionSkinRangeAfter; i++) {
-      final idx = newestFirstIndex - i;
-      if (idx >= 0 && idx < frames.length) {
-        final lines = frames[idx].layers.expand((layer) => layer.lines).toList();
-        double alpha = (1.0 - i / (onionSkinRangeAfter + 1)) * 0.3;
-        onionLayers.add(MapEntry(lines, alpha));
-      }
+      final lines = frames[prevIndex].layers.expand((layer) => layer.lines).toList();
+      double alpha = (1.0 - i / (onionSkinRangeBefore + 1)) * 0.5; // giảm dần opacity
+      onionLayers.add(MapEntry(lines, alpha));
     }
 
     return onionLayers;
   }
 
 
+  List<MapEntry<List<DrawnLine>, double>> getOnionSkinLines() {
+    final index = currentFrameIndex.value;
+    final List<MapEntry<List<DrawnLine>, double>> onionLayers = [];
+
+    for (int i = 1; i <= onionSkinCount.value; i++) {
+      final nextIndex = index + i;
+      if (nextIndex >= frames.length) break;
+
+      final lines = frames[nextIndex].layers.expand((layer) => layer.lines).toList();
+      final opacity = (1.0 - i / (onionSkinCount.value + 1)) * 0.4; // mờ dần
+      onionLayers.add(MapEntry(lines, opacity));
+    }
+
+    return onionLayers;
+  }
+
+  Widget buildLayoutSelector() {
+    final controller = Get.find<DrawController>();
+
+    Widget layoutItem(int index, String label, IconData icon) {
+      return Obx(() {
+        final isSelected = controller.currentLayerIndex.value == index;
+        return GestureDetector(
+          onTap: () => controller.switchLayer(index),
+          child: AnimatedContainer(
+            duration: Duration(milliseconds: 200),
+            margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.blue.shade50 : Colors.grey.shade200,
+              border: Border.all(
+                color: isSelected ? Colors.blue : Colors.transparent,
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, color: isSelected ? Colors.blue : Colors.black54),
+                SizedBox(width: 8),
+                Text(label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    )),
+              ],
+            ),
+          ),
+        );
+      });
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        layoutItem(0, 'Layout 1', Icons.layers),
+        layoutItem(1, 'Layout 2', Icons.layers_outlined),
+        layoutItem(2, 'Layout 3', Icons.layers_clear),
+      ],
+    );
+  }
 
 
   Future<void> loadProjectFromHive(String projectId) async {
@@ -161,8 +215,25 @@ class DrawController extends GetxController {
   List<List<DrawnLine>>? copiedFrame;
   static const Size canvasSize = Size(1050, 590.625);
 
-  IconData get currentToolIcon => isEraser.value ?  Icons.brush : MdiIcons.eraser ;
-  String get currentToolTooltip => isEraser.value ? 'Bút' : 'Tẩy';
+  final IconData brushIcon = Icons.brush;
+  final IconData eraserIcon = MdiIcons.eraser;
+
+  final String brushTooltip = 'Bút';
+  final String eraserTooltip = 'Tẩy';
+
+
+  final Rx<ToolType> selectedTool = ToolType.brush.obs;
+
+  IconData get currentToolIcon =>
+  selectedTool.value == ToolType.brush ? brushIcon : eraserIcon;
+
+  String get currentToolTooltip =>
+  selectedTool.value == ToolType.brush ? brushTooltip : eraserTooltip;
+
+
+  void selectBrush() => selectedTool.value = ToolType.brush;
+  void selectEraser() => selectedTool.value = ToolType.eraser;
+
 
   @override
   void onInit() {
@@ -172,11 +243,20 @@ class DrawController extends GetxController {
   }
 
   void startStroke(Offset point) {
-    undoStack.add(List.from(currentLines.map((l) => l.copy())));
+    // ✅ Lưu cả 3 layer của frame hiện tại vào undoStack
+    undoStack.add(
+      frames[currentFrameIndex.value]
+          .layers
+          .map((layer) => layer.lines.map((line) => line.copy()).toList())
+          .toList(),
+    );
+
     redoStack.clear();
-    final color = isEraser.value ? Colors.white : selectedColor.value;
+
+    final color = selectedTool.value == ToolType.eraser ? Colors.white : selectedColor.value;
     currentLines.add(DrawnLine(points: [point], colorValue: color.value, width: selectedWidth.value));
   }
+
 
 
   void addPoint(Offset point) {
@@ -209,24 +289,61 @@ class DrawController extends GetxController {
 
   void undo() {
     if (undoStack.isNotEmpty) {
-      redoStack.add(List.from(currentLines.map((l) => l.copy())));
-      currentLines = undoStack.removeLast();
+      // ✅ Lưu lại trạng thái hiện tại trước khi undo
+      redoStack.add(
+        frames[currentFrameIndex.value]
+            .layers
+            .map((layer) => layer.lines.map((line) => line.copy()).toList())
+            .toList(),
+      );
+
+      final previous = undoStack.removeLast();
+
+      // ✅ Gán lại cho 3 layer
+      for (int i = 0; i < 3; i++) {
+        frames[currentFrameIndex.value].layers[i].lines = previous[i];
+      }
+
       frames.refresh();
     }
   }
+
   void redo() {
     if (redoStack.isNotEmpty) {
-      undoStack.add(List.from(currentLines.map((l) => l.copy())));
-      currentLines = redoStack.removeLast();
+      // ✅ Lưu trạng thái hiện tại trước khi redo
+      undoStack.add(
+        frames[currentFrameIndex.value]
+            .layers
+            .map((layer) => layer.lines.map((line) => line.copy()).toList())
+            .toList(),
+      );
+
+      final next = redoStack.removeLast();
+
+      // ✅ Gán lại cho 3 layer
+      for (int i = 0; i < 3; i++) {
+        frames[currentFrameIndex.value].layers[i].lines = next[i];
+      }
+
       frames.refresh();
     }
   }
 
   void clearCanvas() {
-    undoStack.add(List.from(currentLines.map((l) => l.copy())));
-    currentLines.clear();
+    undoStack.add(
+      frames[currentFrameIndex.value]
+          .layers
+          .map((layer) => layer.lines.map((line) => line.copy()).toList())
+          .toList(),
+    );
+
+    for (int i = 0; i < 3; i++) {
+      frames[currentFrameIndex.value].layers[i].lines.clear();
+    }
+
     frames.refresh();
   }
+
 
 
   void toggleEraser() => isEraser.toggle();
@@ -242,14 +359,19 @@ class DrawController extends GetxController {
     _clearThumbnailCache();
     frames.refresh();
   }
-
+  void resetLayerIndex() {
+    if (currentLayerIndex.value == 0) {
+      currentLayerIndex.value = -1;
+    }
+    currentLayerIndex.value = 0;
+  }
 
   void selectFrame(int index) {
     if (index == currentFrameIndex.value) return;
 
     saveCurrentFrame();
     currentFrameIndex.value = index;
-    currentLayerIndex.value = 0;
+    resetLayerIndex(); // ✅ GỌI LẠI ở đây
 
     final context = frameItemKeys[index]?.currentContext;
     if (context != null) {
@@ -441,28 +563,36 @@ class DrawController extends GetxController {
     final cacheKey = layerIndex == null ? '$frameIndex' : '$frameIndex-$layerIndex';
     if (thumbnailCache.containsKey(cacheKey)) return thumbnailCache[cacheKey]!;
 
-    // 👉 Đồng bộ thumbnail theo đúng tỉ lệ canvas: 16:9 (vd: 320x180 hoặc 640x360)
-    const double thumbWidth = 320;
-    const double thumbHeight = 180;
+    const double thumbWidth = 1050;
+    const double thumbHeight = 590.625;
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, thumbWidth, thumbHeight));
 
-    // ✅ Scale chính xác theo canvasSize thực tế
     final scaleX = thumbWidth / canvasSize.width;
     final scaleY = thumbHeight / canvasSize.height;
     canvas.scale(scaleX, scaleY);
-
 
     canvas.drawColor(Colors.white, BlendMode.src);
 
     try {
       if (layerIndex == null) {
+        final allLines = <DrawnLine>[];
         for (int i = 0; i < 3; i++) {
-          Sketcher(lines: frames[frameIndex].layers[i].lines).paint(canvas, canvasSize);
+          if (!isLayerHidden(i)) {
+            allLines.addAll(frames[frameIndex].layers[i].lines);
+          }
         }
+
+        SketcherFull(
+          mainLines: allLines,
+          onionSkinLines: null, // ❌ KHÔNG render onionSkin trong thumbnail
+        ).paint(canvas, canvasSize);
       } else {
-        Sketcher(lines: frames[frameIndex].layers[layerIndex].lines).paint(canvas, canvasSize);
+        SketcherFull(
+          mainLines: frames[frameIndex].layers[layerIndex].lines,
+          onionSkinLines: null,
+        ).paint(canvas, canvasSize);
       }
 
       final picture = recorder.endRecording();
@@ -484,6 +614,7 @@ class DrawController extends GetxController {
 
 
 
+
   bool isInsideCanvas(Offset point) {
     final box = repaintKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null) return false;
@@ -500,16 +631,21 @@ class DrawController extends GetxController {
       await outputDir.create(recursive: true);
     }
 
-
     for (int i = 0; i < frames.length; i++) {
       final recorder = ui.PictureRecorder();
       final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, canvasSize.width, canvasSize.height));
+      canvas.drawColor(Colors.white, BlendMode.src);
 
+      final allLines = <DrawnLine>[];
       for (int l = 0; l < 3; l++) {
         if (!isLayerHidden(l)) {
-          Sketcher(lines: frames[i].layers[l].lines).paint(canvas, canvasSize);
+          allLines.addAll(frames[i].layers[l].lines);
         }
       }
+
+      SketcherFull(
+        mainLines: allLines,
+      ).paint(canvas, canvasSize);
 
       final picture = recorder.endRecording();
       final image = await picture.toImage(canvasSize.width.toInt(), canvasSize.height.toInt());
@@ -520,6 +656,7 @@ class DrawController extends GetxController {
       await File(filePath).writeAsBytes(bytes);
     }
   }
+
 
   Future<bool> ensureStoragePermission() async {
     if (Platform.isAndroid) {
@@ -577,11 +714,18 @@ class DrawController extends GetxController {
       final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, canvasSize.width, canvasSize.height));
       canvas.drawColor(Colors.white, BlendMode.src);
 
+      final allLines = <DrawnLine>[];
       for (int l = 0; l < 3; l++) {
         if (!isLayerHidden(l)) {
-          Sketcher(lines: frames[i].layers[l].lines).paint(canvas, canvasSize);
+          allLines.addAll(frames[i].layers[l].lines);
         }
       }
+
+      SketcherFull(
+        mainLines: allLines,
+        onionSkinLines: null,
+      ).paint(canvas, canvasSize);
+
 
       final picture = recorder.endRecording();
       final image = await picture.toImage(canvasSize.width.toInt(), canvasSize.height.toInt());
@@ -630,7 +774,7 @@ class DrawController extends GetxController {
 
 
 
-  Future<void> uploadVideoToProfile(int fps, int userId) async {
+  Future<void> uploadVideoToProfile(int fps, int userId, {int? selectedFrameIndex}) async {
     final tempDir = await getTemporaryDirectory();
     final framesDir = Directory(p.join(tempDir.path, "upload_frames"));
 
@@ -644,11 +788,17 @@ class DrawController extends GetxController {
       final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, canvasSize.width, canvasSize.height));
       canvas.drawColor(Colors.white, BlendMode.src);
 
+      final allLines = <DrawnLine>[];
       for (int l = 0; l < 3; l++) {
         if (!isLayerHidden(l)) {
-          Sketcher(lines: frames[i].layers[l].lines).paint(canvas, canvasSize);
+          allLines.addAll(frames[i].layers[l].lines);
         }
       }
+
+      SketcherFull(
+        mainLines: allLines,
+        onionSkinLines: null,
+      ).paint(canvas, canvasSize);
 
       final picture = recorder.endRecording();
       final image = await picture.toImage(canvasSize.width.toInt(), canvasSize.height.toInt());
@@ -678,10 +828,13 @@ class DrawController extends GetxController {
     final uploadController = Get.put(UploadController());
     uploadController.videoFile.value = File(outputVideoPath);
 
-    // Optional: Generate thumbnail from first frame
+    // ✅ Use selected frame as thumbnail (default = frame 0)
+    final frameIndex = selectedFrameIndex ?? 0;
     final thumbPath = p.join(tempDir.path, 'thumbnail.png');
-    final thumb = await renderThumbnailToFile(0, thumbPath);
-    if (thumb != null) uploadController.backgroundFile.value = thumb;
+    final thumb = await renderThumbnailToFile(frameIndex, thumbPath);
+    if (thumb != null) {
+      uploadController.backgroundFile.value = thumb;
+    }
 
     // Default values
     uploadController.nameController.text = currentProjectName ?? 'New Video';
@@ -703,6 +856,7 @@ class DrawController extends GetxController {
       await File(outputVideoPath).delete();
     }
   }
+
 
   Future<File?> renderThumbnailToFile(int frameIndex, String path) async {
     try {

@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../profile/controllers/profile_controller.dart';
 import '../controllers/draw_controller.dart';
 import 'canvas_area.dart';
@@ -42,7 +45,7 @@ class _DrawViewState extends State<DrawView> {
                     : _buildCollapsedSidebar(),
                 ),
                 // const VerticalDivider(width: 1, thickness: 1), // xóa dòng này để không hiện đường chia
-                const Expanded(child: CanvasArea()),
+                Expanded(child: CanvasArea()),
               ],
             ),
 
@@ -137,36 +140,72 @@ class _DrawViewState extends State<DrawView> {
                   ]
 
                 ]),
-
-
                 const SizedBox(width: 12),
 
                 _toolbarGroup([
-                  _iconButton(
-                    controller.currentToolIcon,
-                    controller.toggleEraser,
-                    tooltip: controller.currentToolTooltip,
-                  ),
-                  _iconButton(
-                    Icons.color_lens,
-                        () => _showColorPicker(Get.context!),
-                    tooltip: 'Chọn màu',
-                    color: controller.selectedColor.value,
-                  ),
-                ]),
+                  Obx(() => _iconButton(
+                    Icons.brush,
+                    controller.selectBrush,
+                    isActive: controller.selectedTool.value == ToolType.brush,
+                    tooltip: 'Bút',
+                  )),
+                  Obx(() => _iconButton(
+                    MdiIcons.eraser,
+                    controller.selectEraser,
+                    isActive: controller.selectedTool.value == ToolType.eraser,
+                    tooltip: 'Tẩy',
+                  )),
+        Obx(() {
+          final selectedColor = controller.selectedColor.value;
+
+          final isBright = selectedColor.computeLuminance() > 0.5;
+          final bgColor = isBright ? Colors.black : Colors.white;
+          final iconColor = selectedColor; // icon mang đúng màu đã chọn
+
+          return GestureDetector(
+            onTap: () => _showColorPicker(context),
+            child: Container(
+              width: 32,
+              height: 32,
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: bgColor, // 👈 Nền ngược với màu đang chọn
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.color_lens,
+                  size: 20,
+                  color: iconColor, // 👈 icon luôn mang màu đã chọn
+                ),
+              ),
+            ),
+          );
+        })
+
+
+
+
+        ]),
+
+
+
 
                 const SizedBox(width: 12),
 
-                _roundedControl(
-                  label: '${controller.selectedWidth.value.toInt()} px',
-                  onMinus:
-                      () => controller.changeWidth(
-                    controller.selectedWidth.value - 1,
-                  ),
-                  onPlus:
-                      () => controller.changeWidth(
-                    controller.selectedWidth.value + 1,
-                  ),
+                DropdownButton<int>(
+                  value: controller.selectedWidth.value.toInt(),
+                  onChanged: (value) {
+                    if (value != null) controller.changeWidth(value.toDouble());
+                  },
+                  items: List.generate(30, (i) => i + 1)
+                      .map((val) => DropdownMenuItem<int>(
+                    value: val,
+                    child: Text('$val px'),
+                  ))
+                      .toList(),
+                  underline: Container(height: 1, color: Color(Theme.of(context).colorScheme.surfaceContainer.value)),
+                  style: TextStyle(fontSize: 16, color: Color(Theme.of(context).colorScheme.onSurface.value)),
                 ),
 
                 const SizedBox(width: 8),
@@ -202,14 +241,20 @@ class _DrawViewState extends State<DrawView> {
       IconData icon,
       VoidCallback onPressed, {
         String? tooltip,
+        bool isActive = false, // ✅ Thêm dòng này
         Color? color,
       }) {
     return IconButton(
-      icon: Icon(icon, size: 20, color: color ?? Color(Theme.of(context).colorScheme.onSurface.value)),
+      icon: Icon(
+        icon,
+        size: 20,
+        color: color ?? (isActive ? Colors.blue : Color(Theme.of(context).colorScheme.onSurface.value)),
+      ),
       tooltip: tooltip,
       onPressed: onPressed,
     );
   }
+
 
   Widget _toolbarGroup(List<Widget> children) {
     return Row(
@@ -349,7 +394,10 @@ class _DrawViewState extends State<DrawView> {
                         ),
                         tooltip: 'Xoá frame hiện tại',
                         onPressed: () {
-                          if (controller.frames.length <= 1) return;
+                          if (controller.frames.length <= 1) {
+                            Get.snackbar("Thông báo", "Bạn cần ít nhất 1 frame");
+                            return;
+                          }
                           Get.defaultDialog(
                             title: 'Xác nhận',
                             middleText:
@@ -378,30 +426,37 @@ class _DrawViewState extends State<DrawView> {
 
   Widget _buildReorderToggleButton() {
     return Obx(
-          () => ElevatedButton.icon(
-        onPressed: controller.toggleReorderMode,
-        style: ElevatedButton.styleFrom(
-          backgroundColor:
-          controller.isReorderMode.value
-              ? Colors.cyanAccent
-              : Colors.grey.shade200,
-          foregroundColor: Colors.black,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+          () {
+        final isEditing = controller.isReorderMode.value;
+        final colorScheme = Theme.of(Get.context!).colorScheme;
+
+        return ElevatedButton.icon(
+          onPressed: controller.toggleReorderMode,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isEditing
+                ? colorScheme.primaryContainer
+                : colorScheme.surfaceVariant,
+            foregroundColor: isEditing
+                ? colorScheme.onPrimaryContainer
+                : colorScheme.onSurface,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
           ),
-        ),
-        icon: Icon(
-          controller.isReorderMode.value ? Icons.lock_open : Icons.lock_outline,
-          size: 18,
-        ),
-        label: Text(
-          controller.isReorderMode.value ? 'Tắt Chỉnh Sửa' : ' Chỉnh Sửa',
-          style: const TextStyle(fontSize: 13),
-        ),
-      ),
+          icon: Icon(
+            isEditing ? Icons.lock_open : Icons.lock_outline,
+            size: 18,
+          ),
+          label: Text(
+            isEditing ? 'Tắt Chỉnh Sửa' : 'Chỉnh Sửa',
+            style: const TextStyle(fontSize: 13),
+          ),
+        );
+      },
     );
   }
+
 
   Widget _buildSidebarHeader() {
     return Container(
@@ -486,8 +541,8 @@ class _DrawViewState extends State<DrawView> {
   }
 
   Widget _buildFrameList() {
-    return ReorderableListView.builder(
-      key: const PageStorageKey('frame_list_key'),
+    return Obx(() => ReorderableListView.builder(
+      key: ValueKey(controller.isReorderMode.value), // 👈 force rebuild khi toggle
       onReorder: controller.reorderFrame,
       buildDefaultDragHandles: false,
       scrollController: controller.scrollController,
@@ -496,20 +551,17 @@ class _DrawViewState extends State<DrawView> {
       itemBuilder: (_, index) {
         final frame = controller.frames[index];
         final futureImage = controller.renderThumbnail(index);
-        final itemKey = ValueKey('frame_$index');
+        final isSelected = controller.currentFrameIndex.value == index;
 
-        final thumbnail = Obx(
-              () => _thumbnailItem(
-            isSelected: controller.currentFrameIndex.value == index,
-            onTap: () => controller.selectFrame(index),
-            futureImage: futureImage,
-            borderColor: Colors.blue,
-            isHidden: frame.isHidden,
-            onToggleVisibility: () => controller.toggleFrameVisibility(index),
-          ),
+        final thumbnail = _thumbnailItem(
+          isSelected: isSelected,
+          onTap: () => controller.selectFrame(index),
+          futureImage: futureImage,
+          borderColor: Colors.blue,
+          isHidden: frame.isHidden,
+          onToggleVisibility: () => controller.toggleFrameVisibility(index),
         );
 
-        // 👉 Nếu bật chế độ reorder → hiển thị nút drag + xoá
         if (controller.isReorderMode.value) {
           return KeyedSubtree(
             key: ValueKey('frame_$index'),
@@ -518,12 +570,7 @@ class _DrawViewState extends State<DrawView> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.drag_indicator,
-                    color: Colors.grey,
-                    size: 20,
-                  ),
-
+                  const Icon(Icons.drag_indicator, color: Colors.grey, size: 20),
                   const SizedBox(width: 4),
                   Expanded(
                     child: ReorderableDragStartListener(
@@ -537,11 +584,14 @@ class _DrawViewState extends State<DrawView> {
           );
         }
 
-        // 👉 Nếu không bật reorder → chỉ hiện thumbnail
-        return KeyedSubtree(key: itemKey, child: thumbnail);
+        return KeyedSubtree(
+          key: ValueKey('frame_$index'),
+          child: thumbnail,
+        );
       },
-    );
+    ));
   }
+
 
   Widget _buildLayoutList() {
     final index = controller.currentFrameIndex.value;
@@ -550,16 +600,19 @@ class _DrawViewState extends State<DrawView> {
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
       itemCount: 3,
       itemBuilder: (_, layerIndex) {
-        final isSelected = controller.currentLayerIndex.value == layerIndex;
-        return _thumbnailItem(
-          isSelected: isSelected,
-          onTap: () => controller.switchLayer(layerIndex),
-          futureImage: controller.renderThumbnail(index, layerIndex),
-          borderColor: Colors.indigo,
-        );
+        return Obx(() {
+          final isSelected = controller.currentLayerIndex.value == layerIndex;
+          return _thumbnailItem(
+            isSelected: isSelected,
+            onTap: () => controller.switchLayer(layerIndex),
+            futureImage: controller.renderThumbnail(index, layerIndex),
+            borderColor: Colors.indigo,
+          );
+        });
       },
     );
   }
+
 
   Widget _thumbnailItem({
     required bool isSelected,
@@ -693,7 +746,7 @@ class _DrawViewState extends State<DrawView> {
                         ),
                         LayoutBuilder(
                           builder: (context, constraints) {
-                            double progress = current / (frames.length - 1);
+                            double progress = frames.length <= 1 ? 0 : current / (frames.length - 1);
                             return AnimatedContainer(
                               duration: const Duration(milliseconds: 100),
                               width: constraints.maxWidth * progress,
@@ -836,7 +889,12 @@ class _DrawViewState extends State<DrawView> {
                                     return;
                                   }
 
-                                  await controller.uploadVideoToProfile(localFps, userId);
+                                  final selectedIndex = await _selectThumbnailFrame();
+
+                                  if (selectedIndex == null) return; // người dùng huỷ
+
+                                  await controller.uploadVideoToProfile(localFps, userId, selectedFrameIndex: selectedIndex);
+
                                 }
                               },
 
@@ -869,6 +927,188 @@ class _DrawViewState extends State<DrawView> {
     ).then((_) => timer?.cancel());
   }
   final List<Color> recentColors = [];
+  Future<int?> _selectThumbnailFrame() async {
+    int? selectedIndex;
+
+    return await Get.dialog<int>(
+      StatefulBuilder(builder: (context, setState) {
+        return AlertDialog(
+          title: const Text("Chọn frame làm thumbnail"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: 100,
+                width: 800,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: controller.frames.length,
+                  itemBuilder: (_, index) {
+                    return FutureBuilder<Uint8List>(
+                      future: controller.renderThumbnail(index),
+                      builder: (_, snapshot) {
+                        if (!snapshot.hasData) {
+                          return const SizedBox(
+                            width: 100,
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                        return GestureDetector(
+                          onTap: () => setState(() => selectedIndex = index),
+                          child: Container(
+                            margin: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: selectedIndex == index ? Colors.blue : Colors.grey,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Image.memory(snapshot.data!, width: 80),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              if (selectedIndex != null)
+                FutureBuilder<Uint8List>(
+                  future: controller.renderThumbnail(selectedIndex!),
+                  builder: (_, snapshot) {
+                    if (snapshot.hasData) {
+                      return Container(
+                        width: 640,  // 📏 16:9 tỷ lệ với 360
+                        height: 360,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.memory(
+                            snapshot.data!,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      );
+                    } else {
+                      return const SizedBox(
+                        height: 360,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                  },
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(result: null),
+              child: const Text("Huỷ"),
+            ),
+            ElevatedButton(
+              onPressed: selectedIndex != null ? () => Get.back(result: selectedIndex) : null,
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+
+  Future<int?> _selectThumbnailFrameWithPreview() async {
+    int? selectedIndex;
+
+    return await Get.dialog<int>(
+      StatefulBuilder(builder: (context, setState) {
+        return AlertDialog(
+          title: const Text("Chọn frame làm thumbnail"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 🔹 Danh sách frame dạng thumbnail
+              SizedBox(
+                height: 100,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: controller.frames.length,
+                  itemBuilder: (_, index) {
+                    return FutureBuilder<Uint8List>(
+                      future: controller.renderThumbnail(index),
+                      builder: (_, snapshot) {
+                        if (!snapshot.hasData) {
+                          return const SizedBox(
+                            width: 80,
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                        return GestureDetector(
+                          onTap: () => setState(() => selectedIndex = index),
+                          child: Container(
+                            margin: const EdgeInsets.all(4),
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: selectedIndex == index ? Colors.blue : Colors.grey,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Image.memory(snapshot.data!, width: 80),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // 🔹 Hiển thị ảnh lớn của frame đang chọn
+              if (selectedIndex != null)
+                FutureBuilder<Uint8List>(
+                  future: controller.renderThumbnail(selectedIndex!),
+                  builder: (_, snapshot) {
+                    if (snapshot.hasData) {
+                      return Container(
+                        width: 512,
+                        height: 288,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.white24),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.memory(snapshot.data!, fit: BoxFit.contain),
+                        ),
+                      );
+                    } else {
+                      return const SizedBox(
+                        height: 150,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+                  },
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(result: null),
+              child: const Text("Huỷ"),
+            ),
+            ElevatedButton(
+              onPressed: selectedIndex != null ? () => Get.back(result: selectedIndex) : null,
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      }),
+    );
+  }
 
   void _showColorPicker(BuildContext context) {
     Color selectedColor = controller.selectedColor.value;
