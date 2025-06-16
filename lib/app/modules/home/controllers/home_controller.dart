@@ -22,22 +22,22 @@ class HomeController extends GetxController {
     super.onInit();
     _projectBox = Hive.box<DrawProjectModel>('draw_project');
     loadProjects();
-    ever(searchQuery, (_) => applyFilter()); // ✅ Tự động lọc khi thay đổi search
+    ever(searchQuery, (_) => applyFilter()); // Tự động lọc khi thay đổi search
   }
 
   void loadProjects() {
     final loaded = _projectBox.values.toList();
 
     for (final project in loaded) {
-      // ✅ Nếu project chưa có frame nào thì thêm 1 frame mặc định
+      // Nếu project chưa có frame nào thì thêm 1 frame mặc định
       if (project.frames.isEmpty) {
         project.frames.add(FrameModel());
-        _projectBox.put(project.id, project); // ✅ Cập nhật lại Hive
+        _projectBox.put(project.id, project); // Cập nhật lại Hive
       }
     }
 
     projects.assignAll(loaded);
-    applyFilter(); // ✅ Áp dụng filter ngay sau khi load
+    applyFilter(); // Áp dụng filter ngay sau khi load
   }
 
   void applyFilter() {
@@ -60,12 +60,12 @@ class HomeController extends GetxController {
   void addProject(DrawProjectModel project) {
     _projectBox.put(project.id, project);
     projects.add(project);
-    applyFilter(); // ✅ Cập nhật lọc sau khi thêm
+    applyFilter(); // Cập nhật lọc sau khi thêm
   }
 
   void deleteProject(String id) {
     _projectBox.delete(id);
     projects.removeWhere((p) => p.id == id);
-    applyFilter(); // ✅ Cập nhật lọc sau khi xoá
+    applyFilter(); // Cập nhật lọc sau khi xoá
   }
 }

@@ -53,7 +53,7 @@ class DrawingCanvas extends StatelessWidget {
               }
 
               final onionSkinLines = controller.showOnionSkin.value
-                  ? controller.getOnionSkinLines() // ✅ chỉ lấy frame sau
+                  ? controller.getOnionSkinLines() // chỉ lấy frame sau
                   : null;
 
               return CustomPaint(

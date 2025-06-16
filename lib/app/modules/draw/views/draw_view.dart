@@ -26,7 +26,7 @@ class _DrawViewState extends State<DrawView> {
   void initState() {
     super.initState();
     projectId = Get.arguments as String;
-    controller.loadFromProjectId(projectId); // ✅ Gọi đúng, chỉ 1 lần
+    controller.loadFromProjectId(projectId); // Gọi đúng, chỉ 1 lần
   }
 
   @override
@@ -58,7 +58,7 @@ class _DrawViewState extends State<DrawView> {
   Widget _buildTopToolbar() {
     return Container(
       height: 58,
-      width: double.infinity, // 👈 đảm bảo full width
+      width: double.infinity, // đảm bảo full width
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         color: Color(Theme.of(context).colorScheme.surfaceContainer.value),
@@ -83,19 +83,19 @@ class _DrawViewState extends State<DrawView> {
                   _iconButton(
                     Icons.arrow_back,
                         () => Get.back(),
-                    tooltip: 'Quay lại',
+                    tooltip: 'Back',
                   ),
                 ]),
 
                 const SizedBox(width: 12),
 
                 _toolbarGroup([
-                  _iconButton(Icons.undo, controller.undo, tooltip: 'Hoàn tác'),
-                  _iconButton(Icons.redo, controller.redo, tooltip: 'Làm lại'),
+                  _iconButton(Icons.undo, controller.undo, tooltip: 'Undo'),
+                  _iconButton(Icons.redo, controller.redo, tooltip: 'Redo'),
                   _iconButton(
                     Icons.clear,
                     controller.clearCanvas,
-                    tooltip: 'Xoá canvas',
+                    tooltip: 'Clear canvas',
                   ),
                 ]),
 
@@ -107,7 +107,7 @@ class _DrawViewState extends State<DrawView> {
                         ? Icons.visibility
                         : Icons.visibility_off,
                     controller.toggleOnionSkin,
-                    tooltip: "Bật/tắt Onion Skin",
+                    tooltip: "On/Off Onion Skin",
                   ),
                   if (controller.showOnionSkin.value) ...[
                     const SizedBox(width: 4),
@@ -147,13 +147,13 @@ class _DrawViewState extends State<DrawView> {
                     Icons.brush,
                     controller.selectBrush,
                     isActive: controller.selectedTool.value == ToolType.brush,
-                    tooltip: 'Bút',
+                    tooltip: 'Pencil',
                   )),
                   Obx(() => _iconButton(
                     MdiIcons.eraser,
                     controller.selectEraser,
                     isActive: controller.selectedTool.value == ToolType.eraser,
-                    tooltip: 'Tẩy',
+                    tooltip: 'Eraser',
                   )),
         Obx(() {
           final selectedColor = controller.selectedColor.value;
@@ -170,29 +170,20 @@ class _DrawViewState extends State<DrawView> {
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: bgColor, // 👈 Nền ngược với màu đang chọn
+                color: bgColor, // Nền ngược với màu đang chọn
               ),
               child: Center(
                 child: Icon(
                   Icons.color_lens,
                   size: 20,
-                  color: iconColor, // 👈 icon luôn mang màu đã chọn
+                  color: iconColor, // icon luôn mang màu đã chọn
                 ),
               ),
             ),
           );
         })
-
-
-
-
         ]),
-
-
-
-
                 const SizedBox(width: 12),
-
                 DropdownButton<int>(
                   value: controller.selectedWidth.value.toInt(),
                   onChanged: (value) {
@@ -216,17 +207,17 @@ class _DrawViewState extends State<DrawView> {
                   _iconButton(
                     Icons.copy,
                     controller.copyFrameCurrent,
-                    tooltip: 'Sao chép frame',
+                    tooltip: 'Copy current frame',
                   ),
                   _iconButton(
                     Icons.content_paste,
                     controller.pasteCopiedFrame,
-                    tooltip: 'Dán frame',
+                    tooltip: 'Paste frame',
                   ),
                   _iconButton(
                     Icons.play_circle_fill,
                     _showPreviewDialog,
-                    tooltip: 'Xem trước Animation',
+                    tooltip: 'Preview Animation',
                   ),
                 ]),
               ],
@@ -241,7 +232,7 @@ class _DrawViewState extends State<DrawView> {
       IconData icon,
       VoidCallback onPressed, {
         String? tooltip,
-        bool isActive = false, // ✅ Thêm dòng này
+        bool isActive = false, //Thêm dòng này
         Color? color,
       }) {
     return IconButton(
@@ -366,11 +357,11 @@ class _DrawViewState extends State<DrawView> {
                 () =>
             controller.isShowingLayout.value
                 ? const SizedBox(height: 8)
-                : _buildFrameToggle(), // ✅ Nút + vẫn ở trên
+                : _buildFrameToggle(), // Nút + vẫn ở trên
           ),
           const SizedBox(height: 8),
 
-          // ✅ Danh sách Frame hoặc Layout
+          // Danh sách Frame hoặc Layout
           Expanded(
             child: Obx(
                   () =>
@@ -381,7 +372,7 @@ class _DrawViewState extends State<DrawView> {
                   // 📄 Danh sách frame
                   Expanded(child: _buildFrameList()),
 
-                  // ✅ Nút bật/tắt chế độ reorder ở CUỐI
+                  // Nút bật/tắt chế độ reorder ở CUỐI
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -392,18 +383,18 @@ class _DrawViewState extends State<DrawView> {
                           Icons.delete,
                           color: Colors.red,
                         ),
-                        tooltip: 'Xoá frame hiện tại',
+                        tooltip: 'Delete current frame',
                         onPressed: () {
                           if (controller.frames.length <= 1) {
-                            Get.snackbar("Thông báo", "Bạn cần ít nhất 1 frame");
+                            Get.snackbar("Notification", "You need at least one frame to keep drawing",);
                             return;
                           }
                           Get.defaultDialog(
-                            title: 'Xác nhận',
+                            title: 'Confirm Deletion',
                             middleText:
-                            'Bạn có chắc muốn xoá frame hiện tại?',
-                            textCancel: 'Huỷ',
-                            textConfirm: 'Xoá',
+                            'Are you sure you want to delete this frame?',
+                            textCancel: 'Cancel',
+                            textConfirm: 'Delete',
                             confirmTextColor: Colors.white,
                             onConfirm: () {
                               Get.back();
@@ -449,7 +440,7 @@ class _DrawViewState extends State<DrawView> {
             size: 18,
           ),
           label: Text(
-            isEditing ? 'Tắt Chỉnh Sửa' : 'Chỉnh Sửa',
+            isEditing ? 'Off Edit Mode' : 'Edit Mode',
             style: const TextStyle(fontSize: 13),
           ),
         );
@@ -480,7 +471,7 @@ class _DrawViewState extends State<DrawView> {
             padding: const EdgeInsets.only(right: 4), // 👈 hoặc EdgeInsets.zero nếu muốn sát mép
             child: IconButton(
               icon: const Icon(Icons.menu, size: 20),
-              tooltip: 'Thu gọn sidebar',
+              tooltip: 'Collapse Sidebar',
               onPressed: () => controller.isFrameListExpanded.value = false,
               color: Theme.of(context).colorScheme.onSurface,
               visualDensity: VisualDensity.compact, // 👈 gọn hơn
@@ -666,7 +657,7 @@ class _DrawViewState extends State<DrawView> {
   void _showPreviewDialog() async {
     final frames = await controller.getAllFrameThumbnails();
     if (frames.isEmpty) {
-      Get.snackbar("Lỗi", "Không có frame nào để xem trước");
+      Get.snackbar("Error", "No frames available to preview",);
       return;
     }
 
@@ -834,7 +825,7 @@ class _DrawViewState extends State<DrawView> {
                             const SizedBox(width: 12),
                             ElevatedButton.icon(
                               icon: const Icon(Icons.movie_creation_outlined),
-                              label: const Text("Xuất video"),
+                              label: const Text("Extract Video"),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.indigo,
                                 foregroundColor: Colors.white,
@@ -846,20 +837,20 @@ class _DrawViewState extends State<DrawView> {
                                   context: context,
                                   builder: (context) {
                                     return AlertDialog(
-                                      title: const Text("Chọn nơi lưu video"),
-                                      content: const Text("Bạn muốn lưu video về máy hay đăng lên hồ sơ cá nhân?"),
+                                      title: const Text("Select where to save the video"),
+                                      content: const Text("Do you want to save the video to your device or upload it to your profile?"),
                                       actions: [
                                         TextButton(
                                           onPressed: () => Navigator.of(context).pop("local"),
-                                          child: const Text("💾 Lưu về máy"),
+                                          child: const Text("Save to device"),
                                         ),
                                         TextButton(
                                           onPressed: () => Navigator.of(context).pop("upload"),
-                                          child: const Text("📤 Đăng lên profile"),
+                                          child: const Text("Upload to profile"),
                                         ),
                                         TextButton(
                                           onPressed: () => Navigator.of(context).pop(),
-                                          child: const Text("Huỷ"),
+                                          child: const Text("Cancel"),
                                         ),
                                       ],
                                     );
@@ -868,7 +859,7 @@ class _DrawViewState extends State<DrawView> {
 
                                 if (result == null) return;
 
-                                Navigator.of(context).pop(); // đóng dialog preview
+                                Navigator.of(context).pop(); // close preview dialog
 
                                 await controller.renderAllFramesToImages();
 
@@ -879,31 +870,35 @@ class _DrawViewState extends State<DrawView> {
                                   final userIdStr = profileCtrl.currentUser.value?.id;
 
                                   if (userIdStr == null) {
-                                    Get.snackbar("Lỗi", "Không tìm thấy userId hiện tại");
+                                    Get.snackbar("Error", "Current user ID not found");
                                     return;
                                   }
 
                                   final userId = int.tryParse(userIdStr);
                                   if (userId == null) {
-                                    Get.snackbar("Lỗi", "ID người dùng không hợp lệ: $userIdStr");
+                                    Get.snackbar("Error", "Invalid user ID: $userIdStr");
                                     return;
                                   }
 
                                   final selectedIndex = await _selectThumbnailFrame();
 
-                                  if (selectedIndex == null) return; // người dùng huỷ
+                                  if (selectedIndex == null) return; // user cancelled
 
-                                  await controller.uploadVideoToProfile(localFps, userId, selectedFrameIndex: selectedIndex);
-
+                                  await controller.uploadVideoToProfile(
+                                    localFps,
+                                    userId,
+                                    selectedFrameIndex: selectedIndex,
+                                  );
                                 }
                               },
+
 
 
                             ),
                             const SizedBox(width: 8),
                             ElevatedButton.icon(
                               icon: const Icon(Icons.close),
-                              label: const Text("Đóng"),
+                              label: const Text("Close"),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.grey.shade700,
                                 foregroundColor: Colors.white,
@@ -933,7 +928,7 @@ class _DrawViewState extends State<DrawView> {
     return await Get.dialog<int>(
       StatefulBuilder(builder: (context, setState) {
         return AlertDialog(
-          title: const Text("Chọn frame làm thumbnail"),
+          title: const Text("Choose thumbnail frame"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1007,7 +1002,7 @@ class _DrawViewState extends State<DrawView> {
           actions: [
             TextButton(
               onPressed: () => Get.back(result: null),
-              child: const Text("Huỷ"),
+              child: const Text("Cancel"),
             ),
             ElevatedButton(
               onPressed: selectedIndex != null ? () => Get.back(result: selectedIndex) : null,
@@ -1025,11 +1020,11 @@ class _DrawViewState extends State<DrawView> {
     return await Get.dialog<int>(
       StatefulBuilder(builder: (context, setState) {
         return AlertDialog(
-          title: const Text("Chọn frame làm thumbnail"),
+          title: const Text("Choose thumbnail frame"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 🔹 Danh sách frame dạng thumbnail
+              // Danh sách frame dạng thumbnail
               SizedBox(
                 height: 100,
                 child: ListView.builder(
@@ -1098,7 +1093,7 @@ class _DrawViewState extends State<DrawView> {
           actions: [
             TextButton(
               onPressed: () => Get.back(result: null),
-              child: const Text("Huỷ"),
+              child: const Text("Cancel"),
             ),
             ElevatedButton(
               onPressed: selectedIndex != null ? () => Get.back(result: selectedIndex) : null,
@@ -1117,17 +1112,17 @@ class _DrawViewState extends State<DrawView> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Chọn màu vẽ'),
+          title: const Text('Choose Color'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 🎨 Giao diện picker chuẩn như hình
+              // Giao diện picker chuẩn như hình
               ColorPicker(
                 color: selectedColor,
                 onColorChanged: (Color color) {
                   controller.changeColor(color);
 
-                  // 🕹️ Cập nhật danh sách màu đã dùng
+                  // 🕹Cập nhật danh sách màu đã dùng
                   if (!recentColors.contains(color)) {
                     recentColors.insert(0, color);
                     if (recentColors.length > 10) {
@@ -1138,7 +1133,7 @@ class _DrawViewState extends State<DrawView> {
                 pickersEnabled: const {
                   ColorPickerType.wheel: true,
                 },
-                enableShadesSelection: true,  // ✅ giữ dải màu gợi ý bên dưới như ảnh
+                enableShadesSelection: true,  // giữ dải màu gợi ý bên dưới như ảnh
                 enableOpacity: false,
                 showColorCode: false,
                 width: 36,
@@ -1150,13 +1145,13 @@ class _DrawViewState extends State<DrawView> {
 
               const SizedBox(height: 16),
 
-              // ✅ Dòng màu đã dùng
+              // Dòng màu đã dùng
               if (recentColors.isNotEmpty) ...[
                 const Align(
                   alignment: Alignment.centerLeft,
                   child: Padding(
                     padding: EdgeInsets.only(bottom: 8),
-                    child: Text('Màu đã dùng:',
+                    child: Text('Color used:',
                         style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                   ),
                 ),
@@ -1186,7 +1181,7 @@ class _DrawViewState extends State<DrawView> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Đóng'),
+              child: const Text('Close'),
             ),
           ],
         );

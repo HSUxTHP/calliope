@@ -17,7 +17,7 @@ class PostProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final formattedDate = post.created_at != null
         ? DateFormat('dd/MM/yyyy HH:mm').format(post.created_at)
-        : 'Không rõ ngày đăng';
+        : 'Unknown upload date';
     return GestureDetector(
       onTap: () {
 

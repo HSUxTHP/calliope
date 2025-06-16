@@ -96,10 +96,14 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
           viewedUser.value = self;
           await fetchPostsByUser(selfId);
         } else {
-          print('ID của currentUser không hợp lệ');
+          if (kDebugMode) {
+            print('ID của currentUser không hợp lệ');
+          }
         }
       } else {
-        print('Không có thông tin currentUser');
+        if (kDebugMode) {
+          print('Không có thông tin currentUser');
+        }
       }
     }
 
@@ -111,7 +115,9 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
 
   Future<void> initProfile(int? userId) async {
     if (userId == null || userId <= 0) {
-      print('Không có ID hợp lệ để tải profile');
+      if (kDebugMode) {
+        print('Không có ID hợp lệ để tải profile');
+      }
       return;
     }
 
@@ -127,7 +133,9 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       final selfId = int.tryParse(currentUser.value?.id ?? '');
       isCurrentUser.value = selfId != null && user.id == selfId;
     } catch (e) {
-      print('Lỗi khi lấy dữ liệu người dùng từ Supabase: $e');
+      if (kDebugMode) {
+        print('Lỗi khi lấy dữ liệu người dùng từ Supabase: $e');
+      }
     }
 
     await fetchPostsByUser(userId);
@@ -151,15 +159,19 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
     if (user != null) {
       currentUser.value = user;
       isLogined.value = true;
-      print('Đã tải UserModel từ Hive: ${user.id}');
+      if (kDebugMode) {
+        print('Đã tải UserModel từ Hive: ${user.id}');
+      }
     } else {
-      print('Không tìm thấy current_user trong Hive');
+      if (kDebugMode) {
+        print('Không tìm thấy current_user trong Hive');
+      }
     }
   }
 
   Future<UserModel> getUser(int userId) async {
     if (!await checkNetworkConnection()) {
-      throw Exception("Không có kết nối mạng");
+      throw Exception("No Internet connection");
     }
     isLoading.value = true;
     try {
@@ -211,7 +223,9 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
         thumbnail: post['thumbnail'],
       )).toList();
     } catch (e) {
-      print("Error when getting post: $e");
+      if (kDebugMode) {
+        print("Error when getting post: $e");
+      }
       post.value = [];
     }
   }
@@ -229,7 +243,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
     }
     try {
       final googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) throw Exception("Người dùng đã huỷ đăng nhập");
+      if (googleUser == null) throw Exception("User cancelled the login");
 
       final googleAuth = await googleUser.authentication;
 
@@ -240,8 +254,8 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
 
       final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
       final user = userCredential.user;
-      if (user == null) throw Exception("Không lấy được người dùng");
-      if (user.email == null) throw Exception("Email người dùng không tồn tại");
+      if (user == null) throw Exception("User not found");
+      if (user.email == null) throw Exception("Email user not exist");
 
       final supabase = Supabase.instance.client;
 
@@ -265,7 +279,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
 
         final insertResponse = await supabase.from('users').insert(userData).select().single();
 
-        if (insertResponse == null) throw Exception("Không tạo được user mới");
+        if (insertResponse == null) throw Exception("Failed to create new user in Supabase");
 
         userData = Map<String, dynamic>.from(insertResponse);
       } else {
@@ -289,13 +303,17 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       await box.put('current_user', userModel);
       isLogined.value = true;
       await initProfile(null);
-      print('Đã lưu UserModel vào Hive: ${userModel.toJson()}');
+      if (kDebugMode) {
+        print('Đã lưu UserModel vào Hive: ${userModel.toJson()}');
+      }
 
       Get.snackbar("Log in successfully", "Hello ${userModel.name}");
       await reload();
     } catch (e) {
       Get.snackbar("Login error", e.toString());
-      print("Lỗi đăng nhập: $e");
+      if (kDebugMode) {
+        print("Lỗi đăng nhập: $e");
+      }
     }
   }
 
@@ -313,11 +331,15 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       currentUser.value = null;
       viewedUser.value = null;
       isLogined.value = false;
-      print('Đã xoá current_user khỏi Hive');
+      if (kDebugMode) {
+        print('Đã xoá current_user khỏi Hive');
+      }
       // Get.toNamed('/layout');
     } catch (e) {
       Get.snackbar("Logout error", e.toString());
-      print("Lỗi đăng xuất: $e");
+      if (kDebugMode) {
+        print("Lỗi đăng xuất: $e");
+      }
     }
   }
 
@@ -412,7 +434,9 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
               viewedUser.value = currentUser.value;
               Get.back();
               Get.snackbar("Profile updated", "Your profile has been updated successfully.");
-              print("Đã cập nhật thông tin người dùng: ${currentUser.value?.toJson()}");
+              if (kDebugMode) {
+                print("Đã cập nhật thông tin người dùng: ${currentUser.value?.toJson()}");
+              }
 
             },
             child: const Text('Save'),
@@ -456,7 +480,9 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       await reload();
     } catch (e) {
       Get.snackbar("Error", "Unable to delete post: $e");
-      print("Lỗi khi xóa bài viết: $e");
+      if (kDebugMode) {
+        print("Lỗi khi xóa bài viết: $e");
+      }
     }
   }
 

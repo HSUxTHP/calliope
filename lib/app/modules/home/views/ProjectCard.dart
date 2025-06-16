@@ -60,7 +60,7 @@ class ProjectCard extends StatelessWidget {
                           children: [
                             Icon(Icons.delete_outline, color: Colors.red),
                             SizedBox(width: 8),
-                            Text("Xoá"),
+                            Text("Delete", style: TextStyle(color: Colors.red)),
                           ],
                         ),
                       ),

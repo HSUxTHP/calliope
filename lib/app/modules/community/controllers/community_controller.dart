@@ -1,5 +1,6 @@
 import 'package:calliope/app/data/models/post_model.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -58,7 +59,9 @@ class CommunityController extends GetxController
 
   Future<void> reload() async {
     if (!await profileController.checkNetworkConnection()) {
-      Get.snackbar("No Internet", "Vui lòng kiểm tra kết nối mạng");
+      Get.snackbar("No Internet", "Please Check the internet connection",
+          backgroundColor: Colors.red.withOpacity(0.8),
+          colorText: Colors.white);
       isLoading.value = false;
       return;
     }
@@ -124,7 +127,9 @@ class CommunityController extends GetxController
       post.value = postsWithUser;
       isLoading.value = false;
     } catch (e) {
-      print("Lỗi khi lấy bài viết: $e");
+      if (kDebugMode) {
+        print("Error when geting the post: $e");
+      }
       post.value = [];
       isLoading.value = false;
     } finally {
@@ -139,7 +144,7 @@ class CommunityController extends GetxController
     }
     if (!await profileController.checkNetworkConnection()) {
       post.value = [];
-      throw Exception("Không có kết nối mạng");
+      throw Exception("No Internet Connection");
     }
     try {
       isLoading.value = true;
@@ -169,7 +174,9 @@ class CommunityController extends GetxController
 
       post.value = postsWithUser;
     } catch (e) {
-      print("Lỗi khi tìm kiếm bài viết: $e");
+      if (kDebugMode) {
+        print("Error when searching post: $e");
+      }
       post.value = [];
     } finally {
       isLoading.value = false;
