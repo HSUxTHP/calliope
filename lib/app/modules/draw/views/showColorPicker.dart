@@ -6,7 +6,7 @@ void showColorPicker(BuildContext context, DrawController controller) {
   showDialog(
     context: context,
     builder: (_) => AlertDialog(
-      title: const Text('Chọn màu'),
+      title: const Text('Color Picker'),
       content: SingleChildScrollView(
         child: Wrap(
           spacing: 10,

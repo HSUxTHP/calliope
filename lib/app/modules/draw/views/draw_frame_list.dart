@@ -32,18 +32,20 @@ class DrawFrameList extends StatelessWidget {
           confirmDismiss: (_) async {
             if (controller.frames.length <= 1) return false;
             return await Get.dialog<bool>(
-              AlertDialog(
-                title: const Text('Xác nhận xoá'),
-                content: const Text('Bạn có chắc muốn xoá frame này?'),
-                actions: [
-                  TextButton(
+                AlertDialog(
+                  title: const Text('Delete Confirmation'),
+                  content: const Text('Are you sure you want to delete this frame?'),
+                  actions: [
+                    TextButton(
                       onPressed: () => Get.back(result: false),
-                      child: const Text('Huỷ')),
-                  TextButton(
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
                       onPressed: () => Get.back(result: true),
-                      child: const Text('Xoá')),
-                ],
-              ),
+                      child: const Text('Delete'),
+                    ),
+                  ],
+                ),
             ) ??
                 false;
           },

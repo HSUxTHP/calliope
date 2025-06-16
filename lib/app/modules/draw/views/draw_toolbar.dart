@@ -23,20 +23,20 @@ class DrawToolbar extends GetView<DrawController> {
       child: Obx(() => Row(
         children: [
           _toolbarGroup([
-            iconButton(Icons.arrow_back, () {}, tooltip: 'Quay lại'),
+            iconButton(Icons.arrow_back, () {}, tooltip: 'Back to Home'),
           ]),
           const SizedBox(width: 8),
           _toolbarGroup([
-            iconButton(Icons.undo, controller.undo, tooltip: 'Hoàn tác'),
-            iconButton(Icons.redo, controller.redo, tooltip: 'Làm lại'),
-            iconButton(Icons.clear, controller.clearCanvas, tooltip: 'Xoá canvas'),
+            iconButton(Icons.undo, controller.undo, tooltip: 'Undo'),
+            iconButton(Icons.redo, controller.redo, tooltip: 'Redo'),
+            iconButton(Icons.clear, controller.clearCanvas, tooltip: 'Clear canvas'),
           ]),
           const SizedBox(width: 8),
           _toolbarGroup([
             iconButton(controller.currentToolIcon, controller.toggleEraser,
                 tooltip: controller.currentToolTooltip),
             iconButton(Icons.color_lens, () => _showColorPicker(context),
-                tooltip: 'Chọn màu',
+                tooltip: 'Color picker',
                 color: controller.selectedColor.value),
           ]),
           const SizedBox(width: 8),
@@ -72,8 +72,8 @@ class DrawToolbar extends GetView<DrawController> {
 
           const Spacer(),
           _toolbarGroup([
-            iconButton(Icons.save, controller.copyFrameCurrent, tooltip: 'Sao chép frame hiện tại'),
-            iconButton(Icons.paste, controller.pasteCopiedFrame, tooltip: 'Dán frame'),
+            iconButton(Icons.save, controller.copyFrameCurrent, tooltip: 'Copy current frame'),
+            iconButton(Icons.paste, controller.pasteCopiedFrame, tooltip: 'Paste frame'),
           ]),
         ],
       )),
@@ -92,7 +92,7 @@ class DrawToolbar extends GetView<DrawController> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Chọn màu'),
+        title: const Text('Color Picker'),
         content: SingleChildScrollView(
           child: Wrap(
             spacing: 10,

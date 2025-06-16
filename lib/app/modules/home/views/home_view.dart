@@ -20,14 +20,13 @@ class HomeView extends GetView<HomeController> {
       backgroundColor: theme.colorScheme.surface,
       body: Column(
         mainAxisAlignment: MainAxisAlignment.start,
-        spacing: 40,
+        spacing: 16,
         children: [
           // Nút New Project cố định và cách lề rõ ràng
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: _buildNewProjectButton(theme, context),
           ),
-          const SizedBox(height: 8),
 
           // Danh sách project cuộn được + RefreshIndicator
           Expanded(
@@ -37,10 +36,9 @@ class HomeView extends GetView<HomeController> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                 child: Column(
-                  spacing: 24,
+                  spacing: 16,
                   children: [
                     _buildHeaderAndSearch(theme, context),
-                    const SizedBox(height: 16),
                     _buildProjectGrid(context),
                   ],
                 ),

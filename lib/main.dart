@@ -1,4 +1,5 @@
 import 'package:calliope/share/theme.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -74,8 +75,10 @@ Future<void> main() async {
   layoutController.loadTheme();
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
-    print('Lỗi Flutter: ${details.exception}');
-    print('Stack trace: ${details.stack}');
+    if (kDebugMode) {
+      print('Lỗi Flutter: ${details.exception}');
+      print('Stack trace: ${details.stack}');
+    }
   };
   runApp(
     GetMaterialApp(

@@ -243,7 +243,7 @@ class DrawController extends GetxController {
   }
 
   void startStroke(Offset point) {
-    // ✅ Lưu cả 3 layer của frame hiện tại vào undoStack
+    // Lưu cả 3 layer của frame hiện tại vào undoStack
     undoStack.add(
       frames[currentFrameIndex.value]
           .layers
@@ -289,7 +289,7 @@ class DrawController extends GetxController {
 
   void undo() {
     if (undoStack.isNotEmpty) {
-      // ✅ Lưu lại trạng thái hiện tại trước khi undo
+      // Lưu lại trạng thái hiện tại trước khi undo
       redoStack.add(
         frames[currentFrameIndex.value]
             .layers
@@ -299,7 +299,7 @@ class DrawController extends GetxController {
 
       final previous = undoStack.removeLast();
 
-      // ✅ Gán lại cho 3 layer
+      // Gán lại cho 3 layer
       for (int i = 0; i < 3; i++) {
         frames[currentFrameIndex.value].layers[i].lines = previous[i];
       }
@@ -310,7 +310,7 @@ class DrawController extends GetxController {
 
   void redo() {
     if (redoStack.isNotEmpty) {
-      // ✅ Lưu trạng thái hiện tại trước khi redo
+      // Lưu trạng thái hiện tại trước khi redo
       undoStack.add(
         frames[currentFrameIndex.value]
             .layers
@@ -320,7 +320,7 @@ class DrawController extends GetxController {
 
       final next = redoStack.removeLast();
 
-      // ✅ Gán lại cho 3 layer
+      // Gán lại cho 3 layer
       for (int i = 0; i < 3; i++) {
         frames[currentFrameIndex.value].layers[i].lines = next[i];
       }
@@ -372,7 +372,7 @@ class DrawController extends GetxController {
 
     saveCurrentFrame();
     currentFrameIndex.value = index;
-    resetLayerIndex(); // ✅ GỌI LẠI ở đây
+    resetLayerIndex(); // GỌI LẠI ở đây
 
     final context = frameItemKeys[index]?.currentContext;
     if (context != null) {
@@ -433,7 +433,7 @@ class DrawController extends GetxController {
     frames.insert(insertIndex, newFrame);
     selectFrame(insertIndex);
 
-    // ✅ Ghi lại vào Hive sau khi paste
+    // Ghi lại vào Hive sau khi paste
     if (currentProjectId != null && currentProjectName != null) {
       saveProjectToHive(currentProjectId!, currentProjectName!);
     }
@@ -445,11 +445,11 @@ class DrawController extends GetxController {
     final item = frames.removeAt(oldIndex);
     frames.insert(newIndex, item);
 
-    // ✅ Xoá cache thumbnail (QUAN TRỌNG)
+    // Xoá cache thumbnail (QUAN TRỌNG)
     _clearThumbnailCache();
     frames.refresh();
 
-    // ✅ Giữ frame đang chọn đúng vị trí mới
+    // Giữ frame đang chọn đúng vị trí mới
     if (currentFrameIndex.value == oldIndex) {
       currentFrameIndex.value = newIndex;
     } else if (currentFrameIndex.value == newIndex) {
@@ -492,7 +492,7 @@ class DrawController extends GetxController {
       saveProjectToHive(currentProjectId!, currentProjectName!);
     }
 
-    // ✅ Thêm để xóa thumbnail cache và làm mới UI
+    // Thêm để xóa thumbnail cache và làm mới UI
     _clearThumbnailCache();
     frames.refresh();
   }
@@ -508,7 +508,7 @@ class DrawController extends GetxController {
       currentFrameIndex.value = frames.length - 1;
     }
 
-    // ✅ Gọi lại render thumbnail để cập nhật UI
+    // Gọi lại render thumbnail để cập nhật UI
     await renderThumbnail(currentFrameIndex.value);
   }
 
@@ -554,7 +554,9 @@ class DrawController extends GetxController {
         return byteData?.buffer.asUint8List();
       }
     } catch (e) {
-      print('Lỗi capture smooth: $e');
+      if (kDebugMode) {
+        print('Error capture smooth: $e');
+      }
     }
     return null;
   }
@@ -591,7 +593,7 @@ class DrawController extends GetxController {
 
         SketcherFull(
           mainLines: allLines,
-          onionSkinLines: null, // ❌ KHÔNG render onionSkin trong thumbnail
+          onionSkinLines: null, // KHÔNG render onionSkin trong thumbnail
         ).paint(canvas, canvasSize);
       } else {
         SketcherFull(
@@ -833,7 +835,7 @@ class DrawController extends GetxController {
     final uploadController = Get.put(UploadController());
     uploadController.videoFile.value = File(outputVideoPath);
 
-    // ✅ Use selected frame as thumbnail (default = frame 0)
+    // Use selected frame as thumbnail (default = frame 0)
     final frameIndex = selectedFrameIndex ?? 0;
     final thumbPath = p.join(tempDir.path, 'thumbnail.png');
     final thumb = await renderThumbnailToFile(frameIndex, thumbPath);
@@ -870,7 +872,9 @@ class DrawController extends GetxController {
       await file.writeAsBytes(bytes);
       return file;
     } catch (e) {
-      print("❌ Lỗi tạo thumbnail: $e");
+      if (kDebugMode) {
+        print("Error create thumbnail: $e");
+      }
       return null;
     }
   }
@@ -882,17 +886,17 @@ class DrawController extends GetxController {
 
     await Get.dialog(
       AlertDialog(
-        title: const Text("Đăng video lên hồ sơ"),
+        title: Text("Upload Video"),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: "Tên video"),
+                decoration: const InputDecoration(labelText: "Video Name"),
               ),
               const SizedBox(height: 12),
-              const Text("Chọn frame làm thumbnail (hoặc bỏ qua để chọn ảnh từ máy):"),
+              const Text("Select a frame to use as thumbnail (or skip to choose an image from device):"),
               const SizedBox(height: 8),
               SizedBox(
                 height: 100,
@@ -930,17 +934,17 @@ class DrawController extends GetxController {
                   final result = await FilePicker.platform.pickFiles(type: FileType.image);
                   if (result != null && result.files.single.path != null) {
                     thumbnailFile = File(result.files.single.path!);
-                    Get.snackbar("Đã chọn ảnh", "Ảnh từ máy sẽ được dùng làm thumbnail");
+                    Get.snackbar("Image selected", "The chosen image will be used as the thumbnail");
                   }
                 },
                 icon: const Icon(Icons.image),
-                label: const Text("Chọn ảnh từ máy"),
+                label: const Text("Choose image from device"),
               ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text("Huỷ")),
+          TextButton(onPressed: () => Get.back(), child: const Text("Cancel")),
           ElevatedButton(
             onPressed: () async {
               Get.back(); // đóng dialog
@@ -964,11 +968,11 @@ class DrawController extends GetxController {
               uploadController.videoFile.value = File(outputPath);
               uploadController.backgroundFile.value = thumbnailFile;
               uploadController.nameController.text = nameController.text;
-              uploadController.descriptionController.text = "Tạo từ ứng dụng vẽ";
+              uploadController.descriptionController.text = "Created from drawing app";
 
               await uploadController.uploadVideo(userId);
             },
-            child: const Text("Đăng video"),
+            child: const Text("Upload video"),
           ),
         ],
       ),
@@ -980,7 +984,9 @@ class DrawController extends GetxController {
 
     for (int i = frames.length - 1; i >= 0; i--) {
       final bytes = await renderThumbnail(i);
-      print("📸 Thumbnail $i - size: ${bytes.length} bytes"); // để kiểm tra
+      if (kDebugMode) {
+        print(" Thumbnail $i - size: ${bytes.length} bytes");
+      } // để kiểm tra
       framesData.add(bytes);
     }
 
