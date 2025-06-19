@@ -41,8 +41,8 @@ class WatchController extends GetxController {
     final hasConnection = await profileController.checkNetworkConnection();
     if (!hasConnection) {
       Get.snackbar(
-        'Lỗi mạng',
-        'Không có kết nối Internet',
+        'Network error',
+        'No Internet Connection',
         backgroundColor: Colors.redAccent,
         colorText: Colors.white,
       );
@@ -105,13 +105,13 @@ class WatchController extends GetxController {
   void postComment() async {
     final data = commentController.text.trim();
     if (data.isEmpty) {
-      Get.snackbar('Lỗi', 'Nội dung bình luận không được để trống',
+      Get.snackbar('Error', 'Comment content cannot be blank',
           backgroundColor: Colors.redAccent, colorText: Colors.white);
       return;
     }
     final userId = profileController.currentUser.value?.id;
     if (userId == null) {
-      Get.snackbar('Lỗi', 'Bạn cần đăng nhập để bình luận',
+      Get.snackbar('Error', 'You must log in to comment.',
           backgroundColor: Colors.redAccent, colorText: Colors.white);
       return;
     }
@@ -125,7 +125,7 @@ class WatchController extends GetxController {
     await Supabase.instance.client.from('comments').insert(newComment);
 
     commentController.clear();
-    Get.snackbar('Thành công', 'Bình luận đã được đăng',
+    Get.snackbar('Success', 'Comments have been posted.',
         backgroundColor: Colors.green, colorText: Colors.white);
   }
 
@@ -150,7 +150,7 @@ class WatchController extends GetxController {
         }),
       );
       this.comments.value = updatedComments;
-      print("All comment user ids: ${this.comments.map((e) => e.id_user).toList()}");
+      // print("All comment user ids: ${this.comments.map((e) => e.id_user).toList()}");
     } else {
       this.comments.value = [];
     }
