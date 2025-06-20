@@ -219,6 +219,19 @@ class _DrawViewState extends State<DrawView> {
                     _showPreviewDialog,
                     tooltip: 'Preview Animation',
                   ),
+                  _iconButton(
+                  Icons.rectangle,
+                    _showPreviewDialog,
+                    color:Color(Theme.of(context).colorScheme.onSurface.value),
+
+                  ),
+                  _iconButton(
+                    Icons.timeline,
+                    _generateTweenFromCurrent,
+                    tooltip: 'Auto Tween (←)',
+                  ),
+
+
                 ]),
               ],
             ),
@@ -337,7 +350,58 @@ class _DrawViewState extends State<DrawView> {
       ),
     );
   }
+  void _generateTweenFromCurrent() {
+    final index = controller.currentFrameIndex.value;
+    if (index <= 0) {
+      Get.snackbar("Không thể tạo tween", "Bạn cần đứng ở frame thứ 2 trở lên để tạo tween.");
+      return;
+    }
 
+    int steps = 3;
+
+    Get.defaultDialog(
+      title: 'Tạo tween frame',
+      content: StatefulBuilder(
+        builder: (context, setState) {
+          return Column(
+            children: [
+              const Text("Chọn số tween frame muốn tạo:"),
+              const SizedBox(height: 12),
+              DropdownButton<int>(
+                value: steps,
+                items: List.generate(5, (i) => DropdownMenuItem(
+                  value: i + 1,
+                  child: Text(
+                    "${i + 1}",
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface, // 👈 tự đổi màu chữ theo theme
+                      fontSize: 14,
+                    ),
+                  ),
+                )),
+                onChanged: (val) {
+                  if (val != null) setState(() => steps = val);
+                },
+                isDense: true,
+                dropdownColor: Theme.of(context).colorScheme.surface, // 👈 màu nền menu
+                underline: Container(height: 1, color: Theme.of(context).colorScheme.onSurface),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface, // 👈 màu chữ đang chọn
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+      textCancel: "Huỷ",
+      textConfirm: "Tạo",
+      onConfirm: () {
+        Get.back();
+        controller.generateTween(index - 1, index, steps);
+      },
+    );
+  }
 
 
 
@@ -530,6 +594,8 @@ class _DrawViewState extends State<DrawView> {
       child: const Icon(Icons.add, size: 18, color: Colors.black),
     );
   }
+
+
 
   Widget _buildFrameList() {
     return Obx(() => ReorderableListView.builder(

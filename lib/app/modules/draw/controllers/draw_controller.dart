@@ -863,6 +863,62 @@ class DrawController extends GetxController {
       await File(outputVideoPath).delete();
     }
   }
+  Future<void> generateTween(int fromIndex, int toIndex, int steps) async {
+    if (fromIndex < 0 || toIndex >= frames.length || fromIndex >= toIndex || steps < 1) {
+      Get.snackbar("Lỗi", "Tham số không hợp lệ");
+      return;
+    }
+
+    final layerIndex = currentLayerIndex.value;
+    final fromLines = frames[fromIndex].layers[layerIndex].lines;
+    final toLines = frames[toIndex].layers[layerIndex].lines;
+
+    final maxLines = fromLines.length > toLines.length ? fromLines.length : toLines.length;
+    final generatedFrames = <FrameModel>[];
+
+    for (int s = 1; s <= steps; s++) {
+      final t = s / (steps + 1);
+      final tweenLines = <DrawnLine>[];
+
+      for (int i = 0; i < maxLines; i++) {
+        final a = i < fromLines.length ? fromLines[i] : DrawnLine(points: [], colorValue: Colors.black.value, width: 1);
+        final b = i < toLines.length ? toLines[i] : DrawnLine(points: [], colorValue: Colors.black.value, width: 1);
+
+        final minLen = a.points.length < b.points.length ? a.points.length : b.points.length;
+        final points = <Offset>[];
+
+        for (int j = 0; j < minLen; j++) {
+          final p = Offset.lerp(a.points[j], b.points[j], t);
+          points.add(p ?? a.points[j]);
+        }
+
+        // Nếu số điểm khác nhau → thêm các điểm dư từ frame dài hơn
+        if (a.points.length > b.points.length) {
+          points.addAll(a.points.sublist(minLen));
+        } else if (b.points.length > a.points.length) {
+          points.addAll(b.points.sublist(minLen));
+        }
+
+        tweenLines.add(
+          DrawnLine(
+            points: points,
+            colorValue: Color.lerp(Color(a.colorValue), Color(b.colorValue), t)?.value ?? a.colorValue,
+            width: a.width + (b.width - a.width) * t,
+          ),
+        );
+      }
+
+      final tweenFrame = FrameModel();
+      tweenFrame.layers[layerIndex].lines = tweenLines;
+      generatedFrames.add(tweenFrame);
+    }
+
+    frames.insertAll(fromIndex + 1, generatedFrames);
+    _clearThumbnailCache();
+    frames.refresh();
+    Get.snackbar("Tween thành công", "Đã chèn $steps frame trung gian giữa $fromIndex và $toIndex");
+  }
+
 
 
   Future<File?> renderThumbnailToFile(int frameIndex, String path) async {
@@ -1043,6 +1099,7 @@ Future<String?> _getProjectNameFromUser() async {
     ),
   );
 }
+
 
 Future<bool> _showPostCustomizationDialog(UploadController controller) async {
   return await Get.dialog<bool>(
