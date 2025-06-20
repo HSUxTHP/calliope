@@ -207,68 +207,73 @@ class WatchView extends GetView<WatchController> {
                 /// Comment list
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: ListView.separated(
-                itemCount: controller.comments.length,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                separatorBuilder: (_, __) => const Divider(),
-                itemBuilder: (context, index) {
-                  return InkWell(
-                    onTap: () {
-                      Get.toNamed('/profile/${controller.comments[index].user?.id}');
-                    },
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CircleAvatar(
-                          backgroundImage: NetworkImage(
-                            controller.comments[index].user?.avatar_url ?? 'https://t3.ftcdn.net/jpg/02/99/04/20/360_F_299042079_vGBD7wIlSeNl7vOevWHiL93G4koMM967.jpg',
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  await controller.getComments(video.id ?? 0);
+                },
+                child: ListView.separated(
+                  itemCount: controller.comments.length,
+                  shrinkWrap: true,
+                  physics: const AlwaysScrollableScrollPhysics(), // cho phép kéo
+                  separatorBuilder: (_, __) => const Divider(),
+                  itemBuilder: (context, index) {
+                    return InkWell(
+                      onTap: () {
+                        Get.toNamed('/profile/${controller.comments[index].user?.id}');
+                      },
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CircleAvatar(
+                            backgroundImage: NetworkImage(
+                              controller.comments[index].user?.avatar_url ?? 'https://t3.ftcdn.net/jpg/02/99/04/20/360_F_299042079_vGBD7wIlSeNl7vOevWHiL93G4koMM967.jpg',
+                            ),
+                            radius: 20,
                           ),
-                          radius: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                  children: [
-                                    Text(
-                                      controller.comments[index].user?.name ?? 'Unknown User',
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
-                                    ),
-                                    if (controller.comments[index].user?.id == user.id)
-                                      Container(
-                                        margin: const EdgeInsets.only(left: 8),
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context).colorScheme.primary,
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Text(
-                                          "Author",
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.onPrimary,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                    children: [
+                                      Text(
+                                        controller.comments[index].user?.name ?? 'Unknown User',
+                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                      if (controller.comments[index].user?.id == user.id)
+                                        Container(
+                                          margin: const EdgeInsets.only(left: 8),
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context).colorScheme.primary,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            "Author",
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onPrimary,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                  ],
+                                    ],
+                                  ),
+                                Text(
+                                  DateFormat('dd/MM/yyyy HH:mm').format(controller.comments[index].created_at),
+                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                                 ),
-                              Text(
-                                DateFormat('dd/MM/yyyy HH:mm').format(controller.comments[index].created_at),
-                                style: const TextStyle(fontSize: 12, color: Colors.grey),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(controller.comments[index].data),
-                            ],
+                                const SizedBox(height: 4),
+                                Text(controller.comments[index].data),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
               ],

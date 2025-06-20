@@ -1,6 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:calliope/app/data/models/drawmodels/frame_model.dart';
+import 'package:calliope/app/data/models/drawmodels/layer_model.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:external_path/external_path.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -8,7 +12,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hive/hive.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../data/models/drawmodels/draw_project_model.dart';
+import '../../../data/models/drawmodels/drawn_line_model.dart';
 import '../../../data/models/post_model.dart';
 import '../../../data/models/user_model.dart';
 
@@ -521,7 +528,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
             onTap: () async {
               await updateStatus(id: post.id, status: 0);
               Get.back();
-              Get.snackbar("Sign out", "You have successfully logged out.");
+              Get.snackbar("Success", "The post has been set to private.");
             },
           )
               : ListTile(
@@ -553,7 +560,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
                 middleText: 'Are you sure you want to sign out?',
                 textConfirm: 'Sign out',
                 textCancel: 'Cancel',
-                confirmTextColor: Get.theme.colorScheme.error,
+                confirmTextColor: Get.theme.colorScheme.onError,
                 onConfirm: () async {
                   await signOutGoogleAndClearHive();
                   Get.back();
@@ -562,15 +569,167 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
               );
             },
           ),
-          // ListTile(
-          //   leading: Icon(Icons.edit),
-          //   title: Text('?'),
-          //   onTap: () {
-          //   },
-          // ),
+          ListTile(
+            leading: Icon(Icons.backup),
+            title: Text('Backup data'),
+            onTap: () async {
+              Get.back();
+              await exportAll();
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.restore),
+            title: Text('Restore data'),
+            onTap: () async {
+              Get.back();
+              await importAll();
+            },
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> exportAllHiveData(String filePath) async {
+    final Map<String, dynamic> exportData = {};
+
+    await checkOpenBox();
+
+    final drawProjectBox = Hive.box<DrawProjectModel>('draw_project');
+    final frameBox = Hive.box<FrameModel>('frameModel');
+    final layerBox = Hive.box<LayerModel>('layerModel');
+    final lineBox = Hive.box<DrawnLine>('drawnLine');
+
+    exportData['drawProjectModel'] = drawProjectBox.toMap().map((key, value) => MapEntry(key.toString(), value));
+    exportData['frameModel'] = frameBox.toMap().map((key, value) => MapEntry(key.toString(), value));
+    exportData['layerModel'] = layerBox.toMap().map((key, value) => MapEntry(key.toString(), value));
+    exportData['drawnLine'] = lineBox.toMap().map((key, value) => MapEntry(key.toString(), value));
+
+    final file = File(filePath);
+    await file.writeAsString(jsonEncode(exportData));
+  }
+
+  Future<void> exportAll() async {
+    // Xin quyền truy cập bộ nhớ
+    final hasPermission = await requestStoragePermission();
+    if (!hasPermission) {
+      print('❌ Không có quyền lưu file');
+      return;
+    }
+
+    // Lấy đường dẫn thư mục "Download"
+    final dir = await ExternalPath.getExternalStoragePublicDirectory(ExternalPath.DIRECTORY_DOWNLOAD);
+    final filePath = '$dir/hive_backup.json';
+
+    await exportAllHiveData(filePath);
+
+    // Thông báo dialog đã lưu thành công
+    Get.defaultDialog(
+      title: 'Backup successful',
+      middleText: 'Your projects has been exported to:\n$filePath',
+      confirm: ElevatedButton(
+        onPressed: () => Get.back(),
+        child: const Text('OK'),
+      ),
+    );
+    print('✅ Đã lưu file tại: $filePath');
+  }
+
+  Future<bool> requestStoragePermission() async {
+    if (await Permission.manageExternalStorage.isGranted) {
+      return true;
+    }
+
+    final status = await Permission.manageExternalStorage.request();
+
+    if (status.isGranted) return true;
+
+    // Mở cài đặt nếu bị từ chối
+    await openAppSettings();
+    return false;
+  }
+
+  Future<void> checkOpenBox() async {
+    // Mở các box cần thiết
+    if (!Hive.isBoxOpen('draw_project')) {
+      await Hive.openBox<DrawProjectModel>('draw_project');
+    }
+    if (!Hive.isBoxOpen('frameModel')) {
+      await Hive.openBox<FrameModel>('frameModel');
+    }
+    if (!Hive.isBoxOpen('layerModel')) {
+      await Hive.openBox<LayerModel>('layerModel');
+    }
+    if (!Hive.isBoxOpen('drawnLine')) {
+      await Hive.openBox<DrawnLine>('drawnLine'); // ✅ đúng kiểu
+    }
+  }
+
+  Future<void> importAllHiveData(String filePath) async {
+    final file = File(filePath);
+    final contents = await file.readAsString();
+    final Map<String, dynamic> jsonData = jsonDecode(contents);
+
+    await checkOpenBox();
+
+    final drawProjectBox = Hive.box<DrawProjectModel>('draw_project');
+    final frameBox = Hive.box<FrameModel>('frameModel');
+    final layerBox = Hive.box<LayerModel>('layerModel');
+    final lineBox = Hive.box<DrawnLine>('drawnLine');
+
+    await drawProjectBox.clear(); // ✅ xóa dữ liệu cũ
+    await frameBox.clear();
+    await layerBox.clear();
+    await lineBox.clear();
+
+    for (var entry in (jsonData['drawProjectModel'] as Map<String, dynamic>).entries) {
+      final obj = DrawProjectModel.fromJson(entry.value);
+      await drawProjectBox.put(entry.key, obj);
+    }
+
+    for (var entry in (jsonData['frameModel'] as Map<String, dynamic>).entries) {
+      final obj = FrameModel.fromJson(entry.value);
+      await frameBox.put(entry.key, obj);
+    }
+
+    for (var entry in (jsonData['layerModel'] as Map<String, dynamic>).entries) {
+      final obj = LayerModel.fromJson(entry.value);
+      await layerBox.put(entry.key, obj);
+    }
+
+    for (var entry in (jsonData['drawnLine'] as Map<String, dynamic>).entries) {
+      final obj = DrawnLine.fromJson(entry.value);
+      await lineBox.put(entry.key, obj);
+    }
+  }
+
+  Future<void> importAll() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        dialogTitle: 'Chọn file backup Hive (.json)',
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      if (result == null || result.files.isEmpty || result.files.single.path == null) {
+        print('❌ Người dùng đã hủy chọn file');
+        return;
+      }
+
+      final path = result.files.single.path!;
+      await importAllHiveData(path);
+      Get.defaultDialog(
+        title: 'Khôi phục thành công',
+        middleText: 'Dữ liệu đã được khôi phục thành công.',
+        confirm: ElevatedButton(
+          onPressed: () => Get.back(),
+          child: const Text('OK'),
+        ),
+      );
+      print('✅ Khôi phục dữ liệu thành công từ: $path');
+    } catch (e) {
+      print('❌ Lỗi khi import Hive: $e');
+    }
   }
 
 }

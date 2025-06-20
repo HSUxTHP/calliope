@@ -119,6 +119,7 @@ class WatchController extends GetxController {
     final newComment = {
       'id_post': post.value?.id,
       'id_user': userId,
+      'created_at': DateTime.now().toIso8601String(),
       'data': data,
     };
 
