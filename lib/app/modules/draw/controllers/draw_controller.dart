@@ -1107,65 +1107,68 @@ Future<bool> _showPostCustomizationDialog(UploadController controller) async {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "Customize Your Post",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 20),
-
-              // Title input
-              TextField(
-                controller: controller.nameController,
-                decoration: InputDecoration(
-                  labelText: "Video Title",
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.title),
-                ),
-              ),
-              SizedBox(height: 15),
-
-              // Description input
-              TextField(
-                controller: controller.descriptionController,
-                decoration: InputDecoration(
-                  labelText: "Description",
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.description),
-                ),
-                maxLines: 3,
-              ),
-              SizedBox(height: 25),
-
-              // Action buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Get.back(result: false),
-                    child: Text("Cancel"),
+        child: SizedBox(
+          width: 400,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Customize Your Post",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
-                  SizedBox(width: 10),
-                  ElevatedButton.icon(
-                    onPressed: () => Get.back(result: true),
-                    icon: Icon(Icons.upload),
-                    label: Text("Upload"),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                ),
+                SizedBox(height: 20),
+
+                // Title input
+                TextField(
+                  controller: controller.nameController,
+                  decoration: InputDecoration(
+                    labelText: "Video Title",
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.title),
+                  ),
+                ),
+                SizedBox(height: 15),
+
+                // Description input
+                TextField(
+                  controller: controller.descriptionController,
+                  decoration: InputDecoration(
+                    labelText: "Description",
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.description),
+                  ),
+                  maxLines: 3,
+                ),
+                SizedBox(height: 25),
+
+                // Action buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Get.back(result: false),
+                      child: Text("Cancel"),
+                    ),
+                    SizedBox(width: 10),
+                    ElevatedButton.icon(
+                      onPressed: () => Get.back(result: true),
+                      icon: Icon(Icons.upload),
+                      label: Text("Upload"),
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
