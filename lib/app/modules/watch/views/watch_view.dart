@@ -189,9 +189,10 @@ class WatchView extends GetView<WatchController> {
                       const SizedBox(width: 8),
                       IconButton(
                         icon: const Icon(Icons.send),
-                        onPressed: () {
+                        onPressed: () async {
                           controller.postComment();
                           controller.commentController.clear();
+                          await controller.getComments(video.id ?? 0);
                         },
                       ),
                     ],
