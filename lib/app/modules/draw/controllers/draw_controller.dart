@@ -370,15 +370,16 @@ class DrawController extends GetxController {
   void selectFrame(int index) {
     if (index == currentFrameIndex.value) return;
 
-    saveCurrentFrame();
+    final copied = currentLines.map((l) => l.copy()).toList();
+    currentLines = copied;
     currentFrameIndex.value = index;
-    resetLayerIndex(); // GỌI LẠI ở đây
-
+    if (currentProjectId != null && currentProjectName != null) {
+      saveProjectToHive(currentProjectId!, currentProjectName!);
+    }
     final context = frameItemKeys[index]?.currentContext;
     if (context != null) {
       Scrollable.ensureVisible(
         context,
-        duration: const Duration(milliseconds: 300),
         alignment: 0.5,
       );
     }
