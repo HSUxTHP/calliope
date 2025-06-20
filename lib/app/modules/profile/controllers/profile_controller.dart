@@ -499,7 +499,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       middleText: 'Are you sure you want to delete this post?',
       textConfirm: 'Delete',
       textCancel: 'Cancel',
-      confirmTextColor: Colors.white,
+      confirmTextColor: Get.theme.colorScheme.onError,
       onConfirm: () async {
         Get.back();
         await deletePost(id: id);
@@ -620,7 +620,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
 
     // Lấy đường dẫn thư mục "Download"
     final dir = await ExternalPath.getExternalStoragePublicDirectory(ExternalPath.DIRECTORY_DOWNLOAD);
-    final filePath = '$dir/hive_backup.json';
+    final filePath = '$dir/calliope_backup.json';
 
     await exportAllHiveData(filePath);
 
@@ -707,7 +707,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
   Future<void> importAll() async {
     try {
       final result = await FilePicker.platform.pickFiles(
-        dialogTitle: 'Chọn file backup Hive (.json)',
+        dialogTitle: 'Select the backup project file (.json)',
         type: FileType.custom,
         allowedExtensions: ['json'],
       );
@@ -720,8 +720,8 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       final path = result.files.single.path!;
       await importAllHiveData(path);
       Get.defaultDialog(
-        title: 'Khôi phục thành công',
-        middleText: 'Dữ liệu đã được khôi phục thành công.',
+        title: 'Restore successfully',
+        middleText: 'Data was successfully recovered.',
         confirm: ElevatedButton(
           onPressed: () => Get.back(),
           child: const Text('OK'),
