@@ -21,6 +21,8 @@ class WatchView extends GetView<WatchController> {
       // profileController.checkNetworkConnection();
       return Scaffold(
           backgroundColor: Theme.of(context).colorScheme.surface,
+          appBar: AppBar(
+          ),
           body: Center(
             child: Column(
               // mainAxisAlignment: MainAxisAlignment.center,
@@ -55,6 +57,8 @@ class WatchView extends GetView<WatchController> {
       );
     }
     return Scaffold(
+      appBar: AppBar(
+      ),
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value || controller.playerController == null) {
@@ -226,12 +230,33 @@ class WatchView extends GetView<WatchController> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              Row(
+                                  children: [
+                                    Text(
+                                      controller.comments[index].user?.name ?? 'Unknown User',
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    if (controller.comments[index].user?.id == user.id)
+                                      Container(
+                                        margin: const EdgeInsets.only(left: 8),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).colorScheme.primary,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          "Author",
+                                          style: TextStyle(
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               Text(
-                                "${controller.comments[index].user?.name ?? 'Unknown User'}",
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              Text(
-                                "${DateFormat('dd/MM/yyyy HH:mm').format(controller.comments[index].created_at)}",
+                                DateFormat('dd/MM/yyyy HH:mm').format(controller.comments[index].created_at),
                                 style: const TextStyle(fontSize: 12, color: Colors.grey),
                               ),
                               const SizedBox(height: 4),
