@@ -57,6 +57,37 @@ class ProfileView extends GetView<ProfileController> {
                   child: Column(
                     // mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      Container(
+                        // height: kToolbarHeight,
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        child: Row(
+                          mainAxisAlignment:
+                          MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Nút back nếu không phải current user
+                            if (!controller.isCurrentUser.value)
+                              IconButton(
+                                icon: Icon(Icons.arrow_back),
+                                onPressed: () {
+                                  Get.back();
+                                },
+                              )
+                            else
+                              SizedBox(
+                                width: 48,
+                              ), // giữ layout cân bằng nếu không có leading
+                            // Nút settings nếu là current user đã đăng nhập
+                            if (controller.isCurrentUser.value &&
+                                controller.isLogined.value)
+                              IconButton(
+                                icon: Icon(Icons.settings),
+                                onPressed: controller.showSettingsOptions,
+                              )
+                            else
+                              SizedBox(width: 48),
+                          ],
+                        ),
+                      ),
                       Icon(Icons.signal_wifi_off, size: 48, color: Colors.red),
                       const SizedBox(height: 8),
                       Text(
