@@ -493,7 +493,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
     }
   }
 
-  void confirmDeletePost(int id) {
+  Future<void> confirmDeletePost(int id) async {
     Get.defaultDialog(
       title: 'Confirm',
       middleText: 'Are you sure you want to delete this post?',
@@ -518,7 +518,8 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
             leading: Icon(Icons.delete, color: Get.theme.colorScheme.error),
             title: Text('Delete posts'),
             onTap: () async {
-              confirmDeletePost(post.id);
+              Get.back();
+              await confirmDeletePost(post.id);
             },
           ),
           post.status == 1
