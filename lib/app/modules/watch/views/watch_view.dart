@@ -21,6 +21,8 @@ class WatchView extends GetView<WatchController> {
       // profileController.checkNetworkConnection();
       return Scaffold(
           backgroundColor: Theme.of(context).colorScheme.surface,
+          appBar: AppBar(
+          ),
           body: Center(
             child: Column(
               // mainAxisAlignment: MainAxisAlignment.center,
@@ -55,6 +57,8 @@ class WatchView extends GetView<WatchController> {
       );
     }
     return Scaffold(
+      appBar: AppBar(
+      ),
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value || controller.playerController == null) {
