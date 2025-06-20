@@ -621,6 +621,36 @@ class DrawController extends GetxController {
 
 
 
+  Future<void> exportFrameAsImage(int frameIndex) async {
+    if (frameIndex < 0 || frameIndex >= frames.length) {
+      Get.snackbar("Lỗi", "Chỉ số frame không hợp lệ.");
+      return;
+    }
+
+    bool granted = await ensureStoragePermission();
+    if (!granted) {
+      Get.snackbar("Lỗi", "Không có quyền lưu trữ.");
+      return;
+    }
+
+    final dir = await FilePicker.platform.getDirectoryPath();
+    if (dir == null) {
+      Get.snackbar("Đã huỷ", "Bạn chưa chọn thư mục.");
+      return;
+    }
+
+    final bytes = await renderThumbnail(frameIndex );
+    final filePath = "$dir/frame_${frameIndex.toString().padLeft(3, '0')}.png";
+    final file = File(filePath);
+    await file.writeAsBytes(bytes);
+
+    Get.snackbar(
+      "Export Successful",
+      "The exported image has been saved as PNG.",
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
 
 
   bool isInsideCanvas(Offset point) {
