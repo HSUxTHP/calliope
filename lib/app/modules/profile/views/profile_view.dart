@@ -55,62 +55,61 @@ class ProfileView extends GetView<ProfileController> {
                 controller.checkNetworkConnection();
                 return Center(
                   child: Column(
-                    // mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        // height: kToolbarHeight,
-                        padding: EdgeInsets.symmetric(horizontal: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
                         child: Row(
-                          mainAxisAlignment:
-                          MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            // Nút back nếu không phải current user
-                            if (!controller.isCurrentUser.value)
-                              IconButton(
-                                icon: Icon(Icons.arrow_back),
-                                onPressed: () {
-                                  Get.back();
-                                },
-                              )
-                            else
-                              SizedBox(
-                                width: 48,
-                              ), // giữ layout cân bằng nếu không có leading
+                            IconButton(
+                              icon: const Icon(Icons.arrow_back),
+                              onPressed: Get.back,
+                            ),
                             // Nút settings nếu là current user đã đăng nhập
-                            if (controller.isCurrentUser.value &&
-                                controller.isLogined.value)
-                              IconButton(
-                                icon: Icon(Icons.settings),
-                                onPressed: controller.showSettingsOptions,
-                              )
-                            else
-                              SizedBox(width: 48),
+                            IconButton(
+                              icon: const Icon(Icons.settings),
+                              onPressed: controller.showSettingsOptions,
+                            ),
                           ],
                         ),
                       ),
-                      Icon(Icons.signal_wifi_off, size: 48, color: Colors.red),
-                      const SizedBox(height: 8),
-                      Text(
-                        'No Internet Connection',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          fontSize: 18,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: () async {
-                          if (await controller.checkNetworkConnection()) {
-                            await controller.reload();
-                          } else {
-                            Get.snackbar(
-                              'Error',
-                              'Unable to connect to the internet.',
-                              snackPosition: SnackPosition.BOTTOM,
-                            );
-                          }
-                        },
-                        child: Text('Retry'),
+                      const SizedBox(height: 100),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 24),
+                          const Icon(
+                            Icons.signal_wifi_off,
+                            size: 48,
+                            color: Colors.red,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No Internet Connection',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 18,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: () async {
+                              if (await controller.checkNetworkConnection()) {
+                                await controller.reload();
+                              } else {
+                                Get.snackbar(
+                                  'Error',
+                                  'Unable to connect to the internet.',
+                                  snackPosition: SnackPosition.BOTTOM,
+                                );
+                              }
+                            },
+                            child: const Text('Retry'),
+                          ),
+                        ],
                       ),
                     ],
                   ),

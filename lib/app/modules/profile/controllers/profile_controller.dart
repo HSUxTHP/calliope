@@ -551,25 +551,27 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       title: 'Settings',
       content: Column(
         children: [
-          ListTile(
-            leading: Icon(Icons.logout, color: Get.theme.colorScheme.error),
-            title: Text('Sign out'),
-            onTap: () async {
-              Get.back();
-              Get.defaultDialog(
-                title: 'Confirm',
-                middleText: 'Are you sure you want to sign out?',
-                textConfirm: 'Sign out',
-                textCancel: 'Cancel',
-                confirmTextColor: Get.theme.colorScheme.onError,
-                onConfirm: () async {
-                  await signOutGoogleAndClearHive();
-                  Get.back();
-                  Get.snackbar("Sign out", "You have successfully logged out.");
-                },
-              );
-            },
-          ),
+          isLogined.value
+          ? ListTile(
+              leading: Icon(Icons.logout, color: Get.theme.colorScheme.error),
+              title: Text('Sign out'),
+              onTap: () async {
+                Get.back();
+                Get.defaultDialog(
+                  title: 'Confirm',
+                  middleText: 'Are you sure you want to sign out?',
+                  textConfirm: 'Sign out',
+                  textCancel: 'Cancel',
+                  confirmTextColor: Get.theme.colorScheme.onError,
+                  onConfirm: () async {
+                    await signOutGoogleAndClearHive();
+                    Get.back();
+                    Get.snackbar("Sign out", "You have successfully logged out.");
+                  },
+                );
+              },
+            )
+          : const SizedBox.shrink(),
           ListTile(
             leading: Icon(Icons.backup),
             title: Text('Backup data'),
@@ -618,23 +620,59 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       return;
     }
 
-    // Lấy đường dẫn thư mục "Download"
-    final dir = await ExternalPath.getExternalStoragePublicDirectory(ExternalPath.DIRECTORY_DOWNLOAD);
-    final filePath = '$dir/calliope_backup.json';
+    final fileNameController = TextEditingController(text: 'calliope_backup');
 
-    await exportAllHiveData(filePath);
-
-    // Thông báo dialog đã lưu thành công
-    Get.defaultDialog(
-      title: 'Backup successful',
-      middleText: 'Your projects has been exported to:\n$filePath',
+    await Get.defaultDialog(
+      title: 'Đặt tên file',
+      barrierDismissible: false,
+      content: Column(
+        children: [
+          const Text('Nhập tên file:'),
+          const SizedBox(height: 8),
+          TextField(
+            controller: fileNameController,
+            decoration: const InputDecoration(border: OutlineInputBorder()),
+          ),
+        ],
+      ),
       confirm: ElevatedButton(
+        onPressed: () async {
+          final rawName = fileNameController.text.trim();
+          if (rawName.isEmpty) {
+            Get.snackbar('Lỗi', 'Tên file không được để trống');
+            return;
+          }
+
+          final fileName = rawName.endsWith('.json') ? rawName : '$rawName.json';
+
+          Get.back(); // Đóng dialog
+
+          final dir = await ExternalPath.getExternalStoragePublicDirectory(
+              ExternalPath.DIRECTORY_DOWNLOAD);
+          final filePath = '$dir/$fileName';
+
+          await exportAllHiveData(filePath);
+
+          Get.defaultDialog(
+            title: 'Backup successful',
+            middleText: 'Your projects has been exported to:\n$filePath',
+            confirm: ElevatedButton(
+              onPressed: () => Get.back(),
+              child: const Text('OK'),
+            ),
+          );
+          print('✅ Đã lưu file tại: $filePath');
+        },
+        child: const Text('Lưu'),
+      ),
+      cancel: TextButton(
         onPressed: () => Get.back(),
-        child: const Text('OK'),
+        child: const Text('Hủy'),
       ),
     );
-    print('✅ Đã lưu file tại: $filePath');
   }
+
+
 
   Future<bool> requestStoragePermission() async {
     if (await Permission.manageExternalStorage.isGranted) {
@@ -668,8 +706,27 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
 
   Future<void> importAllHiveData(String filePath) async {
     final file = File(filePath);
-    final contents = await file.readAsString();
-    final Map<String, dynamic> jsonData = jsonDecode(contents);
+
+    if (!await file.exists()) {
+      throw Exception("❌ File không tồn tại: $filePath");
+    }
+
+    late Map<String, dynamic> jsonData;
+
+    try {
+      final contents = await file.readAsString();
+      jsonData = jsonDecode(contents);
+    } catch (e) {
+      throw Exception("❌ File không hợp lệ hoặc không phải định dạng JSON.\nChi tiết: $e");
+    }
+
+    // Kiểm tra các khóa bắt buộc
+    final requiredKeys = ['drawProjectModel', 'frameModel', 'layerModel', 'drawnLine'];
+    for (var key in requiredKeys) {
+      if (!jsonData.containsKey(key)) {
+        throw Exception("❌ File thiếu dữ liệu: '$key'");
+      }
+    }
 
     await checkOpenBox();
 
@@ -678,34 +735,73 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
     final layerBox = Hive.box<LayerModel>('layerModel');
     final lineBox = Hive.box<DrawnLine>('drawnLine');
 
-    await drawProjectBox.clear(); // ✅ xóa dữ liệu cũ
+    // Xóa dữ liệu cũ
+    await drawProjectBox.clear();
     await frameBox.clear();
     await layerBox.clear();
     await lineBox.clear();
 
-    for (var entry in (jsonData['drawProjectModel'] as Map<String, dynamic>).entries) {
-      final obj = DrawProjectModel.fromJson(entry.value);
-      await drawProjectBox.put(entry.key, obj);
-    }
+    try {
+      for (var entry in (jsonData['drawProjectModel'] as Map<String, dynamic>).entries) {
+        final obj = DrawProjectModel.fromJson(entry.value);
+        await drawProjectBox.put(entry.key, obj);
+      }
 
-    for (var entry in (jsonData['frameModel'] as Map<String, dynamic>).entries) {
-      final obj = FrameModel.fromJson(entry.value);
-      await frameBox.put(entry.key, obj);
-    }
+      for (var entry in (jsonData['frameModel'] as Map<String, dynamic>).entries) {
+        final obj = FrameModel.fromJson(entry.value);
+        await frameBox.put(entry.key, obj);
+      }
 
-    for (var entry in (jsonData['layerModel'] as Map<String, dynamic>).entries) {
-      final obj = LayerModel.fromJson(entry.value);
-      await layerBox.put(entry.key, obj);
-    }
+      for (var entry in (jsonData['layerModel'] as Map<String, dynamic>).entries) {
+        final obj = LayerModel.fromJson(entry.value);
+        await layerBox.put(entry.key, obj);
+      }
 
-    for (var entry in (jsonData['drawnLine'] as Map<String, dynamic>).entries) {
-      final obj = DrawnLine.fromJson(entry.value);
-      await lineBox.put(entry.key, obj);
+      for (var entry in (jsonData['drawnLine'] as Map<String, dynamic>).entries) {
+        final obj = DrawnLine.fromJson(entry.value);
+        await lineBox.put(entry.key, obj);
+      }
+    } catch (e) {
+      throw Exception("❌ Lỗi khi phân tích hoặc ghi dữ liệu Hive.\nChi tiết: $e");
     }
   }
 
+
   Future<void> importAll() async {
     try {
+      bool isCancel = false;
+      //Mở dialog cảnh báo
+      await Get.defaultDialog(
+        title: 'Warning',
+        middleText: 'This will overwrite all your current projects. Are you sure?',
+        confirm: ElevatedButton(
+          onPressed: () {
+            Get.back();
+            isCancel = false;
+          },
+          child: const Text('Yes'),
+        ),
+        cancel: TextButton(
+          onPressed: () {
+            Get.back();
+            isCancel = true;
+          },
+          child: const Text('No'),
+        ),
+      );
+
+      if (isCancel) {
+        print('❌ Người dùng đã hủy khôi phục dữ liệu');
+        return; // Người dùng đã hủy, không làm gì cả
+      }
+
+      // Xin quyền truy cập bộ nhớ
+      final hasPermission = await requestStoragePermission();
+      if (!hasPermission) {
+        print('❌ Không có quyền truy cập file');
+        return;
+      }
+
       final result = await FilePicker.platform.pickFiles(
         dialogTitle: 'Select the backup project file (.json)',
         type: FileType.custom,
@@ -729,7 +825,8 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       );
       print('✅ Khôi phục dữ liệu thành công từ: $path');
     } catch (e) {
-      print('❌ Lỗi khi import Hive: $e');
+      print(e);
+      Get.snackbar('Lỗi', e.toString(), snackPosition: SnackPosition.BOTTOM);
     }
   }
 
