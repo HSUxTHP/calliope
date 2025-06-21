@@ -623,11 +623,11 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
     final fileNameController = TextEditingController(text: 'calliope_backup');
 
     await Get.defaultDialog(
-      title: 'Đặt tên file',
+      title: 'Name the backup file',
       barrierDismissible: false,
       content: Column(
         children: [
-          const Text('Nhập tên file:'),
+          const Text('Enter backup file name:'),
           const SizedBox(height: 8),
           TextField(
             controller: fileNameController,
@@ -639,7 +639,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
         onPressed: () async {
           final rawName = fileNameController.text.trim();
           if (rawName.isEmpty) {
-            Get.snackbar('Lỗi', 'Tên file không được để trống');
+            Get.snackbar('Error', 'File name cannot be empty');
             return;
           }
 
@@ -663,11 +663,11 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
           );
           print('✅ Đã lưu file tại: $filePath');
         },
-        child: const Text('Lưu'),
+        child: const Text('Save'),
       ),
       cancel: TextButton(
         onPressed: () => Get.back(),
-        child: const Text('Hủy'),
+        child: const Text('Cancel'),
       ),
     );
   }
@@ -708,7 +708,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
     final file = File(filePath);
 
     if (!await file.exists()) {
-      throw Exception("❌ File không tồn tại: $filePath");
+      throw Exception("❌ File does not exist: $filePath");
     }
 
     late Map<String, dynamic> jsonData;
@@ -717,14 +717,14 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       final contents = await file.readAsString();
       jsonData = jsonDecode(contents);
     } catch (e) {
-      throw Exception("❌ File không hợp lệ hoặc không phải định dạng JSON.\nChi tiết: $e");
+      throw Exception("❌ File is invalid or not in JSON format.\nDetail: $e");
     }
 
     // Kiểm tra các khóa bắt buộc
     final requiredKeys = ['drawProjectModel', 'frameModel', 'layerModel', 'drawnLine'];
     for (var key in requiredKeys) {
       if (!jsonData.containsKey(key)) {
-        throw Exception("❌ File thiếu dữ liệu: '$key'");
+        throw Exception("❌ File missing data: '$key'");
       }
     }
 
@@ -762,16 +762,17 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
         await lineBox.put(entry.key, obj);
       }
     } catch (e) {
-      throw Exception("❌ Lỗi khi phân tích hoặc ghi dữ liệu Hive.\nChi tiết: $e");
+      throw Exception("❌ Error parsing or writing Hive data.\nDetails: $e");
     }
   }
 
 
   Future<void> importAll() async {
     try {
-      bool isCancel = false;
+      bool isCancel = true;
       //Mở dialog cảnh báo
       await Get.defaultDialog(
+        barrierDismissible: false,
         title: 'Warning',
         middleText: 'This will overwrite all your current projects. Are you sure?',
         confirm: ElevatedButton(
@@ -826,7 +827,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       print('✅ Khôi phục dữ liệu thành công từ: $path');
     } catch (e) {
       print(e);
-      Get.snackbar('Lỗi', e.toString(), snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('Error', e.toString(), snackPosition: SnackPosition.BOTTOM);
     }
   }
 
