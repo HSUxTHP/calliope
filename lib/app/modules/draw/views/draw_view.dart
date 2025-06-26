@@ -26,7 +26,7 @@ class _DrawViewState extends State<DrawView> {
   void initState() {
     super.initState();
     projectId = Get.arguments as String;
-    controller.loadFromProjectId(projectId); // Gọi đúng, chỉ 1 lần
+    controller.loadProject(projectId); // Gọi đúng, chỉ 1 lần
   }
 
   @override
