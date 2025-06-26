@@ -26,7 +26,7 @@ class _DrawViewState extends State<DrawView> {
   void initState() {
     super.initState();
     projectId = Get.arguments as String;
-    controller.loadFromProjectId(projectId); // Gọi đúng, chỉ 1 lần
+    controller.loadProject(projectId); // Gọi đúng, chỉ 1 lần
   }
 
   @override
@@ -353,19 +353,22 @@ class _DrawViewState extends State<DrawView> {
   void _generateTweenFromCurrent() {
     final index = controller.currentFrameIndex.value;
     if (index <= 0) {
-      Get.snackbar("Không thể tạo tween", "Bạn cần đứng ở frame thứ 2 trở lên để tạo tween.");
+      Get.snackbar(
+        "Cannot create tween",
+        "You need to be on frame 2 or higher to create tween",
+      );
       return;
     }
 
     int steps = 3;
 
     Get.defaultDialog(
-      title: 'Tạo tween frame',
+      title: 'Create tween frame',
       content: StatefulBuilder(
         builder: (context, setState) {
           return Column(
             children: [
-              const Text("Chọn số tween frame muốn tạo:"),
+              const Text("Select the number of tween frames you want to create:"),
               const SizedBox(height: 12),
               DropdownButton<int>(
                 value: steps,
@@ -394,8 +397,8 @@ class _DrawViewState extends State<DrawView> {
           );
         },
       ),
-      textCancel: "Huỷ",
-      textConfirm: "Tạo",
+      textCancel: "Cancel",
+      textConfirm: "Create",
       onConfirm: () {
         Get.back();
         controller.generateTween(index - 1, index, steps);
@@ -442,30 +445,41 @@ class _DrawViewState extends State<DrawView> {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _buildReorderToggleButton(),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete,
-                          color: Colors.red,
-                        ),
-                        tooltip: 'Delete current frame',
-                        onPressed: () {
-                          if (controller.frames.length <= 1) {
-                            Get.snackbar("Notification", "You need at least one frame to keep drawing",);
-                            return;
-                          }
-                          Get.defaultDialog(
-                            title: 'Confirm Deletion',
-                            middleText:
-                            'Are you sure you want to delete this frame?',
-                            textCancel: 'Cancel',
-                            textConfirm: 'Delete',
-                            confirmTextColor: Colors.white,
-                            onConfirm: () {
-                              Get.back();
-                              controller.deleteCurrentFrame();
+                      Row(
+                        children: [
+                          _miniIconButton(
+                            icon: Icons.delete,
+                            color: Colors.red,
+                            tooltip: 'Delete current frame',
+                            onPressed: () {
+                              if (controller.frames.length <= 1) {
+                                Get.snackbar("Notification", "You need at least one frame to keep drawing");
+                                return;
+                              }
+                              Get.defaultDialog(
+                                title: 'Confirm Deletion',
+                                middleText: 'Are you sure you want to delete this frame?',
+                                textCancel: 'Cancel',
+                                textConfirm: 'Delete',
+                                confirmTextColor: Colors.white,
+                                onConfirm: () {
+                                  Get.back();
+                                  controller.deleteCurrentFrame();
+                                },
+                              );
                             },
-                          );
-                        },
+                          ),
+                          const SizedBox(width: 6),
+                          _miniIconButton(
+                            icon: Icons.image_outlined,
+                            color: Colors.green,
+                            tooltip: 'Export frame as image',
+                            onPressed: () {
+                              final index = controller.currentFrameIndex.value;
+                              controller.exportFrameAsImage(index);
+                            },
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -509,6 +523,34 @@ class _DrawViewState extends State<DrawView> {
           ),
         );
       },
+    );
+  }
+  Widget _miniIconButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+    Color? color,
+    String? tooltip,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Icon(
+            icon,
+            size: 18,
+            color: color ?? Colors.black87,
+          ),
+        ),
+      ),
     );
   }
 

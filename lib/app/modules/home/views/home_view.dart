@@ -142,11 +142,11 @@ class HomeView extends GetView<HomeController> {
           onDelete: () async {
             final confirmed = await Get.dialog<bool>(
               AlertDialog(
-                title: const Text('Xoá project'),
-                content: Text('Bạn có chắc muốn xoá project "${project.name}" không?'),
+                title: const Text('Delete project'),
+                content: Text('Are you sure you want to delete the project? "${project.name}" No?'),
                 actions: [
-                  TextButton(onPressed: () => Get.back(result: false), child: const Text('Huỷ')),
-                  TextButton(onPressed: () => Get.back(result: true), child: const Text('Xoá', style: TextStyle(color: Colors.red))),
+                  TextButton(onPressed: () => Get.back(result: false), child: const Text('Cancel')),
+                  TextButton(onPressed: () => Get.back(result: true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
                 ],
               ),
             );
@@ -154,7 +154,7 @@ class HomeView extends GetView<HomeController> {
               final box = Hive.box<DrawProjectModel>('draw_project');
               await box.delete(project.id);
               controller.loadProjects();
-              Get.snackbar('Đã xoá', 'Project "${project.name}" đã bị xoá');
+              Get.snackbar('Deleted', 'Project "${project.name}" has been deleted');
             }
           },
         );

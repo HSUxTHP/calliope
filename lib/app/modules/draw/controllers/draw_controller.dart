@@ -21,48 +21,33 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:file_picker/file_picker.dart';
 enum ToolType { brush, eraser }
-
-
 class DrawController extends GetxController {
   final repaintKey = GlobalKey();
   final scrollController = ScrollController();
-
   final undoStack = <List<List<DrawnLine>>>[].obs;
   final redoStack = <List<List<DrawnLine>>>[].obs;
-
-
-
-
   final selectedColor = Colors.black.obs;
   final selectedWidth = 4.0.obs;
   final isEraser = false.obs;
   final Map<int, GlobalKey> frameItemKeys = {};
-
   final isReorderMode = false.obs;
   void toggleReorderMode() => isReorderMode.toggle();
-
-
   final showOnionSkin = true.obs;
   final onionSkinEnabled = true.obs;
   final onionSkinRangeBefore = 2;
   final onionSkinRangeAfter = 1;
   final onionSkinCount = 2.obs;
-
   void toggleOnionSkin() => showOnionSkin.toggle();
-
   final frames = <FrameModel>[].obs;
   final currentFrameIndex = 0.obs;
   final currentLayerIndex = 0.obs;
   String? currentProjectId;
   String? currentProjectName;
-
   final isPlaying = false.obs;
   final isFrameListExpanded = true.obs;
   final isShowingLayout = true.obs;
-
   final playbackSpeed = 6.obs;
   final _box = Hive.box<DrawProjectModel>('draw_project');
-
   Future<void> saveProjectToHive(String projectId, String name) async {
     final project = DrawProjectModel(
       id: projectId,
@@ -72,9 +57,7 @@ class DrawController extends GetxController {
     );
     await _box.put(projectId, project);
   }
-
-
-  void loadFromProjectId(String id) {
+  void loadProject(String id) {
     final project = _box.get(id);
     if (project != null) {
       frames.assignAll(project.frames.map((f) => f.copy()).toList());
@@ -84,11 +67,9 @@ class DrawController extends GetxController {
       currentProjectName = project.name;
     }
   }
-
   List<MapEntry<List<DrawnLine>, double>> getPreviousFramesLines() {
     final index = currentFrameIndex.value;
     final result = <MapEntry<List<DrawnLine>, double>>[];
-
     for (int i = 1; i <= onionSkinCount.value; i++) {
       final idx = index + i; // 👉 duyệt frame SAU (cũ hơn)
       if (idx >= 0 && idx < frames.length) {
@@ -97,56 +78,41 @@ class DrawController extends GetxController {
         result.add(MapEntry(lines, opacity));
       }
     }
-
     return result;
   }
-
-
   List<DrawnLine>? getPreviousFrameLines() {
     final index = currentFrameIndex.value;
     if (index <= 0 || index >= frames.length) return null;
-
     final prevFrame = frames[index - 1];
     return prevFrame.layers.expand((layer) => layer.lines).toList();
   }
-
   List<MapEntry<List<DrawnLine>, double>> getMultiOnionLines() {
     final index = currentFrameIndex.value;
     final List<MapEntry<List<DrawnLine>, double>> onionLayers = [];
-
     // 👉 Chỉ lấy các frame trước (quá khứ)
     for (int i = 1; i <= onionSkinRangeBefore; i++) {
       final prevIndex = index - i;
       if (prevIndex < 0) break;
-
       final lines = frames[prevIndex].layers.expand((layer) => layer.lines).toList();
       double alpha = (1.0 - i / (onionSkinRangeBefore + 1)) * 0.5; // giảm dần opacity
       onionLayers.add(MapEntry(lines, alpha));
     }
-
     return onionLayers;
   }
-
-
   List<MapEntry<List<DrawnLine>, double>> getOnionSkinLines() {
     final index = currentFrameIndex.value;
     final List<MapEntry<List<DrawnLine>, double>> onionLayers = [];
-
     for (int i = 1; i <= onionSkinCount.value; i++) {
       final nextIndex = index + i;
       if (nextIndex >= frames.length) break;
-
       final lines = frames[nextIndex].layers.expand((layer) => layer.lines).toList();
       final opacity = (1.0 - i / (onionSkinCount.value + 1)) * 0.4; // mờ dần
       onionLayers.add(MapEntry(lines, opacity));
     }
-
     return onionLayers;
   }
-
   Widget buildLayoutSelector() {
     final controller = Get.find<DrawController>();
-
     Widget layoutItem(int index, String label, IconData icon) {
       return Obx(() {
         final isSelected = controller.currentLayerIndex.value == index;
@@ -179,7 +145,6 @@ class DrawController extends GetxController {
         );
       });
     }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -190,58 +155,33 @@ class DrawController extends GetxController {
     );
   }
 
-
-  Future<void> loadProjectFromHive(String projectId) async {
-    final savedProject = _box.get(projectId);
-    if (savedProject != null) {
-      frames.assignAll(savedProject.frames);
-      currentFrameIndex.value = 0;
-      currentLayerIndex.value = 0;
-    }
-  }
-
   final Map<String, Uint8List> thumbnailCache = {};
   Timer? _playbackTimer;
   int _currentIndex = 0;
   int fps = 6;
-
   List<DrawnLine> get currentLines =>
       frames[currentFrameIndex.value].layers[currentLayerIndex.value].lines;
-
   set currentLines(List<DrawnLine> newLines) =>
       frames[currentFrameIndex.value].layers[currentLayerIndex.value].lines = newLines;
-
-
   List<List<DrawnLine>>? copiedFrame;
   static const Size canvasSize = Size(1050, 590.625);
-
   final IconData brushIcon = Icons.brush;
   final IconData eraserIcon = MdiIcons.eraser;
-
   final String brushTooltip = 'Bút';
   final String eraserTooltip = 'Tẩy';
-
-
   final Rx<ToolType> selectedTool = ToolType.brush.obs;
-
   IconData get currentToolIcon =>
   selectedTool.value == ToolType.brush ? brushIcon : eraserIcon;
-
   String get currentToolTooltip =>
   selectedTool.value == ToolType.brush ? brushTooltip : eraserTooltip;
-
-
   void selectBrush() => selectedTool.value = ToolType.brush;
   void selectEraser() => selectedTool.value = ToolType.eraser;
-
-
   @override
   void onInit() {
     super.onInit();
     addFrame();
     selectFrame(0);
   }
-
   void startStroke(Offset point) {
     // Lưu cả 3 layer của frame hiện tại vào undoStack
     undoStack.add(
@@ -250,43 +190,30 @@ class DrawController extends GetxController {
           .map((layer) => layer.lines.map((line) => line.copy()).toList())
           .toList(),
     );
-
     redoStack.clear();
-
     final color = selectedTool.value == ToolType.eraser ? Colors.white : selectedColor.value;
     currentLines.add(DrawnLine(points: [point], colorValue: color.value, width: selectedWidth.value));
   }
-
-
+  final Map<int, RxInt> frameVersions = {};
+  final currentTempLine = Rx<DrawnLine?>(null); // chỉ 1 dòng đang vẽ
 
   void addPoint(Offset point) {
     if (currentLines.isNotEmpty) {
       currentLines.last.points.add(point);
-      _clearThumbnailCache(frameIndex: currentFrameIndex.value);
-
       final index = currentFrameIndex.value;
-      frames[index] = frames[index]; // 👈 chỉ cập nhật frame hiện tại
+      frames.refresh(); // 👈 chỉ cập nhật frame hiện tại
     }
   }
-
-
   void endStroke() {
     if (currentLines.isNotEmpty) {
       final index = currentFrameIndex.value;
-      frames[index] = frames[index]; // 👈 chỉ update frame hiện tại
-
+      frames.refresh(); // 👈 chỉ update frame hiện tại
       saveCurrentFrame();
-
       if (currentProjectId != null && currentProjectName != null) {
         saveProjectToHive(currentProjectId!, currentProjectName!);
       }
     }
   }
-
-
-
-
-
   void undo() {
     if (undoStack.isNotEmpty) {
       // Lưu lại trạng thái hiện tại trước khi undo
@@ -296,18 +223,14 @@ class DrawController extends GetxController {
             .map((layer) => layer.lines.map((line) => line.copy()).toList())
             .toList(),
       );
-
       final previous = undoStack.removeLast();
-
       // Gán lại cho 3 layer
       for (int i = 0; i < 3; i++) {
         frames[currentFrameIndex.value].layers[i].lines = previous[i];
       }
-
       frames.refresh();
     }
   }
-
   void redo() {
     if (redoStack.isNotEmpty) {
       // Lưu trạng thái hiện tại trước khi redo
@@ -317,18 +240,14 @@ class DrawController extends GetxController {
             .map((layer) => layer.lines.map((line) => line.copy()).toList())
             .toList(),
       );
-
       final next = redoStack.removeLast();
-
       // Gán lại cho 3 layer
       for (int i = 0; i < 3; i++) {
         frames[currentFrameIndex.value].layers[i].lines = next[i];
       }
-
       frames.refresh();
     }
   }
-
   void clearCanvas() {
     undoStack.add(
       frames[currentFrameIndex.value]
@@ -336,28 +255,21 @@ class DrawController extends GetxController {
           .map((layer) => layer.lines.map((line) => line.copy()).toList())
           .toList(),
     );
-
     for (int i = 0; i < 3; i++) {
       frames[currentFrameIndex.value].layers[i].lines.clear();
     }
-
     frames.refresh();
   }
-
-
-
   void toggleEraser() => isEraser.toggle();
   void changeColor(Color color) => selectedColor.value = color;
   void changeWidth(double width) => selectedWidth.value = width.clamp(1.0, 30.0);
   void toggleFrameList() => isFrameListExpanded.toggle();
-
   void addFrame() {
     final newFrame = FrameModel(); // tự khởi tạo 3 layer rỗng
     frames.insert(0, newFrame);
     currentFrameIndex.value = 0;
     currentLayerIndex.value = 0;
     _clearThumbnailCache();
-
     frames.refresh();
   }
   void resetLayerIndex() {
@@ -369,7 +281,6 @@ class DrawController extends GetxController {
 
   void selectFrame(int index) {
     if (index == currentFrameIndex.value) return;
-
     final copied = currentLines.map((l) => l.copy()).toList();
     currentLines = copied;
     currentFrameIndex.value = index;
@@ -384,30 +295,18 @@ class DrawController extends GetxController {
       );
     }
   }
-
-
-
-
-
-
   void switchLayer(int layerIndex) {
     saveCurrentFrame();
     currentLayerIndex.value = layerIndex;
   }
-
-
   void saveCurrentFrame() {
     final copied = currentLines.map((l) => l.copy()).toList();
     currentLines = copied;
     _clearThumbnailCache();
-
     if (currentProjectId != null && currentProjectName != null) {
       saveProjectToHive(currentProjectId!, currentProjectName!);
     }
   }
-
-
-
   void copyFrame(int index) {
     if (index >= 0 && index < frames.length) {
       copiedFrame = frames[index]
@@ -620,6 +519,36 @@ class DrawController extends GetxController {
   }
 
 
+
+  Future<void> exportFrameAsImage(int frameIndex) async {
+    if (frameIndex < 0 || frameIndex >= frames.length) {
+      Get.snackbar("Lỗi", "Chỉ số frame không hợp lệ.");
+      return;
+    }
+
+    bool granted = await ensureStoragePermission();
+    if (!granted) {
+      Get.snackbar("Lỗi", "Không có quyền lưu trữ.");
+      return;
+    }
+
+    final dir = await FilePicker.platform.getDirectoryPath();
+    if (dir == null) {
+      Get.snackbar("Đã huỷ", "Bạn chưa chọn thư mục.");
+      return;
+    }
+
+    final bytes = await renderThumbnail(frameIndex );
+    final filePath = "$dir/frame_${frameIndex.toString().padLeft(3, '0')}.png";
+    final file = File(filePath);
+    await file.writeAsBytes(bytes);
+
+    Get.snackbar(
+      "Export Successful",
+      "The exported image has been saved as PNG.",
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
 
 
 
