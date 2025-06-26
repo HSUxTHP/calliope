@@ -47,6 +47,7 @@ class DrawController extends GetxController {
   final isFrameListExpanded = true.obs;
   final isShowingLayout = true.obs;
   final playbackSpeed = 6.obs;
+  final isChanged = false.obs;
   final _box = Hive.box<DrawProjectModel>('draw_project');
   Future<void> saveProjectToHive(String projectId, String name) async {
     final project = DrawProjectModel(
@@ -201,17 +202,14 @@ class DrawController extends GetxController {
     if (currentLines.isNotEmpty) {
       currentLines.last.points.add(point);
       final index = currentFrameIndex.value;
-      frames.refresh(); // 👈 chỉ cập nhật frame hiện tại
+      frames[index] = frames[index].copy();
     }
   }
   void endStroke() {
     if (currentLines.isNotEmpty) {
       final index = currentFrameIndex.value;
-      frames.refresh(); // 👈 chỉ update frame hiện tại
+      frames[index] = frames[index].copy();
       saveCurrentFrame();
-      if (currentProjectId != null && currentProjectName != null) {
-        saveProjectToHive(currentProjectId!, currentProjectName!);
-      }
     }
   }
   void undo() {
@@ -228,7 +226,7 @@ class DrawController extends GetxController {
       for (int i = 0; i < 3; i++) {
         frames[currentFrameIndex.value].layers[i].lines = previous[i];
       }
-      frames.refresh();
+      frames[currentFrameIndex.value] = frames[currentFrameIndex.value].copy();
     }
   }
   void redo() {
@@ -245,7 +243,7 @@ class DrawController extends GetxController {
       for (int i = 0; i < 3; i++) {
         frames[currentFrameIndex.value].layers[i].lines = next[i];
       }
-      frames.refresh();
+      frames[currentFrameIndex.value] = frames[currentFrameIndex.value].copy();
     }
   }
   void clearCanvas() {
@@ -258,7 +256,7 @@ class DrawController extends GetxController {
     for (int i = 0; i < 3; i++) {
       frames[currentFrameIndex.value].layers[i].lines.clear();
     }
-    frames.refresh();
+    frames[currentFrameIndex.value] = frames[currentFrameIndex.value].copy();
   }
   void toggleEraser() => isEraser.toggle();
   void changeColor(Color color) => selectedColor.value = color;
@@ -270,7 +268,6 @@ class DrawController extends GetxController {
     currentFrameIndex.value = 0;
     currentLayerIndex.value = 0;
     _clearThumbnailCache();
-    frames.refresh();
   }
   void resetLayerIndex() {
     if (currentLayerIndex.value == 0) {
@@ -303,9 +300,6 @@ class DrawController extends GetxController {
     final copied = currentLines.map((l) => l.copy()).toList();
     currentLines = copied;
     _clearThumbnailCache();
-    if (currentProjectId != null && currentProjectName != null) {
-      saveProjectToHive(currentProjectId!, currentProjectName!);
-    }
   }
   void copyFrame(int index) {
     if (index >= 0 && index < frames.length) {
@@ -385,7 +379,7 @@ class DrawController extends GetxController {
 
   void removeFrame(int index) {
     frames.removeAt(index);
-    frames.refresh();
+    frames[currentFrameIndex.value] = frames[currentFrameIndex.value].copy();
 
     // 🔥 Thêm dòng này để lưu lại thay đổi vào Hive
     if (currentProjectId != null && currentProjectName != null) {
@@ -394,7 +388,6 @@ class DrawController extends GetxController {
 
     // Thêm để xóa thumbnail cache và làm mới UI
     _clearThumbnailCache();
-    frames.refresh();
   }
 
 
@@ -506,8 +499,11 @@ class DrawController extends GetxController {
       final image = await picture.toImage(thumbWidth.toInt(), thumbHeight.toInt());
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) throw Exception("Failed to encode image to byteData");
-
       final bytes = byteData.buffer.asUint8List();
+      if (kDebugMode) {
+        print("Rendered thumbnail for frame $frameIndex, layer $layerIndex");
+      }
+
       thumbnailCache[cacheKey] = bytes;
       return bytes;
     } catch (e) {
