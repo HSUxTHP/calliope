@@ -37,20 +37,22 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
   @override
   void onInit() async {
     super.onInit();
+    isLoading.value = true;
+    isCurrentUser.value = false;
   }
 
   @override
   void onReady() async {
     super.onReady();
     await reload();
-    print('currentUser: ${currentUser.value}');
-    print('currentUser.id: ${currentUser.value?.id}');
-    print('viewedUser: ${viewedUser.value}');
+    // print('currentUser: ${currentUser.value}');
+    // print('currentUser.id: ${currentUser.value?.id}');
+    // print('viewedUser: ${viewedUser.value}');
   }
 
   Future<bool> checkNetworkConnection() async {
     var connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult == ConnectivityResult.none) {
+    if (connectivityResult.contains(ConnectivityResult.none)) {
       hasNetwork.value = false;
       return false;
     }
@@ -104,12 +106,12 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
           await fetchPostsByUser(selfId);
         } else {
           if (kDebugMode) {
-            print('ID của currentUser không hợp lệ');
+            // print('ID của currentUser không hợp lệ');
           }
         }
       } else {
         if (kDebugMode) {
-          print('Không có thông tin currentUser');
+          // print('Không có thông tin currentUser');
         }
       }
     }
@@ -123,7 +125,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
   Future<void> initProfile(int? userId) async {
     if (userId == null || userId <= 0) {
       if (kDebugMode) {
-        print('Không có ID hợp lệ để tải profile');
+        // print('Không có ID hợp lệ để tải profile');
       }
       return;
     }
@@ -138,10 +140,10 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       viewedUser.value = user;
 
       final selfId = int.tryParse(currentUser.value?.id ?? '');
-      isCurrentUser.value = selfId != null && user.id == selfId;
+      isCurrentUser.value = selfId != null && int.tryParse(user.id ?? '') == selfId;
     } catch (e) {
       if (kDebugMode) {
-        print('Lỗi khi lấy dữ liệu người dùng từ Supabase: $e');
+        // print('Lỗi khi lấy dữ liệu người dùng từ Supabase: $e');
       }
     }
 
@@ -167,11 +169,11 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       currentUser.value = user;
       isLogined.value = true;
       if (kDebugMode) {
-        print('Đã tải UserModel từ Hive: ${user.id}');
+        // print('Đã tải UserModel từ Hive: ${user.id}');
       }
     } else {
       if (kDebugMode) {
-        print('Không tìm thấy current_user trong Hive');
+        // print('Không tìm thấy current_user trong Hive');
       }
     }
   }
@@ -195,7 +197,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
         throw Exception("No user found with id: $userId");
       }
     } catch (e) {
-      print("Error while taking user: $e");
+      // print("Error while taking user: $e");
       rethrow;
     } finally {
       isLoading.value = false;
@@ -231,7 +233,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       )).toList();
     } catch (e) {
       if (kDebugMode) {
-        print("Error when getting post: $e");
+        // print("Error when getting post: $e");
       }
       post.value = [];
     }
@@ -286,8 +288,6 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
 
         final insertResponse = await supabase.from('users').insert(userData).select().single();
 
-        if (insertResponse == null) throw Exception("Failed to create new user in Supabase");
-
         userData = Map<String, dynamic>.from(insertResponse);
       } else {
         userData = Map<String, dynamic>.from(existingUser);
@@ -311,7 +311,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       isLogined.value = true;
       await initProfile(null);
       if (kDebugMode) {
-        print('Đã lưu UserModel vào Hive: ${userModel.toJson()}');
+        // print('Đã lưu UserModel vào Hive: ${userModel.toJson()}');
       }
 
       Get.snackbar("Log in successfully", "Hello ${userModel.name}");
@@ -319,7 +319,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
     } catch (e) {
       Get.snackbar("Login error", e.toString());
       if (kDebugMode) {
-        print("Lỗi đăng nhập: $e");
+        // print("Lỗi đăng nhập: $e");
       }
     }
   }
@@ -339,13 +339,13 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       viewedUser.value = null;
       isLogined.value = false;
       if (kDebugMode) {
-        print('Đã xoá current_user khỏi Hive');
+        // print('Đã xoá current_user khỏi Hive');
       }
       // Get.toNamed('/layout');
     } catch (e) {
       Get.snackbar("Logout error", e.toString());
       if (kDebugMode) {
-        print("Lỗi đăng xuất: $e");
+        // print("Lỗi đăng xuất: $e");
       }
     }
   }
@@ -380,8 +380,8 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
                 child: CircleAvatar(
                   radius: 40,
                   backgroundImage:
-                  avatarFile != null ? FileImage(avatarFile!) : (avatarUrl != null ? NetworkImage(avatarUrl) : null) as ImageProvider?,
-                  child: avatarUrl == null && avatarFile == null
+                  avatarFile != null ? FileImage(avatarFile) : (avatarUrl != null ? NetworkImage(avatarUrl) : null) as ImageProvider?,
+                  child: avatarUrl == null
                       ? const Icon(Icons.camera_alt)
                       : null,
                 ),
@@ -442,7 +442,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
               Get.back();
               Get.snackbar("Profile updated", "Your profile has been updated successfully.");
               if (kDebugMode) {
-                print("Đã cập nhật thông tin người dùng: ${currentUser.value?.toJson()}");
+                // print("Đã cập nhật thông tin người dùng: ${currentUser.value?.toJson()}");
               }
 
             },
@@ -488,7 +488,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
     } catch (e) {
       Get.snackbar("Error", "Unable to delete post: $e");
       if (kDebugMode) {
-        print("Lỗi khi xóa bài viết: $e");
+        // print("Lỗi khi xóa bài viết: $e");
       }
     }
   }
@@ -616,7 +616,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
     // Xin quyền truy cập bộ nhớ
     final hasPermission = await requestStoragePermission();
     if (!hasPermission) {
-      print('❌ Không có quyền lưu file');
+      // print('❌ Không có quyền lưu file');
       return;
     }
 
@@ -661,7 +661,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
               child: const Text('OK'),
             ),
           );
-          print('✅ Đã lưu file tại: $filePath');
+          // print('✅ Đã lưu file tại: $filePath');
         },
         child: const Text('Save'),
       ),
@@ -792,14 +792,14 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       );
 
       if (isCancel) {
-        print('❌ Người dùng đã hủy khôi phục dữ liệu');
+        // print('❌ Người dùng đã hủy khôi phục dữ liệu');
         return; // Người dùng đã hủy, không làm gì cả
       }
 
       // Xin quyền truy cập bộ nhớ
       final hasPermission = await requestStoragePermission();
       if (!hasPermission) {
-        print('❌ Không có quyền truy cập file');
+        // print('❌ Không có quyền truy cập file');
         return;
       }
 
@@ -810,7 +810,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       );
 
       if (result == null || result.files.isEmpty || result.files.single.path == null) {
-        print('❌ Người dùng đã hủy chọn file');
+        // print('❌ Người dùng đã hủy chọn file');
         return;
       }
 
@@ -824,9 +824,9 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
           child: const Text('OK'),
         ),
       );
-      print('✅ Khôi phục dữ liệu thành công từ: $path');
+      // print('✅ Khôi phục dữ liệu thành công từ: $path');
     } catch (e) {
-      print(e);
+      // print(e);
       Get.snackbar('Error', e.toString(), snackPosition: SnackPosition.BOTTOM);
     }
   }
