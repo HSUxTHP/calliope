@@ -219,8 +219,8 @@ class WatchView extends GetView<WatchController> {
                   itemBuilder: (context, index) {
                     return InkWell(
                       onTap: () async {
-                        Get.toNamed('/profile/${controller.comments[index].user?.id}');
-                        await profileController.reload();
+                        // Get.toNamed('/profile/${controller.comments[index].user?.id}');
+                        // await profileController.reload();
                       },
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,

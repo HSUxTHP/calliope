@@ -185,6 +185,7 @@ class DrawController extends GetxController {
     super.onInit();
     addFrame();
     selectFrame(0);
+    isChanged.value = false;
   }
   void startStroke(Offset point) {
     // Lưu cả 3 layer của frame hiện tại vào undoStack
@@ -314,6 +315,7 @@ class DrawController extends GetxController {
     frames.insert(0, newFrame);
     currentFrameIndex.value = 0;
     currentLayerIndex.value = 0;
+    isChanged.value = true; // Đánh dấu đã thay đổi
     _clearThumbnailCache();
   }
   void resetLayerIndex() {
@@ -328,6 +330,7 @@ class DrawController extends GetxController {
     final copied = currentLines.map((l) => l.copy()).toList();
     currentLines = copied;
     currentFrameIndex.value = index;
+    frames[currentFrameIndex.value] = frames[currentFrameIndex.value].copy();
     final context = frameItemKeys[index]?.currentContext;
     if (context != null) {
       Scrollable.ensureVisible(
