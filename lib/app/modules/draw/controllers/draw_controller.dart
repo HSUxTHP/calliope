@@ -45,10 +45,13 @@ class DrawController extends GetxController {
   String? currentProjectName;
   final isPlaying = false.obs;
   final isFrameListExpanded = true.obs;
-  final isShowingLayout = true.obs;
+  final isShowingLayout = false.obs;
   final playbackSpeed = 6.obs;
   final isChanged = false.obs;
   final _box = Hive.box<DrawProjectModel>('draw_project');
+
+  ui.Picture? backgroundPicture;
+
   Future<void> saveProjectToHive(String projectId, String name) async {
     final project = DrawProjectModel(
       id: projectId,
@@ -198,6 +201,33 @@ class DrawController extends GetxController {
   final Map<int, RxInt> frameVersions = {};
   final currentTempLine = Rx<DrawnLine?>(null); // chỉ 1 dòng đang vẽ
 
+  void _updateBackgroundPicture() {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+
+    final allLines = frames[currentFrameIndex.value]
+        .layers
+        .expand((layer) => layer.lines)
+        .toList();
+
+    for (final line in allLines) {
+      final paint = Paint()
+        ..color = Color(line.colorValue)
+        ..strokeWidth = line.width
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke;
+
+      final path = Path()..moveTo(line.points[0].dx, line.points[0].dy);
+      for (int i = 1; i < line.points.length; i++) {
+        path.lineTo(line.points[i].dx, line.points[i].dy);
+      }
+
+      canvas.drawPath(path, paint);
+    }
+
+    backgroundPicture = recorder.endRecording();
+  }
+
   void addPoint(Offset point) {
     if (currentLines.isNotEmpty) {
       currentLines.last.points.add(point);
@@ -205,16 +235,19 @@ class DrawController extends GetxController {
       frames[index] = frames[index].copy();
     }
   }
+
   void endStroke() {
     if (currentLines.isNotEmpty) {
       final index = currentFrameIndex.value;
       frames[index] = frames[index].copy();
+      _updateBackgroundPicture(); // 👉 update picture
       saveCurrentFrame();
+      isChanged.value = true; // Đánh dấu đã thay đổi
     }
   }
+
   void undo() {
     if (undoStack.isNotEmpty) {
-      // Lưu lại trạng thái hiện tại trước khi undo
       redoStack.add(
         frames[currentFrameIndex.value]
             .layers
@@ -222,16 +255,18 @@ class DrawController extends GetxController {
             .toList(),
       );
       final previous = undoStack.removeLast();
-      // Gán lại cho 3 layer
       for (int i = 0; i < 3; i++) {
         frames[currentFrameIndex.value].layers[i].lines = previous[i];
       }
       frames[currentFrameIndex.value] = frames[currentFrameIndex.value].copy();
+
+      // Xoá thumbnail cache của frame hiện tại
+      removeThumbnailCacheForFrame(currentFrameIndex.value);
     }
   }
+
   void redo() {
     if (redoStack.isNotEmpty) {
-      // Lưu trạng thái hiện tại trước khi redo
       undoStack.add(
         frames[currentFrameIndex.value]
             .layers
@@ -239,13 +274,25 @@ class DrawController extends GetxController {
             .toList(),
       );
       final next = redoStack.removeLast();
-      // Gán lại cho 3 layer
       for (int i = 0; i < 3; i++) {
         frames[currentFrameIndex.value].layers[i].lines = next[i];
       }
       frames[currentFrameIndex.value] = frames[currentFrameIndex.value].copy();
+
+      // Xoá thumbnail cache của frame hiện tại
+      removeThumbnailCacheForFrame(currentFrameIndex.value);
     }
   }
+
+  void removeThumbnailCacheForFrame(int frameIndex) {
+    final keysToRemove = thumbnailCache.keys
+        .where((key) => key.startsWith('$frameIndex'))
+        .toList();
+    for (final key in keysToRemove) {
+      thumbnailCache.remove(key);
+    }
+  }
+
   void clearCanvas() {
     undoStack.add(
       frames[currentFrameIndex.value]
@@ -281,9 +328,6 @@ class DrawController extends GetxController {
     final copied = currentLines.map((l) => l.copy()).toList();
     currentLines = copied;
     currentFrameIndex.value = index;
-    if (currentProjectId != null && currentProjectName != null) {
-      saveProjectToHive(currentProjectId!, currentProjectName!);
-    }
     final context = frameItemKeys[index]?.currentContext;
     if (context != null) {
       Scrollable.ensureVisible(
@@ -299,7 +343,7 @@ class DrawController extends GetxController {
   void saveCurrentFrame() {
     final copied = currentLines.map((l) => l.copy()).toList();
     currentLines = copied;
-    _clearThumbnailCache();
+    _clearThumbnailCache(frameIndex: currentFrameIndex.value);
   }
   void copyFrame(int index) {
     if (index >= 0 && index < frames.length) {
@@ -326,10 +370,51 @@ class DrawController extends GetxController {
     final insertIndex = currentFrameIndex.value + 1;
     frames.insert(insertIndex, newFrame);
     selectFrame(insertIndex);
+    isChanged.value = true; // Đánh dấu đã thay đổi
+  }
 
-    // Ghi lại vào Hive sau khi paste
+  void save() {
     if (currentProjectId != null && currentProjectName != null) {
       saveProjectToHive(currentProjectId!, currentProjectName!);
+      isChanged.value = false; // Đánh dấu đã lưu
+      Get.snackbar("Success", "Project saved successfully.");
+    } else {
+      Get.snackbar("Error", "No project selected to save.");
+    }
+  }
+
+  void leaveSaving () {
+    if (isChanged.value) {
+      showDialog(
+        context: Get.context!,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Save changes?'),
+            content: const Text('Do you want to save the changes before leaving?'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Get.back();
+                  if (currentProjectId != null && currentProjectName != null) {
+                    saveProjectToHive(currentProjectId!, currentProjectName!);
+                  }
+                  Get.back();
+                },
+                child: const Text('Save'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Get.back(); // Đóng dialog
+                  Get.back(); // Thoát trang (quay về trước đó)
+                },
+                child: const Text('Don\'t save'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      Get.back();
     }
   }
 
@@ -380,14 +465,9 @@ class DrawController extends GetxController {
   void removeFrame(int index) {
     frames.removeAt(index);
     frames[currentFrameIndex.value] = frames[currentFrameIndex.value].copy();
-
-    // 🔥 Thêm dòng này để lưu lại thay đổi vào Hive
-    if (currentProjectId != null && currentProjectName != null) {
-      saveProjectToHive(currentProjectId!, currentProjectName!);
-    }
-
     // Thêm để xóa thumbnail cache và làm mới UI
     _clearThumbnailCache();
+    isChanged.value = true; // Đánh dấu đã thay đổi
   }
 
 
@@ -1101,6 +1181,43 @@ Future<bool> _showPostCustomizationDialog(UploadController controller) async {
     ),
   ) ?? false;
 }
+
+class OptimizedSketcher extends CustomPainter {
+  final ui.Picture? backgroundPicture;
+  final DrawnLine? currentLine;
+
+  OptimizedSketcher({
+    required this.backgroundPicture,
+    required this.currentLine,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (backgroundPicture != null) {
+      canvas.drawPicture(backgroundPicture!);
+    }
+
+    if (currentLine != null && currentLine!.points.length > 1) {
+      final paint = Paint()
+        ..color = Color(currentLine!.colorValue)
+        ..strokeWidth = currentLine!.width
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke;
+
+      final path = Path()..moveTo(currentLine!.points[0].dx, currentLine!.points[0].dy);
+      for (int i = 1; i < currentLine!.points.length; i++) {
+        path.lineTo(currentLine!.points[i].dx, currentLine!.points[i].dy);
+      }
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant OptimizedSketcher oldDelegate) {
+    return true;
+  }
+}
+
 
 
 

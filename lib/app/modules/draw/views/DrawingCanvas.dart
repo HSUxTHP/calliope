@@ -35,12 +35,13 @@ class DrawingCanvas extends StatelessWidget {
               final frame = controller.frames[frameIndex];
 
               if (controller.isShowingLayout.value) {
-                final currentLines = [
-                  ...frame.layers[layerIndex].lines,
-                  ...controller.currentLines,
-                ];
                 return CustomPaint(
-                  painter: SketcherFull(mainLines: currentLines),
+                  painter: OptimizedSketcher(
+                    backgroundPicture: controller.backgroundPicture,
+                    currentLine: controller.currentLines.isNotEmpty
+                        ? controller.currentLines.last
+                        : null,
+                  ),
                 );
               }
 

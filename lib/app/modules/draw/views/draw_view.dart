@@ -82,7 +82,7 @@ class _DrawViewState extends State<DrawView> {
                 _toolbarGroup([
                   _iconButton(
                     Icons.arrow_back,
-                        () => Get.back(),
+                        () => controller.leaveSaving(),
                     tooltip: 'Back',
                   ),
                 ]),
@@ -155,33 +155,34 @@ class _DrawViewState extends State<DrawView> {
                     isActive: controller.selectedTool.value == ToolType.eraser,
                     tooltip: 'Eraser',
                   )),
-        Obx(() {
-          final selectedColor = controller.selectedColor.value;
+                Obx(() {
+                  final selectedColor = controller.selectedColor.value;
 
-          final isBright = selectedColor.computeLuminance() > 0.5;
-          final bgColor = isBright ? Colors.black : Colors.white;
-          final iconColor = selectedColor; // icon mang đúng màu đã chọn
+                  final isBright = selectedColor.computeLuminance() > 0.5;
+                  final bgColor = isBright ? Colors.black : Colors.white;
+                  final iconColor = selectedColor; // icon mang đúng màu đã chọn
 
-          return GestureDetector(
-            onTap: () => _showColorPicker(context),
-            child: Container(
-              width: 32,
-              height: 32,
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: bgColor, // Nền ngược với màu đang chọn
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.color_lens,
-                  size: 20,
-                  color: iconColor, // icon luôn mang màu đã chọn
-                ),
-              ),
-            ),
-          );
-        })
+                  return GestureDetector(
+                    onTap: () => _showColorPicker(context),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: bgColor, // Nền ngược với màu đang chọn
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.color_lens,
+                          size: 20,
+                          color: iconColor, // icon luôn mang màu đã chọn
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+
         ]),
                 const SizedBox(width: 12),
                 DropdownButton<int>(
@@ -220,17 +221,16 @@ class _DrawViewState extends State<DrawView> {
                     tooltip: 'Preview Animation',
                   ),
                   _iconButton(
-                  Icons.rectangle,
-                    _showPreviewDialog,
-                    color:Color(Theme.of(context).colorScheme.onSurface.value),
-
-                  ),
-                  _iconButton(
                     Icons.timeline,
                     _generateTweenFromCurrent,
                     tooltip: 'Auto Tween (←)',
                   ),
+                  _iconButton(
+                    Icons.save,
+                        () => controller.save(),
+                    color:Color(Theme.of(context).colorScheme.onSurface.value),
 
+                  ),
 
                 ]),
               ],
