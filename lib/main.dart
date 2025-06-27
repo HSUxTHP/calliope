@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'app/data/models/drawmodels/offset_adapter.dart';
+import 'app/modules/home/controllers/home_controller.dart';
 import 'firebase_options.dart';
 import 'app/data/models/drawmodels/draw_project_model.dart';
 import 'app/data/models/drawmodels/drawn_line_model.dart';
@@ -68,6 +69,7 @@ Future<void> main() async {
   );
 
   // Tạo các controller chính
+  Get.put(HomeController());
   final profileController = Get.put(ProfileController());
   await profileController.loadCurrentUserFromHive();
 
@@ -76,8 +78,8 @@ Future<void> main() async {
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
     if (kDebugMode) {
-      print('Lỗi Flutter: ${details.exception}');
-      print('Stack trace: ${details.stack}');
+      // print('Lỗi Flutter: ${details.exception}');
+      // print('Stack trace: ${details.stack}');
     }
   };
   runApp(

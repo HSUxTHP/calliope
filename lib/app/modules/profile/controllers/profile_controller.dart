@@ -18,8 +18,10 @@ import '../../../data/models/drawmodels/draw_project_model.dart';
 import '../../../data/models/drawmodels/drawn_line_model.dart';
 import '../../../data/models/post_model.dart';
 import '../../../data/models/user_model.dart';
+import '../../home/controllers/home_controller.dart';
 
 class ProfileController extends GetxController with GetSingleTickerProviderStateMixin {
+  final homeController = Get.find<HomeController>();
   final isLoading = false.obs;
   final isCurrentUser = false.obs;
   RxBool hasNetwork = true.obs;
@@ -816,6 +818,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
 
       final path = result.files.single.path!;
       await importAllHiveData(path);
+      homeController.loadProjects();
       Get.defaultDialog(
         title: 'Restore successfully',
         middleText: 'Data was successfully recovered.',
