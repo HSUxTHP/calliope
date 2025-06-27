@@ -218,8 +218,9 @@ class WatchView extends GetView<WatchController> {
                   separatorBuilder: (_, __) => const Divider(),
                   itemBuilder: (context, index) {
                     return InkWell(
-                      onTap: () {
+                      onTap: () async {
                         Get.toNamed('/profile/${controller.comments[index].user?.id}');
+                        await profileController.reload();
                       },
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
