@@ -35,16 +35,29 @@ class DrawingCanvas extends StatelessWidget {
               final frame = controller.frames[frameIndex];
 
               if (controller.isShowingLayout.value) {
+                // Xử lý layout mode với opacity khác nhau
+                final linesMain = frame.layers[layerIndex].lines + controller.currentLines;
+
+                // Tạo danh sách các layer khác với độ mờ giảm dần
+                final onionSkinLines = <MapEntry<List<DrawnLine>, double>>[];
+
+                for (int i = 0; i < 3; i++) {
+                  if (i == layerIndex) continue;
+                  final diff = (layerIndex - i).abs();
+                  final opacity = diff == 1 ? 0.4 : 0.2;
+                  onionSkinLines.add(MapEntry(frame.layers[i].lines, opacity));
+                }
+
                 return CustomPaint(
-                  painter: OptimizedSketcher(
-                    backgroundPicture: controller.backgroundPicture,
-                    currentLine: controller.currentLines.isNotEmpty
-                        ? controller.currentLines.last
-                        : null,
+                  painter: SketcherFull(
+                    mainLines: linesMain,
+                    onionSkinLines: onionSkinLines,
+                    tempLine: null,
                   ),
                 );
               }
 
+              // Nếu không phải layout mode, vẽ tất cả layer bình thường
               final allLines = <DrawnLine>[];
               for (int i = 0; i < 3; i++) {
                 allLines.addAll(frame.layers[i].lines);
@@ -54,13 +67,14 @@ class DrawingCanvas extends StatelessWidget {
               }
 
               final onionSkinLines = controller.showOnionSkin.value
-                  ? controller.getOnionSkinLines() // chỉ lấy frame sau
+                  ? controller.getOnionSkinLines()
                   : null;
 
               return CustomPaint(
                 painter: SketcherFull(
                   mainLines: allLines,
                   onionSkinLines: onionSkinLines,
+                  tempLine: null,
                 ),
               );
             }),
