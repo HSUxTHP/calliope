@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:file_picker/file_picker.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -9,7 +8,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../profile/controllers/profile_controller.dart';
 import '../controllers/draw_controller.dart';
 import 'canvas_area.dart';
-import 'package:blur/blur.dart';
+
 
 class DrawView extends StatefulWidget {
   const DrawView({super.key});
@@ -701,16 +700,21 @@ class _DrawViewState extends State<DrawView> {
       itemBuilder: (_, layerIndex) {
         return Obx(() {
           final isSelected = controller.currentLayerIndex.value == layerIndex;
+          final double opacity = isSelected ? 1.0 : 0.4; // 👈 opacity rõ hoặc mờ
+
           return _thumbnailItem(
             isSelected: isSelected,
             onTap: () => controller.switchLayer(layerIndex),
             futureImage: controller.renderThumbnail(index, layerIndex),
             borderColor: Colors.indigo,
+            opacity: opacity, // 👈 truyền vào đây
           );
         });
       },
     );
   }
+
+
 
 
   Widget _thumbnailItem({
@@ -720,47 +724,44 @@ class _DrawViewState extends State<DrawView> {
     required Color borderColor,
     bool? isHidden,
     VoidCallback? onToggleVisibility,
+    double? opacity, // 👈 thêm opacity để truyền độ mờ
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Stack(
-        children: [
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 6),
-            decoration: BoxDecoration(
-              color: isSelected ? borderColor.withOpacity(0.05) : Colors.white,
-              border: Border.all(
-                color: isSelected ? borderColor : Colors.grey.shade300,
-                width: 2,
-              ),
+      child: Opacity(
+        opacity: opacity ?? (isHidden == true ? 0.4 : 1.0),
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? borderColor.withOpacity(0.05) : Colors.white,
+            border: Border.all(
+              color: isSelected ? borderColor : Colors.grey.shade300,
+              width: 2,
             ),
-            child: FutureBuilder<Uint8List>(
-              future: futureImage,
-              builder: (_, snapshot) {
-                if (snapshot.connectionState == ConnectionState.done &&
-                    snapshot.hasData) {
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Opacity(
-                      opacity: isHidden == true ? 0.4 : 1.0,
-                      child: Image.memory(snapshot.data!, fit: BoxFit.cover),
-                    ),
-                  );
-                }
-                return const SizedBox(
-                  height: 80,
-                  child: Center(
-                    child: CircularProgressIndicator(strokeWidth: 1.2),
-                  ),
-                );
-              },
-            ),
+            borderRadius: BorderRadius.circular(8),
           ),
-
-        ],
+          child: FutureBuilder<Uint8List>(
+            future: futureImage,
+            builder: (_, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.memory(snapshot.data!, fit: BoxFit.cover),
+                );
+              }
+              return const SizedBox(
+                height: 80,
+                child: Center(
+                  child: CircularProgressIndicator(strokeWidth: 1.2),
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }
+
 
   void _showPreviewDialog() async {
     final frames = await controller.getAllFrameThumbnails();
