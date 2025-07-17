@@ -1,7 +1,8 @@
+import 'package:calliope/app/modules/draw/views/sketcher.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../data/models/drawmodels/drawn_line_model.dart';
 import '../controllers/draw_controller.dart';
-import 'sketcher.dart';
 
 class DrawingCanvas extends StatelessWidget {
   const DrawingCanvas({super.key});
@@ -33,39 +34,48 @@ class DrawingCanvas extends StatelessWidget {
               final layerIndex = controller.currentLayerIndex.value;
               final frame = controller.frames[frameIndex];
 
-              // 🎯 Layout mode: chỉ vẽ 1 layer đang chọn
               if (controller.isShowingLayout.value) {
-                final currentLines = [
-                  ...frame.layers[layerIndex].lines,
-                  ...controller.currentLines
-                ];
-                return CustomPaint(painter: Sketcher(lines: currentLines));
+                // Xử lý layout mode với opacity khác nhau
+                final linesMain = frame.layers[layerIndex].lines + controller.currentLines;
+
+                // Tạo danh sách các layer khác với độ mờ giảm dần
+                final onionSkinLines = <MapEntry<List<DrawnLine>, double>>[];
+
+                for (int i = 0; i < 3; i++) {
+                  if (i == layerIndex) continue;
+                  final diff = (layerIndex - i).abs();
+                  final opacity = diff == 1 ? 0.4 : 0.2;
+                  onionSkinLines.add(MapEntry(frame.layers[i].lines, opacity));
+                }
+
+                return CustomPaint(
+                  painter: SketcherFull(
+                    mainLines: linesMain,
+                    onionSkinLines: onionSkinLines,
+                    tempLine: null,
+                  ),
+                );
               }
 
-              // 🎯 Frame mode: hỗ trợ onion skin nhiều frame trước
-              return Stack(
-                children: [
-                  if (controller.showOnionSkin.value)
-                    ...controller.getPreviousFramesLines().map(
-                          (entry) => CustomPaint(
-                        painter: Sketcher(
-                          lines: entry.key,
-                          opacity: entry.value,
-                        ),
-                      ),
-                    ),
+              // Nếu không phải layout mode, vẽ tất cả layer bình thường
+              final allLines = <DrawnLine>[];
+              for (int i = 0; i < 3; i++) {
+                allLines.addAll(frame.layers[i].lines);
+                if (i == layerIndex) {
+                  allLines.addAll(controller.currentLines);
+                }
+              }
 
-                  // Vẽ các layer hiện tại
-                  for (int i = 2; i >= 0; i--)
-                    CustomPaint(
-                      painter: Sketcher(
-                        lines: [
-                          ...frame.layers[i].lines,
-                          if (i == layerIndex) ...controller.currentLines,
-                        ],
-                      ),
-                    ),
-                ],
+              final onionSkinLines = controller.showOnionSkin.value
+                  ? controller.getOnionSkinLines()
+                  : null;
+
+              return CustomPaint(
+                painter: SketcherFull(
+                  mainLines: allLines,
+                  onionSkinLines: onionSkinLines,
+                  tempLine: null,
+                ),
               );
             }),
           ),

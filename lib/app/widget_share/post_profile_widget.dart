@@ -1,4 +1,5 @@
 import 'package:calliope/app/data/models/post_model.dart';
+import 'package:calliope/app/modules/profile/views/upload_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
@@ -16,7 +17,7 @@ class PostProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final formattedDate = post.created_at != null
         ? DateFormat('dd/MM/yyyy HH:mm').format(post.created_at)
-        : 'Không rõ ngày đăng';
+        : 'Unknown upload date';
     return GestureDetector(
       onTap: () {
 
@@ -28,6 +29,11 @@ class PostProfileCard extends StatelessWidget {
         child: InkWell(
           onTap: () {
             Get.toNamed('/watch/${post.id}');
+          },
+          onLongPress: () {
+            if (profileController.isCurrentUser.value) {
+              profileController.showStatusOptionsDialog(post);
+            }
           },
           child: ClipRRect(
             child: Column(

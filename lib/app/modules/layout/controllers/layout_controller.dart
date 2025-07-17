@@ -40,6 +40,7 @@ class LayoutController extends GetxController with GetSingleTickerProviderStateM
     currentIndex.value = index;
     tabController.animateTo(index);
     if (index == 2) {
+      profileController.isLoading.value = true;
       await Future.delayed(const Duration(milliseconds: 1000));
       await profileController.reload();
     }

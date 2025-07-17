@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import '../controllers/draw_controller.dart';
 import 'DrawingCanvas.dart';
 
 class CanvasArea extends StatelessWidget {
@@ -8,21 +6,28 @@ class CanvasArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(0),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 8,
-              offset: Offset(0, 4),
+    return Center(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24), // 👈 thêm bo tròn
+        child: Container(
+          width: 1050,
+          height: 590.625,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface, // 👈 phụ thuộc theme
+            border: Border.all(
+              color: Theme.of(context).dividerColor,
+              width: 1,
             ),
-          ],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: const DrawingCanvas(),
         ),
-        child: const DrawingCanvas(),
       ),
     );
   }

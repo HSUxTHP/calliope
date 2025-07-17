@@ -1,5 +1,6 @@
 import 'package:calliope/app/data/models/post_model.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -18,6 +19,7 @@ class CommunityController extends GetxController
   final post = <PostModel>[].obs;
 
   UserModel? user;
+  final profileController = Get.find<ProfileController>();
 
 
   void changeTab(int index) async {
@@ -56,6 +58,13 @@ class CommunityController extends GetxController
   void increment() => count.value++;
 
   Future<void> reload() async {
+    if (!await profileController.checkNetworkConnection()) {
+      Get.snackbar("No Internet", "Please Check the internet connection",
+          backgroundColor: Colors.red.withOpacity(0.8),
+          colorText: Colors.white);
+      isLoading.value = false;
+      return;
+    }
     isLoading.value = true;
     print(selectedTabIndex.value);
     if (selectedTabIndex.value == 0) {
@@ -80,16 +89,19 @@ class CommunityController extends GetxController
         response = await Supabase.instance.client
             .from('posts')
             .select()
+            .eq('status', 1)
             .order('views', ascending: false);
       } else if (index == 1) {
         response = await Supabase.instance.client
             .from('posts')
             .select()
+            .eq('status', 1)
             .order('created_at', ascending: false);
       } else {
         response = await Supabase.instance.client
             .from('posts')
             .select()
+            .eq('status', 1)
             .order('create_at', ascending: false);
       }
 
@@ -115,7 +127,9 @@ class CommunityController extends GetxController
       post.value = postsWithUser;
       isLoading.value = false;
     } catch (e) {
-      print("Lỗi khi lấy bài viết: $e");
+      if (kDebugMode) {
+        print("Error when geting the post: $e");
+      }
       post.value = [];
       isLoading.value = false;
     } finally {
@@ -127,6 +141,10 @@ class CommunityController extends GetxController
     if (query.isEmpty) {
       post.value = [];
       return;
+    }
+    if (!await profileController.checkNetworkConnection()) {
+      post.value = [];
+      throw Exception("No Internet Connection");
     }
     try {
       isLoading.value = true;
@@ -156,7 +174,9 @@ class CommunityController extends GetxController
 
       post.value = postsWithUser;
     } catch (e) {
-      print("Lỗi khi tìm kiếm bài viết: $e");
+      if (kDebugMode) {
+        print("Error when searching post: $e");
+      }
       post.value = [];
     } finally {
       isLoading.value = false;

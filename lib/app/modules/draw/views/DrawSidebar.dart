@@ -129,11 +129,11 @@ class DrawSidebar extends StatelessWidget {
             if (controller.frames.length <= 1) return false;
             return await Get.dialog<bool>(
               AlertDialog(
-                title: const Text('Xác nhận xoá'),
-                content: const Text('Bạn có chắc muốn xoá frame này?'),
+                title: const Text('Confirm Deletion'),
+                content: const Text('Are you sure you want to delete this frame?'),
                 actions: [
-                  TextButton(onPressed: () => Get.back(result: false), child: const Text('Huỷ')),
-                  TextButton(onPressed: () => Get.back(result: true), child: const Text('Xoá')),
+                  TextButton(onPressed: () => Get.back(result: false), child: const Text('Cancel')),
+                  TextButton(onPressed: () => Get.back(result: true), child: const Text('Delete')),
                 ],
               ),
             ) ??

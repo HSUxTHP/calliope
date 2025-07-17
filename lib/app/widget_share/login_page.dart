@@ -9,62 +9,79 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      body: SafeArea(
+        child: Stack(
           children: [
-            Column(
-              children: [
-                Image.asset(
-                  'assets/logo.png',
-                  height: MediaQuery.sizeOf(context).height * 0.3,
-                  width: MediaQuery.sizeOf(context).width * 0.3,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Welcome to Calliope',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Let your creativity break all limits',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            OutlinedButton(
-              onPressed: () {
-                profileController.signInWithGoogleAndSaveToSupabase();
-              },
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
+            // Nội dung chính
+            Center(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Row(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Image.asset(
-                      'assets/google_logo.png', // sửa lỗi chính tả nếu có
-                      height: 24,
+                      'assets/logo.png',
+                      height: MediaQuery.sizeOf(context).height * 0.3,
+                      width: MediaQuery.sizeOf(context).width * 0.3,
                     ),
-                    const SizedBox(width: 16),
-                    const Text('Sign In with Google'),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Welcome to Calliope',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Let your creativity break all limits',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 32),
+                    OutlinedButton(
+                      onPressed: () {
+                        profileController.signInWithGoogleAndSaveToSupabase();
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        side: BorderSide(color: Theme.of(context).colorScheme.primary),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Image.asset(
+                            'assets/google_logo.png',
+                            height: 24,
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Sign In with Google',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
+              ),
+            ),
+
+            // Nút cài đặt ở góc trên cùng bên phải
+            Align(
+              alignment: Alignment.topRight,
+              child: IconButton(
+                icon: const Icon(Icons.settings),
+                onPressed: profileController.showSettingsOptions,
               ),
             ),
           ],
         ),
       ),
     );
+
   }
 }

@@ -29,6 +29,8 @@ class UploadController extends GetxController {
   void onClose() {
     nameController.dispose();
     descriptionController.dispose();
+    videoFile.value = null;
+    backgroundFile.value = null;
     super.onClose();
   }
 
@@ -66,7 +68,9 @@ class UploadController extends GetxController {
       return;
     }
 
-    print('Tải lên video cho user ${userId}');
+    if (kDebugMode) {
+      print('Tải lên video cho user ${userId}');
+    }
 
     isUploading.value = true;
     progress.value = 0.0;
@@ -110,14 +114,14 @@ class UploadController extends GetxController {
       }
 
       // Upload thumbnail nếu có
-      final thumbnailFile = File('${videoFile.value!.parent.path}/background.png');
-      if (await thumbnailFile.exists()) {
+      if (backgroundFile.value != null && await backgroundFile.value!.exists()) {
         await client.storage.from('videos').upload(
           '$storagePath/background.png',
-          thumbnailFile,
+          backgroundFile.value!,
           fileOptions: const FileOptions(cacheControl: '3600', upsert: true),
         );
       }
+
 
       progress.value = 0.95;
 
@@ -137,7 +141,9 @@ class UploadController extends GetxController {
         thumbnail: thumbnail,
       );
 
-      print(post.toJson());
+      if (kDebugMode) {
+        print(post.toJson());
+      }
       final insertResponse = await client.from('posts').insert(post.toJson()).select();
 
       if (insertResponse == null || insertResponse.isEmpty) {
@@ -244,7 +250,9 @@ class UploadController extends GetxController {
   // }
 
   Future<String> _splitMp4ToHLS(File input) async {
-    print("Bắt đầu phân mảnh HLS: ${input.path}");
+    if (kDebugMode) {
+      print("Bắt đầu phân mảnh HLS: ${input.path}");
+    }
     progress.value = 0.2;
     final segmentLength = 4; // 4 giây mỗi đoạn .ts
     final dir = input.parent;
@@ -269,11 +277,15 @@ class UploadController extends GetxController {
     final returnCode = await session.getReturnCode();
 
     if (ReturnCode.isSuccess(returnCode)) {
-      print('✅ HLS phân mảnh thành công!');
-      print('📄 Manifest: $outputManifest');
+      if (kDebugMode) {
+        print('HLS phân mảnh thành công!');
+        print('Manifest: $outputManifest');
+      }
       return outputManifest;
     } else {
-      print('❌ Lỗi phân mảnh HLS');
+      if (kDebugMode) {
+        print('Lỗi phân mảnh HLS');
+      }
       return '';
     }
   }

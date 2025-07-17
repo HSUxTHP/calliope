@@ -1,5 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:calliope/app/data/models/drawmodels/frame_model.dart';
+import 'package:calliope/app/data/models/drawmodels/layer_model.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:external_path/external_path.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -7,13 +12,19 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hive/hive.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../data/models/drawmodels/draw_project_model.dart';
+import '../../../data/models/drawmodels/drawn_line_model.dart';
 import '../../../data/models/post_model.dart';
 import '../../../data/models/user_model.dart';
+import '../../home/controllers/home_controller.dart';
 
 class ProfileController extends GetxController with GetSingleTickerProviderStateMixin {
+  final homeController = Get.find<HomeController>();
   final isLoading = false.obs;
   final isCurrentUser = false.obs;
+  RxBool hasNetwork = true.obs;
 
   var currentUser = Rxn<UserModel>();
   var viewedUser = Rxn<UserModel>();
@@ -23,20 +34,46 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
   var post = <PostModel>[].obs;
 
   late Box<UserModel> userBox;
+  final SupabaseClient client = Supabase.instance.client;
 
   @override
   void onInit() async {
     super.onInit();
+    isLoading.value = true;
+    isCurrentUser.value = false;
   }
 
   @override
   void onReady() async {
     super.onReady();
     await reload();
-    print('currentUser: ${currentUser.value}');
-    print('currentUser.id: ${currentUser.value?.id}');
-    print('viewedUser: ${viewedUser.value}');
+    // print('currentUser: ${currentUser.value}');
+    // print('currentUser.id: ${currentUser.value?.id}');
+    // print('viewedUser: ${viewedUser.value}');
   }
+
+  Future<bool> checkNetworkConnection() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult.contains(ConnectivityResult.none)) {
+      hasNetwork.value = false;
+      return false;
+    }
+
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+        hasNetwork.value = true;
+        return true;
+      } else {
+        hasNetwork.value = false;
+        return false;
+      }
+    } on SocketException {
+      hasNetwork.value = false;
+      return false;
+    }
+  }
+
 
   Future<void> reload() async {
     isLoading.value = true;
@@ -47,6 +84,12 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
     await loadCurrentUserFromHive();
 
     final self = currentUser.value;
+
+    if (!await checkNetworkConnection()) {
+      Get.snackbar("No Internet", "Please check your network connection");
+      isLoading.value = false;
+      return;
+    }
 
     if (routeUserId != null) {
       // Xem người khác (hoặc bản thân thông qua ID)
@@ -64,10 +107,14 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
           viewedUser.value = self;
           await fetchPostsByUser(selfId);
         } else {
-          print('ID của currentUser không hợp lệ');
+          if (kDebugMode) {
+            // print('ID của currentUser không hợp lệ');
+          }
         }
       } else {
-        print('Không có thông tin currentUser');
+        if (kDebugMode) {
+          // print('Không có thông tin currentUser');
+        }
       }
     }
 
@@ -79,7 +126,14 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
 
   Future<void> initProfile(int? userId) async {
     if (userId == null || userId <= 0) {
-      print('Không có ID hợp lệ để tải profile');
+      if (kDebugMode) {
+        // print('Không có ID hợp lệ để tải profile');
+      }
+      return;
+    }
+
+    if (!await checkNetworkConnection()) {
+      Get.snackbar("No Internet", "Unable to load user data");
       return;
     }
 
@@ -88,9 +142,11 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       viewedUser.value = user;
 
       final selfId = int.tryParse(currentUser.value?.id ?? '');
-      isCurrentUser.value = selfId != null && user.id == selfId;
+      isCurrentUser.value = selfId != null && int.tryParse(user.id ?? '') == selfId;
     } catch (e) {
-      print('Lỗi khi lấy dữ liệu người dùng từ Supabase: $e');
+      if (kDebugMode) {
+        // print('Lỗi khi lấy dữ liệu người dùng từ Supabase: $e');
+      }
     }
 
     await fetchPostsByUser(userId);
@@ -114,13 +170,20 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
     if (user != null) {
       currentUser.value = user;
       isLogined.value = true;
-      print('Đã tải UserModel từ Hive: ${user.id}');
+      if (kDebugMode) {
+        // print('Đã tải UserModel từ Hive: ${user.id}');
+      }
     } else {
-      print('Không tìm thấy current_user trong Hive');
+      if (kDebugMode) {
+        // print('Không tìm thấy current_user trong Hive');
+      }
     }
   }
 
   Future<UserModel> getUser(int userId) async {
+    if (!await checkNetworkConnection()) {
+      throw Exception("No Internet connection");
+    }
     isLoading.value = true;
     try {
       final response = await Supabase.instance.client
@@ -136,7 +199,7 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
         throw Exception("No user found with id: $userId");
       }
     } catch (e) {
-      print("Error while taking user: $e");
+      // print("Error while taking user: $e");
       rethrow;
     } finally {
       isLoading.value = false;
@@ -145,6 +208,11 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
 
 
   Future<void> getAllPostsByCurrentUser(int userId) async {
+    if (!await checkNetworkConnection()) {
+      Get.snackbar("No Internet", "Unable to load article");
+      return;
+    }
+
     try {
 
       final response = await Supabase.instance.client
@@ -166,7 +234,9 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
         thumbnail: post['thumbnail'],
       )).toList();
     } catch (e) {
-      print("Error when getting post: $e");
+      if (kDebugMode) {
+        // print("Error when getting post: $e");
+      }
       post.value = [];
     }
   }
@@ -176,10 +246,15 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
   }
 
 
+
   Future<void> signInWithGoogleAndSaveToSupabase() async {
+    if (!await checkNetworkConnection()) {
+      Get.snackbar("No Internet", "Cannot login while offline");
+      return;
+    }
     try {
       final googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) throw Exception("Người dùng đã huỷ đăng nhập");
+      if (googleUser == null) throw Exception("User cancelled the login");
 
       final googleAuth = await googleUser.authentication;
 
@@ -190,8 +265,8 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
 
       final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
       final user = userCredential.user;
-      if (user == null) throw Exception("Không lấy được người dùng");
-      if (user.email == null) throw Exception("Email người dùng không tồn tại");
+      if (user == null) throw Exception("User not found");
+      if (user.email == null) throw Exception("Email user not exist");
 
       final supabase = Supabase.instance.client;
 
@@ -215,8 +290,6 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
 
         final insertResponse = await supabase.from('users').insert(userData).select().single();
 
-        if (insertResponse == null) throw Exception("Không tạo được user mới");
-
         userData = Map<String, dynamic>.from(insertResponse);
       } else {
         userData = Map<String, dynamic>.from(existingUser);
@@ -239,13 +312,17 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       await box.put('current_user', userModel);
       isLogined.value = true;
       await initProfile(null);
-      print('Đã lưu UserModel vào Hive: ${userModel.toJson()}');
+      if (kDebugMode) {
+        // print('Đã lưu UserModel vào Hive: ${userModel.toJson()}');
+      }
 
       Get.snackbar("Log in successfully", "Hello ${userModel.name}");
       await reload();
     } catch (e) {
       Get.snackbar("Login error", e.toString());
-      print("Lỗi đăng nhập: $e");
+      if (kDebugMode) {
+        // print("Lỗi đăng nhập: $e");
+      }
     }
   }
 
@@ -263,12 +340,15 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
       currentUser.value = null;
       viewedUser.value = null;
       isLogined.value = false;
-      print('Đã xoá current_user khỏi Hive');
+      if (kDebugMode) {
+        // print('Đã xoá current_user khỏi Hive');
+      }
       // Get.toNamed('/layout');
-      Get.snackbar("Sign out", "You have successfully logged out.");
     } catch (e) {
       Get.snackbar("Logout error", e.toString());
-      print("Lỗi đăng xuất: $e");
+      if (kDebugMode) {
+        // print("Lỗi đăng xuất: $e");
+      }
     }
   }
 
@@ -284,6 +364,8 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
     File? avatarFile;
 
     Get.dialog(
+      barrierDismissible:
+      false,
       AlertDialog(
         title: const Text('Edit your profile'),
         content: SingleChildScrollView(
@@ -300,8 +382,8 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
                 child: CircleAvatar(
                   radius: 40,
                   backgroundImage:
-                  avatarFile != null ? FileImage(avatarFile!) : (avatarUrl != null ? NetworkImage(avatarUrl) : null) as ImageProvider?,
-                  child: avatarUrl == null && avatarFile == null
+                  avatarFile != null ? FileImage(avatarFile) : (avatarUrl != null ? NetworkImage(avatarUrl) : null) as ImageProvider?,
+                  child: avatarUrl == null
                       ? const Icon(Icons.camera_alt)
                       : null,
                 ),
@@ -323,6 +405,10 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
           TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () async {
+              if (!await checkNetworkConnection()) {
+                Get.snackbar("No Internet", "Cannot update while offline");
+                return;
+              }
               final editedAt = DateTime.now().toIso8601String();
               String? newAvatarUrl = avatarUrl;
 
@@ -344,13 +430,408 @@ class ProfileController extends GetxController with GetSingleTickerProviderState
               }).eq('id', id);
 
               onUpdated();
+
+              // Cập nhật lại thông tin người dùng trong Hive từ Supabase
+              final updatedUser = await Supabase.instance.client
+                  .from('users')
+                  .select()
+                  .eq('id', id)
+                  .single();
+              final box = await Hive.openBox<UserModel>('users');
+              await box.put('current_user', UserModel.fromJson(updatedUser));
+              currentUser.value = UserModel.fromJson(updatedUser);
+              viewedUser.value = currentUser.value;
               Get.back();
+              Get.snackbar("Profile updated", "Your profile has been updated successfully.");
+              if (kDebugMode) {
+                // print("Đã cập nhật thông tin người dùng: ${currentUser.value?.toJson()}");
+              }
+
             },
             child: const Text('Save'),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> updateStatus({
+    required int id,
+    required int status,
+  }) async {
+    if (!await checkNetworkConnection()) {
+      Get.snackbar("No Internet", "Cannot delete posts when offline");
+      return;
+    }
+    final editedAt = DateTime.now().toIso8601String();
+    await client
+        .from('posts')
+        .update({
+      'status': status,
+      'edited_at': editedAt,
+    })
+        .eq('id', id);
+    await reload();
+  }
+
+  Future<void> deletePost({
+    required int id,
+  }) async {
+    if (!await checkNetworkConnection()) {
+      Get.snackbar("No Internet", "Cannot delete posts when offline");
+      return;
+    }
+
+    try {
+      // Xóa record trong table
+      await client.from('posts').delete().eq('id', id);
+      Get.snackbar("Success", "The post has been deleted.");
+      await reload();
+    } catch (e) {
+      Get.snackbar("Error", "Unable to delete post: $e");
+      if (kDebugMode) {
+        // print("Lỗi khi xóa bài viết: $e");
+      }
+    }
+  }
+
+  Future<void> confirmDeletePost(int id) async {
+    Get.defaultDialog(
+      title: 'Confirm',
+      middleText: 'Are you sure you want to delete this post?',
+      textConfirm: 'Delete',
+      textCancel: 'Cancel',
+      confirmTextColor: Get.theme.colorScheme.onError,
+      onConfirm: () async {
+        Get.back();
+        await deletePost(id: id);
+      },
+    );
+  }
+
+
+
+  void showStatusOptionsDialog(post) {
+    Get.defaultDialog(
+      title: 'Choose action',
+      content: Column(
+        children: [
+          ListTile(
+            leading: Icon(Icons.delete, color: Get.theme.colorScheme.error),
+            title: Text('Delete posts'),
+            onTap: () async {
+              Get.back();
+              await confirmDeletePost(post.id);
+            },
+          ),
+          post.status == 1
+              ? ListTile(
+            leading: Icon(Icons.lock),
+            title: Text('Switch to private'),
+            onTap: () async {
+              await updateStatus(id: post.id, status: 0);
+              Get.back();
+              Get.snackbar("Success", "The post has been set to private.");
+            },
+          )
+              : ListTile(
+            leading: Icon(Icons.visibility),
+            title: Text('Switch to public'),
+            onTap: () async {
+              await updateStatus(id: post.id, status: 1);
+              Get.back();
+            },
+          )
+        ],
+      ),
+    );
+  }
+
+  ////dropdown to show logout options
+  void showSettingsOptions() {
+    Get.defaultDialog(
+      title: 'Settings',
+      content: Column(
+        children: [
+          isLogined.value
+          ? ListTile(
+              leading: Icon(Icons.logout, color: Get.theme.colorScheme.error),
+              title: Text('Sign out'),
+              onTap: () async {
+                Get.back();
+                Get.defaultDialog(
+                  title: 'Confirm',
+                  middleText: 'Are you sure you want to sign out?',
+                  textConfirm: 'Sign out',
+                  textCancel: 'Cancel',
+                  confirmTextColor: Get.theme.colorScheme.onError,
+                  onConfirm: () async {
+                    await signOutGoogleAndClearHive();
+                    Get.back();
+                    Get.snackbar("Sign out", "You have successfully logged out.");
+                  },
+                );
+              },
+            )
+          : const SizedBox.shrink(),
+          ListTile(
+            leading: Icon(Icons.backup),
+            title: Text('Backup data'),
+            onTap: () async {
+              Get.back();
+              await exportAll();
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.restore),
+            title: Text('Restore data'),
+            onTap: () async {
+              Get.back();
+              await importAll();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> exportAllHiveData(String filePath) async {
+    final Map<String, dynamic> exportData = {};
+
+    await checkOpenBox();
+
+    final drawProjectBox = Hive.box<DrawProjectModel>('draw_project');
+    final frameBox = Hive.box<FrameModel>('frameModel');
+    final layerBox = Hive.box<LayerModel>('layerModel');
+    final lineBox = Hive.box<DrawnLine>('drawnLine');
+
+    exportData['drawProjectModel'] = drawProjectBox.toMap().map((key, value) => MapEntry(key.toString(), value));
+    exportData['frameModel'] = frameBox.toMap().map((key, value) => MapEntry(key.toString(), value));
+    exportData['layerModel'] = layerBox.toMap().map((key, value) => MapEntry(key.toString(), value));
+    exportData['drawnLine'] = lineBox.toMap().map((key, value) => MapEntry(key.toString(), value));
+
+    final file = File(filePath);
+    await file.writeAsString(jsonEncode(exportData));
+  }
+
+  Future<void> exportAll() async {
+    // Xin quyền truy cập bộ nhớ
+    final hasPermission = await requestStoragePermission();
+    if (!hasPermission) {
+      // print('❌ Không có quyền lưu file');
+      return;
+    }
+
+    final fileNameController = TextEditingController(text: 'calliope_backup');
+
+    await Get.defaultDialog(
+      title: 'Name the backup file',
+      barrierDismissible: false,
+      content: Column(
+        children: [
+          const Text('Enter backup file name:'),
+          const SizedBox(height: 8),
+          TextField(
+            controller: fileNameController,
+            decoration: const InputDecoration(border: OutlineInputBorder()),
+          ),
+        ],
+      ),
+      confirm: ElevatedButton(
+        onPressed: () async {
+          final rawName = fileNameController.text.trim();
+          if (rawName.isEmpty) {
+            Get.snackbar('Error', 'File name cannot be empty');
+            return;
+          }
+
+          final fileName = rawName.endsWith('.json') ? rawName : '$rawName.json';
+
+          Get.back(); // Đóng dialog
+
+          final dir = await ExternalPath.getExternalStoragePublicDirectory(
+              ExternalPath.DIRECTORY_DOWNLOAD);
+          final filePath = '$dir/$fileName';
+
+          await exportAllHiveData(filePath);
+
+          Get.defaultDialog(
+            title: 'Backup successful',
+            middleText: 'Your projects has been exported to:\n$filePath',
+            confirm: ElevatedButton(
+              onPressed: () => Get.back(),
+              child: const Text('OK'),
+            ),
+          );
+          // print('✅ Đã lưu file tại: $filePath');
+        },
+        child: const Text('Save'),
+      ),
+      cancel: TextButton(
+        onPressed: () => Get.back(),
+        child: const Text('Cancel'),
+      ),
+    );
+  }
+
+
+
+  Future<bool> requestStoragePermission() async {
+    if (await Permission.manageExternalStorage.isGranted) {
+      return true;
+    }
+
+    final status = await Permission.manageExternalStorage.request();
+
+    if (status.isGranted) return true;
+
+    // Mở cài đặt nếu bị từ chối
+    await openAppSettings();
+    return false;
+  }
+
+  Future<void> checkOpenBox() async {
+    // Mở các box cần thiết
+    if (!Hive.isBoxOpen('draw_project')) {
+      await Hive.openBox<DrawProjectModel>('draw_project');
+    }
+    if (!Hive.isBoxOpen('frameModel')) {
+      await Hive.openBox<FrameModel>('frameModel');
+    }
+    if (!Hive.isBoxOpen('layerModel')) {
+      await Hive.openBox<LayerModel>('layerModel');
+    }
+    if (!Hive.isBoxOpen('drawnLine')) {
+      await Hive.openBox<DrawnLine>('drawnLine'); // ✅ đúng kiểu
+    }
+  }
+
+  Future<void> importAllHiveData(String filePath) async {
+    final file = File(filePath);
+
+    if (!await file.exists()) {
+      throw Exception("❌ File does not exist: $filePath");
+    }
+
+    late Map<String, dynamic> jsonData;
+
+    try {
+      final contents = await file.readAsString();
+      jsonData = jsonDecode(contents);
+    } catch (e) {
+      throw Exception("❌ File is invalid or not in JSON format.\nDetail: $e");
+    }
+
+    // Kiểm tra các khóa bắt buộc
+    final requiredKeys = ['drawProjectModel', 'frameModel', 'layerModel', 'drawnLine'];
+    for (var key in requiredKeys) {
+      if (!jsonData.containsKey(key)) {
+        throw Exception("❌ File missing data: '$key'");
+      }
+    }
+
+    await checkOpenBox();
+
+    final drawProjectBox = Hive.box<DrawProjectModel>('draw_project');
+    final frameBox = Hive.box<FrameModel>('frameModel');
+    final layerBox = Hive.box<LayerModel>('layerModel');
+    final lineBox = Hive.box<DrawnLine>('drawnLine');
+
+    // Xóa dữ liệu cũ
+    await drawProjectBox.clear();
+    await frameBox.clear();
+    await layerBox.clear();
+    await lineBox.clear();
+
+    try {
+      for (var entry in (jsonData['drawProjectModel'] as Map<String, dynamic>).entries) {
+        final obj = DrawProjectModel.fromJson(entry.value);
+        await drawProjectBox.put(entry.key, obj);
+      }
+
+      for (var entry in (jsonData['frameModel'] as Map<String, dynamic>).entries) {
+        final obj = FrameModel.fromJson(entry.value);
+        await frameBox.put(entry.key, obj);
+      }
+
+      for (var entry in (jsonData['layerModel'] as Map<String, dynamic>).entries) {
+        final obj = LayerModel.fromJson(entry.value);
+        await layerBox.put(entry.key, obj);
+      }
+
+      for (var entry in (jsonData['drawnLine'] as Map<String, dynamic>).entries) {
+        final obj = DrawnLine.fromJson(entry.value);
+        await lineBox.put(entry.key, obj);
+      }
+    } catch (e) {
+      throw Exception("❌ Error parsing or writing Hive data.\nDetails: $e");
+    }
+  }
+
+
+  Future<void> importAll() async {
+    try {
+      bool isCancel = true;
+      //Mở dialog cảnh báo
+      await Get.defaultDialog(
+        barrierDismissible: false,
+        title: 'Warning',
+        middleText: 'This will overwrite all your current projects. Are you sure?',
+        confirm: ElevatedButton(
+          onPressed: () {
+            Get.back();
+            isCancel = false;
+          },
+          child: const Text('Yes'),
+        ),
+        cancel: TextButton(
+          onPressed: () {
+            Get.back();
+            isCancel = true;
+          },
+          child: const Text('No'),
+        ),
+      );
+
+      if (isCancel) {
+        // print('❌ Người dùng đã hủy khôi phục dữ liệu');
+        return; // Người dùng đã hủy, không làm gì cả
+      }
+
+      // Xin quyền truy cập bộ nhớ
+      final hasPermission = await requestStoragePermission();
+      if (!hasPermission) {
+        // print('❌ Không có quyền truy cập file');
+        return;
+      }
+
+      final result = await FilePicker.platform.pickFiles(
+        dialogTitle: 'Select the backup project file (.json)',
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      if (result == null || result.files.isEmpty || result.files.single.path == null) {
+        // print('❌ Người dùng đã hủy chọn file');
+        return;
+      }
+
+      final path = result.files.single.path!;
+      await importAllHiveData(path);
+      homeController.loadProjects();
+      Get.defaultDialog(
+        title: 'Restore successfully',
+        middleText: 'Data was successfully recovered.',
+        confirm: ElevatedButton(
+          onPressed: () => Get.back(),
+          child: const Text('OK'),
+        ),
+      );
+      // print('✅ Khôi phục dữ liệu thành công từ: $path');
+    } catch (e) {
+      // print(e);
+      Get.snackbar('Error', e.toString(), snackPosition: SnackPosition.BOTTOM);
+    }
   }
 
 }
