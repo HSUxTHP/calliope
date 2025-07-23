@@ -517,7 +517,7 @@ class _DrawViewState extends State<DrawView> {
             size: 18,
           ),
           label: Text(
-            isEditing ? 'Off Edit Mode' : 'Edit Mode',
+            isEditing ? 'ReorderList' : 'Edit Mode',
             style: const TextStyle(fontSize: 13),
           ),
         );

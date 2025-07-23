@@ -126,8 +126,8 @@ class WatchController extends GetxController {
     await Supabase.instance.client.from('comments').insert(newComment);
 
     commentController.clear();
-    Get.snackbar('Success', 'Comments have been posted.',
-        backgroundColor: Colors.green, colorText: Colors.white);
+    // Get.snackbar('Success', 'Comments have been posted.',
+    //     backgroundColor: Colors.green, colorText: Colors.white);
   }
 
   Future<void> getComments(int id) async {
