@@ -171,8 +171,8 @@ class DrawController extends GetxController {
   static const Size canvasSize = Size(1050, 590.625);
   final IconData brushIcon = Icons.brush;
   final IconData eraserIcon = MdiIcons.eraser;
-  final String brushTooltip = 'Bút';
-  final String eraserTooltip = 'Tẩy';
+  final String brushTooltip = 'Brush';
+  final String eraserTooltip = 'Eraser';
   final Rx<ToolType> selectedTool = ToolType.brush.obs;
   IconData get currentToolIcon =>
   selectedTool.value == ToolType.brush ? brushIcon : eraserIcon;
@@ -601,19 +601,19 @@ class DrawController extends GetxController {
 
   Future<void> exportFrameAsImage(int frameIndex) async {
     if (frameIndex < 0 || frameIndex >= frames.length) {
-      Get.snackbar("Lỗi", "Chỉ số frame không hợp lệ.");
+      Get.snackbar("Error", "Frame index invalid.");
       return;
     }
 
     bool granted = await ensureStoragePermission();
     if (!granted) {
-      Get.snackbar("Lỗi", "Không có quyền lưu trữ.");
+      Get.snackbar("Error", "Storage permission not granted.");
       return;
     }
 
     final dir = await FilePicker.platform.getDirectoryPath();
     if (dir == null) {
-      Get.snackbar("Đã huỷ", "Bạn chưa chọn thư mục.");
+      Get.snackbar("Cancelled", "You not choose folder yet.");
       return;
     }
 
@@ -874,7 +874,7 @@ class DrawController extends GetxController {
   }
   Future<void> generateTween(int fromIndex, int toIndex, int steps) async {
     if (fromIndex < 0 || toIndex >= frames.length || fromIndex >= toIndex || steps < 1) {
-      Get.snackbar("Lỗi", "Tham số không hợp lệ");
+      Get.snackbar("Error", "Invalid parameter");
       return;
     }
 
@@ -925,7 +925,7 @@ class DrawController extends GetxController {
     frames.insertAll(fromIndex + 1, generatedFrames);
     _clearThumbnailCache();
     frames.refresh();
-    Get.snackbar("Tween thành công", "Đã chèn $steps frame trung gian giữa $fromIndex và $toIndex");
+    Get.snackbar("Tween succeed", "Inserted $steps as child frame of $fromIndex and $toIndex");
   }
 
 
@@ -944,7 +944,7 @@ class DrawController extends GetxController {
     }
   }
   Future<void> showUploadDialogWithInfo(int fps, int userId) async {
-    final nameController = TextEditingController(text: currentProjectName ?? "Video mới");
+    final nameController = TextEditingController(text: currentProjectName ?? "New Video");
     File? thumbnailFile;
 
     int? selectedFrameIndex;
